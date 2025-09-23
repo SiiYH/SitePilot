@@ -15,18 +15,18 @@ export default function WelcomePage() {
           Welcome to SiteFlow
         </h1>
         <p className="mb-8 max-w-md mx-auto text-muted-foreground">
-            The all-in-one platform for managing your construction projects. How would you like to get started?
+            You're one step away from managing your construction projects. How would you like to get started?
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <Card className="text-left hover:shadow-lg transition-shadow">
                 <CardHeader>
                     <Users className="h-8 w-8 mb-2 text-primary" />
                     <CardTitle>Join a Company</CardTitle>
-                    <CardDescription>Get an invitation from your administrator to join an existing company workspace.</CardDescription>
+                    <CardDescription>Enter an invitation code to join an existing company workspace.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button className="w-full" asChild>
-                        <Link href="/login">Log In to Existing Account</Link>
+                        <Link href="/join-company">Join with Code</Link>
                     </Button>
                 </CardContent>
            </Card>
@@ -34,17 +34,17 @@ export default function WelcomePage() {
                 <CardHeader>
                     <PlusCircle className="h-8 w-8 mb-2 text-primary" />
                     <CardTitle>Create a New Company</CardTitle>
-                    <CardDescription>Set up a new workspace for your company and start managing your projects and team.</CardDescription>
+                    <CardDescription>Set up a new workspace for your company and start managing projects.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <Button className="w-full" variant="outline" asChild>
-                        <Link href="/signup">Create a New Account</Link>
+                        <Link href="/create-company">Create Company</Link>
                     </Button>
                 </CardContent>
            </Card>
         </div>
          <p className="mt-8 text-center text-sm text-muted-foreground">
-          SiteFlow is a demo application. Functionality may be limited.
+          If you need to log in to a different account, you can <Link href="/login" className="font-medium text-primary hover:underline">log out and log in again</Link>.
         </p>
       </div>
     </div>
