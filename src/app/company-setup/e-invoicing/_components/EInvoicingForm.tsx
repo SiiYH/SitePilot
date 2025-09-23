@@ -93,10 +93,10 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
               <Switch id="e-inv-enabled" checked={eInvEnabled} onCheckedChange={setEInvEnabled} />
             </div>
             {eInvEnabled && (
-              <>
+              <div className="space-y-6 pt-4">
                 <div className="space-y-2">
                   <Label>E-Invoicing Version</Label>
-                  <RadioGroup defaultValue="v1" className="flex gap-4" onValueChange={setEInvVersion}>
+                  <RadioGroup defaultValue="v1" className="flex gap-4" onValueChange={(value) => setEInvVersion(value as 'v1' | 'v2')}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="v1" id="v1" />
                       <Label htmlFor="v1">v1.0</Label>
@@ -114,144 +114,146 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                      <p className="text-xs text-muted-foreground">Required for v2.0 e-invoicing.</p>
                   </div>
                 )}
-              </>
-            )}
-          </div>
-          
-          {/* Business Details */}
-          <div className="space-y-4">
-             <h3 className="text-lg font-semibold">Business Identifiers</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                 <div className="space-y-2">
-                    <Label htmlFor="customer-type">Customer Type</Label>
-                     <Select value={customerType} onValueChange={(value) => setCustomerType(value as CustomerType)}>
-                      <SelectTrigger id="customer-type">
-                        <SelectValue placeholder="Select customer type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
-                        <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
-                        <SelectItem value="non-malaysian-business">Non-Malaysian Business</SelectItem>
-                        <SelectItem value="non-malaysian-individual">Non-Malaysian Individual</SelectItem>
-                        <SelectItem value="government">Government Entity</SelectItem>
-                      </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tin">TIN (Tax Identification Number)</Label>
-                  <Input id="tin" placeholder="e.g., C29183749201" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brn">{getIdentifierLabel()}</Label>
-                  <Input id="brn" placeholder={getIdentifierPlaceholder()} />
-                </div>
-                {isMalaysiaBased && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="sst-number">SST Registration Number</Label>
-                      <Input id="sst-number" placeholder='e.g., J12-3456-78901234 or "NA"' />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
-                      <Input id="tourism-tax" placeholder='Optional or "NA"' />
-                    </div>
-                  </>
-                )}
-              </div>
-          </div>
-          
-          <Separator/>
+                
+                <Separator/>
 
-          {/* Contact & Address */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact & Address</h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="supplier-email">Email</Label>
-                <Input id="supplier-email" type="email" placeholder="billing@yourcompany.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile-no">Contact Number</Label>
-                <Input id="mobile-no" placeholder="+6012-3456789" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address-1">Address Line 1</Label>
-              <Input id="address-1" placeholder="Unit/Lot No, Building, Street Name" />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="address-2">Address Line 2 (Optional)</Label>
-              <Input id="address-2" placeholder="Taman/Desa/Kawasan, etc." />
-            </div>
-             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-               <div className="space-y-2">
-                  <Label htmlFor="postal-code">Postal Code</Label>
-                  <Input id="postal-code" placeholder="e.g., 50480" />
+                {/* Business Details */}
+                <div className="space-y-4">
+                   <h3 className="text-lg font-semibold">Business Identifiers</h3>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                       <div className="space-y-2">
+                          <Label htmlFor="customer-type">Customer Type</Label>
+                           <Select value={customerType} onValueChange={(value) => setCustomerType(value as CustomerType)}>
+                            <SelectTrigger id="customer-type">
+                              <SelectValue placeholder="Select customer type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
+                              <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
+                              <SelectItem value="non-malaysian-business">Non-Malaysian Business</SelectItem>
+                              <SelectItem value="non-malaysian-individual">Non-Malaysian Individual</SelectItem>
+                              <SelectItem value="government">Government Entity</SelectItem>
+                            </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tin">TIN (Tax Identification Number)</Label>
+                        <Input id="tin" placeholder="e.g., C29183749201" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="brn">{getIdentifierLabel()}</Label>
+                        <Input id="brn" placeholder={getIdentifierPlaceholder()} />
+                      </div>
+                      {isMalaysiaBased && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="sst-number">SST Registration Number</Label>
+                            <Input id="sst-number" placeholder='e.g., J12-3456-78901234 or "NA"' />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
+                            <Input id="tourism-tax" placeholder='Optional or "NA"' />
+                          </div>
+                        </>
+                      )}
+                    </div>
                 </div>
-                {isMalaysiaBased && (
-                 <div className="space-y-2">
-                    <Label htmlFor="lhdn-state">LHDN State Code</Label>
-                    <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={openStateCode}
-                          className="w-full justify-between"
-                        >
-                          <span className="truncate">
-                            {getStateCodeDisplay(stateCodeValue)}
-                          </span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search state..." />
-                          <CommandList>
-                            <CommandEmpty>No state found.</CommandEmpty>
-                            <CommandGroup>
-                              {stateCodes.map((state) => (
-                                <CommandItem
-                                  key={state.Code}
-                                  value={`${state.Code} ${state.State}`}
-                                  onSelect={(currentValue) => {
-                                    const code = stateCodes.find(s => `${s.Code} ${s.State}`.toLowerCase() === currentValue.toLowerCase())?.Code || ""
-                                    setStateCodeValue(code === stateCodeValue ? "" : code)
-                                    setOpenStateCode(false)
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      stateCodeValue.toLowerCase() === state.Code.toLowerCase() ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground/70 group-aria-selected:text-foreground'>{state.Code}</span>
-                                  <span className='flex-1'>{state.State}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                
+                <Separator/>
+
+                {/* Contact & Address */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Contact & Address</h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="supplier-email">Email</Label>
+                      <Input id="supplier-email" type="email" placeholder="billing@yourcompany.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mobile-no">Contact Number</Label>
+                      <Input id="mobile-no" placeholder="+6012-3456789" />
+                    </div>
                   </div>
-                )}
-             </div>
-          </div>
-          
-           <Separator/>
-
-          {/* Financial Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Financial Details</h3>
-             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                    <Label htmlFor="bank-account">Bank Account Number</Label>
-                    <Input id="bank-account" placeholder="Enter bank account number" />
+                  <div className="space-y-2">
+                    <Label htmlFor="address-1">Address Line 1</Label>
+                    <Input id="address-1" placeholder="Unit/Lot No, Building, Street Name" />
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="address-2">Address Line 2 (Optional)</Label>
+                    <Input id="address-2" placeholder="Taman/Desa/Kawasan, etc." />
+                  </div>
+                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                     <div className="space-y-2">
+                        <Label htmlFor="postal-code">Postal Code</Label>
+                        <Input id="postal-code" placeholder="e.g., 50480" />
+                      </div>
+                      {isMalaysiaBased && (
+                       <div className="space-y-2">
+                          <Label htmlFor="lhdn-state">LHDN State Code</Label>
+                          <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openStateCode}
+                                className="w-full justify-between"
+                              >
+                                <span className="truncate">
+                                  {getStateCodeDisplay(stateCodeValue)}
+                                </span>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                              <Command>
+                                <CommandInput placeholder="Search state..." />
+                                <CommandList>
+                                  <CommandEmpty>No state found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {stateCodes.map((state) => (
+                                      <CommandItem
+                                        key={state.Code}
+                                        value={`${state.Code} ${state.State}`}
+                                        onSelect={(currentValue) => {
+                                          const code = stateCodes.find(s => `${s.Code} ${s.State}`.toLowerCase() === currentValue.toLowerCase())?.Code || ""
+                                          setStateCodeValue(code === stateCodeValue ? "" : code)
+                                          setOpenStateCode(false)
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            stateCodeValue.toLowerCase() === state.Code.toLowerCase() ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground/70 group-aria-selected:text-foreground'>{state.Code}</span>
+                                        <span className='flex-1'>{state.State}</span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
+                   </div>
                 </div>
-             </div>
+                
+                 <Separator/>
+
+                {/* Financial Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Financial Details</h3>
+                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                          <Label htmlFor="bank-account">Bank Account Number</Label>
+                          <Input id="bank-account" placeholder="Enter bank account number" />
+                      </div>
+                   </div>
+                </div>
+              </div>
+            )}
           </div>
           
 
