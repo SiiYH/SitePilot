@@ -5,14 +5,11 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Phone, Building, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Textarea } from '@/components/ui/textarea';
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -43,11 +40,10 @@ const InfoField = ({ label, value }: { label: string; value?: string | null }) =
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className="text-sm">{value}</p>
+            <p className="text-sm break-words">{value}</p>
         </div>
     );
 };
-
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -195,3 +191,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
