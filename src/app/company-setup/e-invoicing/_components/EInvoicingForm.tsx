@@ -80,9 +80,7 @@ const formSchema = z.object({
     } else if (!z.string().email().safeParse(data.email).success) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid email address.', path: ['email'] });
     }
-    if (!data.contactNumber) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
-    }
+    
     if (!data.address1) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Address is required.', path: ['address1'] });
     }
@@ -99,11 +97,25 @@ const formSchema = z.object({
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A 6-digit PIN is required for v2.0", path: ['digitalSignature'] });
         }
     }
+
     if (data.customerType === 'malaysia-business' || data.customerType === 'malaysia-individual') {
         if (!data.lhdnStateCode) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'LHDN State is required.', path: ['lhdnStateCode'] });
         }
     }
+
+    if (data.customerType === 'malaysia-business' || data.customerType === 'malaysia-individual' || data.customerType === 'non-malaysian-business' || data.customerType === 'non-malaysian-individual') {
+        if (!data.tin) {
+             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'TIN is required for this customer type.', path: ['tin'] });
+        }
+    }
+
+    if (data.customerType === 'malaysia-individual' || data.customerType === 'non-malaysian-individual') {
+        if (!data.contactNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
+        }
+    }
+
   });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -135,6 +147,10 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const eInvVersion = form.watch('eInvVersion');
   const customerType = form.watch('customerType');
   const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
+
+  const isTinRequired = eInvEnabled && ['malaysia-business', 'malaysia-individual', 'non-malaysian-business', 'non-malaysian-individual'].includes(customerType);
+  const isContactRequired = eInvEnabled && ['malaysia-individual', 'non-malaysian-individual'].includes(customerType);
+
 
   const getStateCodeDisplay = (code: string) => {
     const state = stateCodes.find((s) => s.Code.toLowerCase() === code.toLowerCase());
@@ -257,9 +273,9 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="tin"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>TIN (Tax Identification Number)</FormLabel>
+                                    <FormLabel>TIN (Tax Identification Number){isTinRequired && <RequiredIndicator />}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g., C29183749201" {...field} />
+                                        <Input placeholder='e.g., C29183749201 or "NA"' {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -334,7 +350,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="contactNumber"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Contact Number{eInvEnabled && <RequiredIndicator />}</FormLabel>
+                                <FormLabel>Contact Number{isContactRequired && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
                                 <Input placeholder="+6012-3456789" {...field} />
                                 </FormControl>
@@ -478,5 +494,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
+
+    
 
     
