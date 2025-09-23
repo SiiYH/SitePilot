@@ -21,6 +21,14 @@ type StateCode = {
   State: string;
 };
 
+type CustomerType =
+  | 'malaysia-business'
+  | 'malaysia-individual'
+  | 'non-malaysia-business'
+  | 'non-malaysia-individual'
+  | 'government';
+
+
 interface EInvoicingFormProps {
   stateCodes: StateCode[];
 }
@@ -28,6 +36,7 @@ interface EInvoicingFormProps {
 export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const [eInvEnabled, setEInvEnabled] = useState(true);
   const [eInvVersion, setEInvVersion] = useState('v1');
+  const [customerType, setCustomerType] = useState<CustomerType>('malaysia-business');
   const [openStateCode, setOpenStateCode] = useState(false)
   const [stateCodeValue, setStateCodeValue] = useState("")
 
@@ -36,6 +45,41 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     if (!state) return "Select LHDN State...";
     return `${state.State} (${state.Code})`;
   }
+
+  const getIdentifierLabel = () => {
+    switch (customerType) {
+      case 'malaysia-individual':
+        return 'NRIC (MyKad/MyTentera/MyPR)';
+      case 'non-malaysia-individual':
+        return 'Passport Number';
+      case 'government':
+        return 'Government Entity Identifier';
+      case 'malaysia-business':
+      case 'non-malaysia-business':
+      default:
+        return 'Business Registration Number (MyCoID)';
+    }
+  };
+  
+  const getIdentifierPlaceholder = () => {
+    switch (customerType) {
+      case 'malaysia-individual':
+        return 'e.g., 901010141234';
+      case 'non-malaysia-individual':
+        return 'Enter passport number';
+      case 'government':
+        return 'Enter government entity ID';
+      case 'malaysia-business':
+        return 'e.g., 202401000123 (1234567-A)';
+      case 'non-malaysia-business':
+        return 'Enter company registration number';
+      default:
+        return 'Enter registration number';
+    }
+  };
+
+  const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
+
 
   return (
     <Card className="mt-6">
@@ -78,35 +122,41 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
           <div className="space-y-4">
              <h3 className="text-lg font-semibold">Business Identifiers</h3>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                 <div className="space-y-2">
+                    <Label htmlFor="customer-type">Customer Type</Label>
+                     <Select value={customerType} onValueChange={(value) => setCustomerType(value as CustomerType)}>
+                      <SelectTrigger id="customer-type">
+                        <SelectValue placeholder="Select customer type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
+                        <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
+                        <SelectItem value="non-malaysia-business">Non-Malaysia Business</SelectItem>
+                        <SelectItem value="non-malaysia-individual">Non-Malaysia Individual</SelectItem>
+                        <SelectItem value="government">Government Entity</SelectItem>
+                      </SelectContent>
+                    </Select>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="tin">TIN (Tax Identification Number)</Label>
                   <Input id="tin" placeholder="e.g., C29183749201" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sst-number">SST Registration Number</Label>
-                  <Input id="sst-number" placeholder="e.g., J12-3456-78901234" />
+                  <Label htmlFor="brn">{getIdentifierLabel()}</Label>
+                  <Input id="brn" placeholder={getIdentifierPlaceholder()} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mycoid">Business Registration Number (MyCoID)</Label>
-                  <Input id="mycoid" placeholder="e.g., 202401000123 (1234567-A)" />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
-                  <Input id="tourism-tax" placeholder="Optional" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="customer-type">Customer Type</Label>
-                     <Select>
-                      <SelectTrigger id="customer-type">
-                        <SelectValue placeholder="Select customer type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="government">Government</SelectItem>
-                      </SelectContent>
-                    </Select>
-                </div>
+                {isMalaysiaBased && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="sst-number">SST Registration Number</Label>
+                      <Input id="sst-number" placeholder='e.g., J12-3456-78901234 or "NA"' />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
+                      <Input id="tourism-tax" placeholder='Optional or "NA"' />
+                    </div>
+                  </>
+                )}
               </div>
           </div>
           
@@ -117,11 +167,11 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
             <h3 className="text-lg font-semibold">Contact & Address</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="supplier-email">Supplier Email</Label>
+                <Label htmlFor="supplier-email">Email</Label>
                 <Input id="supplier-email" type="email" placeholder="billing@yourcompany.com" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="mobile-no">Mobile Number</Label>
+                <Label htmlFor="mobile-no">Contact Number</Label>
                 <Input id="mobile-no" placeholder="+6012-3456789" />
               </div>
             </div>
@@ -138,6 +188,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                   <Label htmlFor="postal-code">Postal Code</Label>
                   <Input id="postal-code" placeholder="e.g., 50480" />
                 </div>
+                {isMalaysiaBased && (
                  <div className="space-y-2">
                     <Label htmlFor="lhdn-state">LHDN State Code</Label>
                     <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
@@ -185,6 +236,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                       </PopoverContent>
                     </Popover>
                   </div>
+                )}
              </div>
           </div>
           
