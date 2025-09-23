@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('siteflow-user');
-    router.push('/login');
+    router.push('/welcome');
   };
 
   const value = {
