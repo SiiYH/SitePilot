@@ -94,6 +94,19 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                   <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
                   <Input id="tourism-tax" placeholder="Optional" />
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="customer-type">Customer Type</Label>
+                     <Select>
+                      <SelectTrigger id="customer-type">
+                        <SelectValue placeholder="Select customer type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="business">Business</SelectItem>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="government">Government</SelectItem>
+                      </SelectContent>
+                    </Select>
+                </div>
               </div>
           </div>
           
@@ -162,7 +175,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                       stateCodeValue.toLowerCase() === state.Code.toLowerCase() ? "opacity-100" : "opacity-0"
                                     )}
                                   />
-                                  <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{state.Code}</span>
+                                  <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground/70 group-aria-selected:text-foreground'>{state.Code}</span>
                                   <span className='flex-1'>{state.State}</span>
                                 </CommandItem>
                               ))}
@@ -184,19 +197,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                 <div className="space-y-2">
                     <Label htmlFor="bank-account">Bank Account Number</Label>
                     <Input id="bank-account" placeholder="Enter bank account number" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="customer-type">Customer Type</Label>
-                     <Select>
-                      <SelectTrigger id="customer-type">
-                        <SelectValue placeholder="Select customer type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="government">Government</SelectItem>
-                      </SelectContent>
-                    </Select>
                 </div>
              </div>
           </div>
