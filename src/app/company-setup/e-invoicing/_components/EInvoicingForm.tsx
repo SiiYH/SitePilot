@@ -10,10 +10,31 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function EInvoicingForm() {
+type StateCode = {
+  Code: string;
+  Description: string;
+};
+
+interface EInvoicingFormProps {
+  stateCodes: StateCode[];
+}
+
+export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const [eInvEnabled, setEInvEnabled] = useState(true);
   const [eInvVersion, setEInvVersion] = useState('v1');
+  const [openStateCode, setOpenStateCode] = useState(false)
+  const [stateCodeValue, setStateCodeValue] = useState("")
+
+  const getStateCodeDisplay = (code: string) => {
+    const state = stateCodes.find((s) => s.Code.toLowerCase() === code.toLowerCase());
+    if (!state) return "Select LHDN State...";
+    return `${state.Description} (${state.Code})`;
+  }
 
   return (
     <Card className="mt-6">
@@ -104,9 +125,52 @@ export default function EInvoicingForm() {
                   <Input id="postal-code" placeholder="e.g., 50480" />
                 </div>
                  <div className="space-y-2">
-                  <Label htmlFor="lhdn-state">LHDN State Code</Label>
-                  <Input id="lhdn-state" placeholder="e.g., WP014 for Kuala Lumpur" />
-                </div>
+                    <Label htmlFor="lhdn-state">LHDN State Code</Label>
+                    <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openStateCode}
+                          className="w-full justify-between"
+                        >
+                          <span className="truncate">
+                            {getStateCodeDisplay(stateCodeValue)}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search state..." />
+                          <CommandList>
+                            <CommandEmpty>No state found.</CommandEmpty>
+                            <CommandGroup>
+                              {stateCodes.map((state) => (
+                                <CommandItem
+                                  key={state.Code}
+                                  value={state.Code}
+                                  onSelect={(currentValue) => {
+                                    setStateCodeValue(currentValue === stateCodeValue ? "" : currentValue)
+                                    setOpenStateCode(false)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      stateCodeValue.toLowerCase() === state.Code.toLowerCase() ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{state.Code}</span>
+                                  <span className='flex-1'>{state.Description}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
              </div>
           </div>
           
