@@ -12,6 +12,7 @@ import { Mail, Phone, Building, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -19,6 +20,22 @@ const getInitials = (name: string) => {
     return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
   }
   return name.substring(0, 2).toUpperCase();
+};
+
+const customerTypeLabels: { [key: string]: string } = {
+  'malaysia-business': 'Malaysia Business',
+  'malaysia-individual': 'Malaysia Individual',
+  'non-malaysian-business': 'Non-Malaysian Business',
+  'non-malaysian-individual': 'Non-Malaysian Individual',
+  'government': 'Government Entity',
+};
+
+const identifierLabels: { [key: string]: string } = {
+  'malaysia-business': 'Business Registration Number (MyCoID)',
+  'malaysia-individual': 'NRIC (MyKad/MyTentera/MyPR)',
+  'non-malaysian-business': 'Business/Company Registration Number',
+  'non-malaysian-individual': 'Passport Number',
+  'government': 'Government Entity Identifier',
 };
 
 export default function ProfilePage() {
@@ -56,6 +73,9 @@ export default function ProfilePage() {
     eInvData.postalCode,
     eInvData.lhdnStateCode,
   ].filter(Boolean).join(', ');
+
+  const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
+  const getIdentifierLabel = (key: string) => identifierLabels[key] || 'Identifier';
 
   return (
     <div className="space-y-6">
@@ -95,29 +115,81 @@ export default function ProfilePage() {
               <CardTitle>Company Information</CardTitle>
               {companyData?.name && <CardDescription>Details for {companyData.name}.</CardDescription>}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {companyData ? (
                 <>
-                  <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name</Label>
-                    <Input id="company-name" value={companyData.name || ''} readOnly />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input id="industry" value={companyData.industry || ''} readOnly />
-                  </div>
-                  {eInvData.email && (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>E-Invoicing Contact Email</Label>
-                      <Input value={eInvData.email} readOnly />
+                      <Label>Company Name</Label>
+                      <Input value={companyData.name || ''} readOnly />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Industry</Label>
+                      <Input value={companyData.industry || ''} readOnly />
+                    </div>
+                  </div>
+                  {companyData.description && (
+                     <div className="space-y-2">
+                      <Label>Company Description</Label>
+                      <Textarea value={companyData.description} readOnly rows={3} />
                     </div>
                   )}
-                  {fullAddress && (
-                    <div className="space-y-2">
-                      <Label>Address</Label>
-                      <Input value={fullAddress} readOnly />
-                    </div>
+                  
+                  {eInvData.eInvEnabled && (
+                    <>
+                      <Separator/>
+                      <div className="space-y-4">
+                          <h3 className="text-base font-semibold">E-Invoicing Details</h3>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div className="space-y-2">
+                                  <Label>E-Invoicing Status</Label>
+                                  <Input value={eInvData.eInvEnabled ? `Enabled (${eInvData.eInvVersion})` : 'Disabled'} readOnly />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Customer Type</Label>
+                                <Input value={getCustomerTypeLabel(eInvData.customerType)} readOnly />
+                              </div>
+                               {eInvData.tin && <div className="space-y-2">
+                                  <Label>TIN</Label>
+                                  <Input value={eInvData.tin} readOnly />
+                              </div>}
+                              {eInvData.identifier && <div className="space-y-2">
+                                  <Label>{getIdentifierLabel(eInvData.customerType)}</Label>
+                                  <Input value={eInvData.identifier} readOnly />
+                              </div>}
+                              {eInvData.sstNumber && <div className="space-y-2">
+                                  <Label>SST Number</Label>
+                                  <Input value={eInvData.sstNumber} readOnly />
+                              </div>}
+                              {eInvData.tourismTax && <div className="space-y-2">
+                                  <Label>Tourism Tax No.</Label>
+                                  <Input value={eInvData.tourismTax} readOnly />
+                              </div>}
+                               {eInvData.email && <div className="space-y-2">
+                                  <Label>E-Invoicing Email</Label>
+                                  <Input value={eInvData.email} readOnly />
+                              </div>}
+                              {eInvData.contactNumber && <div className="space-y-2">
+                                  <Label>E-Invoicing Contact</Label>
+                                  <Input value={eInvData.contactNumber} readOnly />
+                              </div>}
+                          </div>
+                          {fullAddress && (
+                            <div className="space-y-2">
+                              <Label>Address</Label>
+                              <Input value={fullAddress} readOnly />
+                            </div>
+                          )}
+                          {eInvData.bankAccount && (
+                            <div className="space-y-2">
+                              <Label>Bank Account Number</Label>
+                              <Input value={eInvData.bankAccount} readOnly />
+                            </div>
+                          )}
+                      </div>
+                    </>
                   )}
+
                   <div className="mt-6 flex justify-end">
                     <Button variant="outline" asChild>
                       <Link href="/create-company">Edit Company Details</Link>
