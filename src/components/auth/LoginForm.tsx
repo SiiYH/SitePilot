@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { Mail, Phone, Loader2 } from 'lucide-react';
+import { Mail, Phone, Loader2, Eye, EyeOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ const phoneSchema = z.object({
 export default function LoginForm() {
   const [activeTab, setActiveTab] = useState('email');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
 
@@ -65,6 +67,40 @@ export default function LoginForm() {
     }
     setIsLoading(false);
   };
+  
+  const PasswordField = ({ form }: { form: any }) => (
+    <FormField
+      control={form.control}
+      name="password"
+      render={({ field }) => (
+        <FormItem>
+          <div className="flex items-center justify-between">
+            <FormLabel>Password</FormLabel>
+            <Link href="/forgot-password" passHref>
+              <Button variant="link" className="h-auto p-0 text-sm">Forgot password?</Button>
+            </Link>
+          </div>
+          <FormControl>
+            <div className="relative">
+              <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:bg-transparent"
+                onClick={() => setShowPassword(prev => !prev)}
+              >
+                {showPassword ? <EyeOff /> : <Eye />}
+                <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+              </Button>
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -92,24 +128,7 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={formEmail.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Password</FormLabel>
-                    <Link href="/forgot-password" passHref>
-                      <Button variant="link" className="h-auto p-0 text-sm">Forgot password?</Button>
-                    </Link>
-                  </div>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <PasswordField form={formEmail} />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
@@ -133,24 +152,7 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={formPhone.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                   <div className="flex items-center justify-between">
-                    <FormLabel>Password</FormLabel>
-                    <Link href="/forgot-password" passHref>
-                       <Button variant="link" className="h-auto p-0 text-sm">Forgot password?</Button>
-                    </Link>
-                  </div>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <PasswordField form={formPhone} />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
