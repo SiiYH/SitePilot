@@ -77,13 +77,13 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
                <Separator />
-                <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm">{user.email || 'No email provided'}</span>
+                <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
+                    <span className="text-sm break-all">{user.email || 'No email provided'}</span>
                 </div>
-                 <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm">{user.phone || 'No phone provided'}</span>
+                 <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
+                    <span className="text-sm break-all">{user.phone || 'No phone provided'}</span>
                 </div>
             </CardContent>
           </Card>
