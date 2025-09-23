@@ -2,43 +2,121 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Link from 'next/link';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Link from 'next/link';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 type StateCode = {
   Code: string;
   State: string;
 };
 
-type CustomerType =
-  | 'malaysia-business'
-  | 'malaysia-individual'
-  | 'non-malaysian-business'
-  | 'non-malaysian-individual'
-  | 'government';
-
-
 interface EInvoicingFormProps {
   stateCodes: StateCode[];
 }
 
+const identifierLabels = {
+  'malaysia-business': 'Business Registration Number (MyCoID)',
+  'malaysia-individual': 'NRIC (MyKad/MyTentera/MyPR)',
+  'non-malaysian-business': 'Business/Company Registration Number',
+  'non-malaysian-individual': 'Passport Number',
+  'government': 'Government Entity Identifier',
+};
+
+const identifierPlaceholders = {
+  'malaysia-business': 'e.g., 202401000123 (1234567-A)',
+  'malaysia-individual': 'e.g., 901010141234',
+  'non-malaysian-business': 'Enter company registration number',
+  'non-malaysian-individual': 'Enter passport number',
+  'government': 'Enter government entity ID',
+};
+
+const baseSchema = z.object({
+  tin: z.string().optional(),
+  identifier: z.string().min(1, 'This field is required.'),
+  sstNumber: z.string().optional(),
+  tourismTax: z.string().optional(),
+  email: z.string().email('Invalid email address.'),
+  contactNumber: z.string().min(1, 'Contact number is required.'),
+  address1: z.string().min(1, 'Address is required.'),
+  address2: z.string().optional(),
+  postalCode: z.string().min(1, 'Postal code is required.'),
+  lhdnStateCode: z.string().min(1, 'LHDN State is required.'),
+});
+
+const formSchema = z.object({
+    eInvEnabled: z.boolean(),
+    eInvVersion: z.enum(['v1', 'v2']),
+    digitalSignature: z.string().optional(),
+    customerType: z.enum([
+      'malaysia-business',
+      'malaysia-individual',
+      'non-malaysian-business',
+      'non-malaysian-individual',
+      'government'
+    ]),
+  }).and(baseSchema).superRefine((data, ctx) => {
+    if (data.eInvVersion === 'v2') {
+        if (!data.digitalSignature || data.digitalSignature.length !== 6) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A 6-digit PIN is required for v2.0",
+                path: ['digitalSignature'],
+            });
+        }
+    }
+    if (data.customerType === 'malaysia-individual' || data.customerType === 'non-malaysian-individual') {
+      if(!data.contactNumber){
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Contact number is mandatory",
+            path: ['contactNumber'],
+        });
+      }
+    }
+  });
+
+type FormValues = z.infer<typeof formSchema>;
+
 export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
-  const [eInvEnabled, setEInvEnabled] = useState(true);
-  const [eInvVersion, setEInvVersion] = useState('v1');
-  const [customerType, setCustomerType] = useState<CustomerType>('malaysia-business');
   const [openStateCode, setOpenStateCode] = useState(false)
-  const [stateCodeValue, setStateCodeValue] = useState("")
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      eInvEnabled: true,
+      eInvVersion: 'v1',
+      customerType: 'malaysia-business',
+      email: '',
+      contactNumber: '',
+      address1: '',
+      postalCode: '',
+      lhdnStateCode: '',
+    },
+  });
+
+  const eInvEnabled = form.watch('eInvEnabled');
+  const eInvVersion = form.watch('eInvVersion');
+  const customerType = form.watch('customerType');
+  const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
 
   const getStateCodeDisplay = (code: string) => {
     const state = stateCodes.find((s) => s.Code.toLowerCase() === code.toLowerCase());
@@ -46,227 +124,332 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     return `${state.State} (${state.Code})`;
   }
 
-  const getIdentifierLabel = () => {
-    switch (customerType) {
-      case 'malaysia-individual':
-        return 'NRIC (MyKad/MyTentera/MyPR)';
-      case 'non-malaysian-individual':
-        return 'Passport Number';
-      case 'government':
-        return 'Government Entity Identifier';
-      case 'malaysia-business':
-      case 'non-malaysian-business':
-      default:
-        return 'Business Registration Number (MyCoID)';
-    }
+  const onSubmit = (values: FormValues) => {
+    setIsSubmitting(true);
+    console.log(values);
+    toast({
+        title: "Form Submitted!",
+        description: "Your e-invoicing details have been saved.",
+    });
+    // In a real app, you would navigate away after a short delay
+    // For now, just log and reset the loading state
+    setTimeout(() => setIsSubmitting(false), 1500);
   };
-  
-  const getIdentifierPlaceholder = () => {
-    switch (customerType) {
-      case 'malaysia-individual':
-        return 'e.g., 901010141234';
-      case 'non-malaysian-individual':
-        return 'Enter passport number';
-      case 'government':
-        return 'Enter government entity ID';
-      case 'malaysia-business':
-        return 'e.g., 202401000123 (1234567-A)';
-      case 'non-malaysian-business':
-        return 'Enter company registration number';
-      default:
-        return 'Enter registration number';
-    }
-  };
-
-  const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
-
 
   return (
     <Card className="mt-6">
       <CardContent className="pt-6">
-        <form className="space-y-6">
-          {/* E-Invoicing Configuration */}
-          <div className="space-y-4 rounded-lg border p-4">
-            <h3 className="text-lg font-semibold">E-Invoicing Configuration</h3>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="e-inv-enabled">Enable E-Invoicing</Label>
-              <Switch id="e-inv-enabled" checked={eInvEnabled} onCheckedChange={setEInvEnabled} />
-            </div>
-            {eInvEnabled && (
-              <div className="space-y-6 pt-4">
-                <div className="space-y-2">
-                  <Label>E-Invoicing Version</Label>
-                  <RadioGroup defaultValue="v1" className="flex gap-4" onValueChange={(value) => setEInvVersion(value as 'v1' | 'v2')}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="v1" id="v1" />
-                      <Label htmlFor="v1">v1.0</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="v2" id="v2" />
-                      <Label htmlFor="v2">v2.0 (with Digital Signature)</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                {eInvVersion === 'v2' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="digital-signature">Digital Signature PIN</Label>
-                    <Input id="digital-signature" type="password" placeholder="Enter your 6-digit PIN" />
-                     <p className="text-xs text-muted-foreground">Required for v2.0 e-invoicing.</p>
-                  </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4 rounded-lg border p-4">
+              <FormField
+                control={form.control}
+                name="eInvEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <FormLabel className="text-lg font-semibold">Enable E-Invoicing</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
                 )}
-                
-                <Separator/>
+              />
 
-                {/* Business Details */}
-                <div className="space-y-4">
-                   <h3 className="text-lg font-semibold">Business Identifiers</h3>
+              {eInvEnabled && (
+                <div className="space-y-6 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="eInvVersion"
+                    render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>E-Invoicing Version</FormLabel>
+                            <RadioGroup 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value} 
+                                className="flex gap-4"
+                            >
+                                <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                    <RadioGroupItem value="v1" id="v1" />
+                                </FormControl>
+                                <Label htmlFor="v1">v1.0</Label>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                    <RadioGroupItem value="v2" id="v2" />
+                                </FormControl>
+                                <Label htmlFor="v2">v2.0 (with Digital Signature)</Label>
+                                </FormItem>
+                            </RadioGroup>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                  />
+                  {eInvVersion === 'v2' && (
+                    <FormField
+                      control={form.control}
+                      name="digitalSignature"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Digital Signature PIN</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Enter your 6-digit PIN" {...field} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">Required for v2.0 e-invoicing.</p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
+                  <Separator/>
+
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-semibold">Business Identifiers</h3>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                            control={form.control}
+                            name="customerType"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Customer Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select customer type" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
+                                        <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
+                                        <SelectItem value="non-malaysian-business">Non-Malaysian Business</SelectItem>
+                                        <SelectItem value="non-malaysian-individual">Non-Malaysian Individual</SelectItem>
+                                        <SelectItem value="government">Government Entity</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="tin"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>TIN (Tax Identification Number)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g., C29183749201" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="identifier"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{identifierLabels[customerType]}</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder={identifierPlaceholders[customerType]} {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {isMalaysiaBased && (
+                          <>
+                            <FormField
+                                control={form.control}
+                                name="sstNumber"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>SST Registration Number</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder='e.g., J12-3456-78901234 or "NA"' {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="tourismTax"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tourism Tax Registration No.</FormLabel>
+                                    <FormControl>
+                                    <Input placeholder='Optional or "NA"' {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                          </>
+                        )}
+                      </div>
+                  </div>
+                  
+                  <Separator/>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Contact & Address</h3>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                       <div className="space-y-2">
-                          <Label htmlFor="customer-type">Customer Type</Label>
-                           <Select value={customerType} onValueChange={(value) => setCustomerType(value as CustomerType)}>
-                            <SelectTrigger id="customer-type">
-                              <SelectValue placeholder="Select customer type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
-                              <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
-                              <SelectItem value="non-malaysian-business">Non-Malaysian Business</SelectItem>
-                              <SelectItem value="non-malaysian-individual">Non-Malaysian Individual</SelectItem>
-                              <SelectItem value="government">Government Entity</SelectItem>
-                            </SelectContent>
-                          </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="tin">TIN (Tax Identification Number)</Label>
-                        <Input id="tin" placeholder="e.g., C29183749201" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="brn">{getIdentifierLabel()}</Label>
-                        <Input id="brn" placeholder={getIdentifierPlaceholder()} />
-                      </div>
-                      {isMalaysiaBased && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="sst-number">SST Registration Number</Label>
-                            <Input id="sst-number" placeholder='e.g., J12-3456-78901234 or "NA"' />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="tourism-tax">Tourism Tax Registration No.</Label>
-                            <Input id="tourism-tax" placeholder='Optional or "NA"' />
-                          </div>
-                        </>
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                <Input type="email" placeholder="billing@yourcompany.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="contactNumber"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Contact Number</FormLabel>
+                                <FormControl>
+                                <Input placeholder="+6012-3456789" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="address1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address Line 1</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Unit/Lot No, Building, Street Name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
-                </div>
-                
-                <Separator/>
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address Line 2 (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Taman/Desa/Kawasan, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                            control={form.control}
+                            name="postalCode"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Postal Code</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., 50480" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {isMalaysiaBased && (
+                            <FormField
+                                control={form.control}
+                                name="lhdnStateCode"
+                                render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>LHDN State Code</FormLabel>
+                                    <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                        >
+                                            {getStateCodeDisplay(field.value)}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                        <CommandInput placeholder="Search state..." />
+                                        <CommandList>
+                                            <CommandEmpty>No state found.</CommandEmpty>
+                                            <CommandGroup>
+                                            {stateCodes.map((state) => (
+                                                <CommandItem
+                                                    key={state.Code}
+                                                    value={`${state.Code} ${state.State}`}
+                                                    onSelect={() => {
+                                                        form.setValue("lhdnStateCode", state.Code)
+                                                        setOpenStateCode(false)
+                                                    }}
+                                                >
+                                                <Check
+                                                    className={cn("mr-2 h-4 w-4", field.value === state.Code ? "opacity-100" : "opacity-0")}
+                                                />
+                                                <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm'>{state.Code}</span>
+                                                <span className='flex-1'>{state.State}</span>
+                                                </CommandItem>
+                                            ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        )}
+                     </div>
+                  </div>
+                  
+                   <Separator/>
 
-                {/* Contact & Address */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Contact & Address</h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="supplier-email">Email</Label>
-                      <Input id="supplier-email" type="email" placeholder="billing@yourcompany.com" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mobile-no">Contact Number</Label>
-                      <Input id="mobile-no" placeholder="+6012-3456789" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address-1">Address Line 1</Label>
-                    <Input id="address-1" placeholder="Unit/Lot No, Building, Street Name" />
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="address-2">Address Line 2 (Optional)</Label>
-                    <Input id="address-2" placeholder="Taman/Desa/Kawasan, etc." />
-                  </div>
-                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                     <div className="space-y-2">
-                        <Label htmlFor="postal-code">Postal Code</Label>
-                        <Input id="postal-code" placeholder="e.g., 50480" />
-                      </div>
-                      {isMalaysiaBased && (
-                       <div className="space-y-2">
-                          <Label htmlFor="lhdn-state">LHDN State Code</Label>
-                          <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={openStateCode}
-                                className="w-full justify-between"
-                              >
-                                <span className="truncate">
-                                  {getStateCodeDisplay(stateCodeValue)}
-                                </span>
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                              <Command>
-                                <CommandInput placeholder="Search state..." />
-                                <CommandList>
-                                  <CommandEmpty>No state found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {stateCodes.map((state) => (
-                                      <CommandItem
-                                        key={state.Code}
-                                        value={`${state.Code} ${state.State}`}
-                                        onSelect={(currentValue) => {
-                                          const code = stateCodes.find(s => `${s.Code} ${s.State}`.toLowerCase() === currentValue.toLowerCase())?.Code || ""
-                                          setStateCodeValue(code === stateCodeValue ? "" : code)
-                                          setOpenStateCode(false)
-                                        }}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            stateCodeValue.toLowerCase() === state.Code.toLowerCase() ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground/70 group-aria-selected:text-foreground'>{state.Code}</span>
-                                        <span className='flex-1'>{state.State}</span>
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Financial Details</h3>
+                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="bank-account">Bank Account Number</Label>
+                            <Input id="bank-account" placeholder="Enter bank account number" />
                         </div>
-                      )}
-                   </div>
+                     </div>
+                  </div>
                 </div>
-                
-                 <Separator/>
+              )}
+            </div>
+            
 
-                {/* Financial Details */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Financial Details</h3>
-                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                          <Label htmlFor="bank-account">Bank Account Number</Label>
-                          <Input id="bank-account" placeholder="Enter bank account number" />
-                      </div>
-                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-
-          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/dashboard">Skip for now</Link>
-            </Button>
-            <Button type="submit" className="w-full" asChild>
-              <Link href="/dashboard">Save and Continue</Link>
-            </Button>
-          </div>
-        </form>
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/dashboard">Skip for now</Link>
+              </Button>
+               <Button type="submit" className="w-full" disabled={isSubmitting || (eInvEnabled && !form.formState.isValid)}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save and Continue
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
 }
+
+    
