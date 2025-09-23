@@ -4,7 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'SiteFlow',
+  title: 'SitePilot',
   description: 'Construction project management simplified.',
 };
 

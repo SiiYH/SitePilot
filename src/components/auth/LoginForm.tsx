@@ -86,7 +86,7 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="engineer@siteflow.com" {...field} />
+                    <Input placeholder="engineer@sitepilot.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

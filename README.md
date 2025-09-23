@@ -1,2 +1,2 @@
-#Site Pilot
+#SitePilot
 project managing apps

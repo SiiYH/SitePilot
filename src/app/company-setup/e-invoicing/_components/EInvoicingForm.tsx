@@ -151,7 +151,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedCompanyData = localStorage.getItem('siteflow-company');
+      const storedCompanyData = localStorage.getItem('sitepilot-company');
       if (storedCompanyData) {
         const company = JSON.parse(storedCompanyData);
         if (company.eInvoicing) {
@@ -180,7 +180,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
     
-    const companyDataString = localStorage.getItem('siteflow-company');
+    const companyDataString = localStorage.getItem('sitepilot-company');
     const companyData = companyDataString ? JSON.parse(companyDataString) : {};
     
     const combinedData = {
@@ -188,7 +188,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       eInvoicing: values,
     };
 
-    localStorage.setItem('siteflow-company', JSON.stringify(combinedData));
+    localStorage.setItem('sitepilot-company', JSON.stringify(combinedData));
     
     console.log(values);
     toast({

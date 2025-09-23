@@ -45,7 +45,7 @@ export default function CompanyPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const storedCompanyData = localStorage.getItem('siteflow-company');
+        const storedCompanyData = localStorage.getItem('sitepilot-company');
         if (storedCompanyData) {
           setCompanyData(JSON.parse(storedCompanyData));
         }

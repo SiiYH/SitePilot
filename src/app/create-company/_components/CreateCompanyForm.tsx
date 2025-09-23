@@ -32,7 +32,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedCompanyData = localStorage.getItem('siteflow-company');
+      const storedCompanyData = localStorage.getItem('sitepilot-company');
       if (storedCompanyData) {
         const company = JSON.parse(storedCompanyData);
         setCompanyName(company.name || '');
@@ -56,7 +56,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = () => {
-    const storedCompanyData = localStorage.getItem('siteflow-company');
+    const storedCompanyData = localStorage.getItem('sitepilot-company');
     const existingData = storedCompanyData ? JSON.parse(storedCompanyData) : {};
 
     const companyData = {
@@ -65,7 +65,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       industry: getIndustryDisplay(industryCode),
       description: companyDescription,
     };
-    localStorage.setItem('siteflow-company', JSON.stringify(companyData));
+    localStorage.setItem('sitepilot-company', JSON.stringify(companyData));
     router.push('/company-setup/e-invoicing');
   }
 

@@ -19,7 +19,7 @@ async function getProject(slug: string): Promise<Project | undefined> {
 
 // This function would typically get the current user from context/session
 async function getCurrentUser(): Promise<User> {
-    return { id: 'user-2', name: 'Jane Smith', email: 'admin@siteflow.com', role: 'Admin', avatarUrl: '' };
+    return { id: 'user-2', name: 'Jane Smith', email: 'admin@sitepilot.com', role: 'Admin', avatarUrl: '' };
 }
 
 function OverviewTab({ project }: { project: Project }) {

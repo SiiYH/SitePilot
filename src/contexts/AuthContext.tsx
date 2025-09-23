@@ -22,13 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('siteflow-user');
+      const storedUser = localStorage.getItem('sitepilot-user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('siteflow-user');
+      localStorage.removeItem('sitepilot-user');
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loggedInUser = 'email' in credentials ? await loginWithEmail(credentials) : await loginWithPhone(credentials);
     if (loggedInUser) {
       setUser(loggedInUser);
-      localStorage.setItem('siteflow-user', JSON.stringify(loggedInUser));
+      localStorage.setItem('sitepilot-user', JSON.stringify(loggedInUser));
       router.push('/dashboard');
     }
     setLoading(false);
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newUser = await signup(data);
     if (newUser) {
       setUser(newUser);
-      localStorage.setItem('siteflow-user', JSON.stringify(newUser));
+      localStorage.setItem('sitepilot-user', JSON.stringify(newUser));
       router.push('/welcome');
     }
     setLoading(false);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('siteflow-user');
+    localStorage.removeItem('sitepilot-user');
     router.push('/welcome');
   };
 

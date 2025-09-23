@@ -17,7 +17,7 @@ export default function SignUpPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-8 left-8 text-white">
           <h2 className="text-3xl font-bold">Join the Team.</h2>
-          <p className="mt-2 max-w-lg text-lg">Start streamlining your projects with SiteFlow today.</p>
+          <p className="mt-2 max-w-lg text-lg">Start streamlining your projects with SitePilot today.</p>
         </div>
       </div>
       <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
@@ -29,7 +29,7 @@ export default function SignUpPage() {
             Create an Account
           </h1>
           <p className="mb-6 text-center text-muted-foreground">
-            Enter your details to get started with SiteFlow.
+            Enter your details to get started with SitePilot.
           </p>
           <SignUpForm />
           <p className="mt-6 text-center text-sm text-muted-foreground">

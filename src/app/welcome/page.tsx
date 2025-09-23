@@ -12,7 +12,7 @@ export default function WelcomePage() {
           <Logo />
         </div>
         <h1 className="mb-4 text-3xl font-bold tracking-tight text-foreground">
-          Welcome to SiteFlow
+          Welcome to SitePilot
         </h1>
         <p className="mb-8 max-w-md mx-auto text-muted-foreground">
             You're one step away from managing your construction projects. How would you like to get started?
