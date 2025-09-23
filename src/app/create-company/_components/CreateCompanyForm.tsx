@@ -78,7 +78,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                               value === industry.Code ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm'>{industry.Code}</span>
+                          <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm group-aria-selected:text-foreground'>{industry.Code}</span>
                           <span className='flex-1'>{industry.Description}</span>
                         </CommandItem>
                       ))}
