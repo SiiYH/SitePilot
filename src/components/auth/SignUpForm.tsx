@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,12 +20,16 @@ const formSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string(),
 }).refine(data => data.contactMethod === 'email' ? z.string().email().safeParse(data.email).success : true, {
   message: 'A valid email is required',
   path: ['email'],
 }).refine(data => data.contactMethod === 'phone' ? z.string().min(10).safeParse(data.phone).success : true, {
   message: 'A valid phone number is required',
   path: ['phone'],
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 });
 
 
@@ -41,6 +46,7 @@ export default function SignUpForm() {
       email: '',
       phone: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
@@ -144,6 +150,20 @@ export default function SignUpForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
