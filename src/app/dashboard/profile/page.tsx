@@ -144,32 +144,38 @@ export default function ProfilePage() {
                         )}
                     </div>
                   
-                  {Object.keys(eInvData).length > 0 && (
+                  {Object.keys(eInvData).length > 0 && eInvData.eInvEnabled ? (
                     <>
                       <Separator/>
                       <div className="space-y-4">
                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                 <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (${eInvData.eInvVersion})` : 'Disabled'} />
-                                {eInvData.eInvEnabled && (
-                                    <>
-                                        <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
-                                        <InfoField label="TIN" value={eInvData.tin} />
-                                        <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
-                                        <InfoField label="SST Number" value={eInvData.sstNumber} />
-                                        <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
-                                        <InfoField label="E-Invoicing Email" value={eInvData.email} />
-                                        <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
-                                        <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
-                                    </>
-                                )}
+                                <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
+                                <InfoField label="TIN" value={eInvData.tin} />
+                                <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
+                                <InfoField label="SST Number" value={eInvData.sstNumber} />
+                                <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
+                                <InfoField label="E-Invoicing Email" value={eInvData.email} />
+                                <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
+                                <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
                            </div>
-                           {eInvData.eInvEnabled && fullAddress && (
-                                <InfoField label="Address" value={fullAddress} />
+                           {fullAddress && (
+                                <div className="pt-4">
+                                    <InfoField label="Address" value={fullAddress} />
+                                </div>
                            )}
                       </div>
                     </>
-                  )}
+                  ) : Object.keys(eInvData).length > 0 && !eInvData.eInvEnabled ? (
+                     <>
+                      <Separator/>
+                       <div className="space-y-4">
+                         <h3 className="text-base font-semibold">E-Invoicing Details</h3>
+                         <p className="text-sm text-muted-foreground">E-invoicing is currently disabled.</p>
+                       </div>
+                     </>
+                  ) : null }
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
@@ -192,3 +198,4 @@ export default function ProfilePage() {
   );
 }
 
+    
