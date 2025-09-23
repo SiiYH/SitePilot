@@ -1,12 +1,13 @@
 'use client';
 
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/types';
 import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
+  setUser: Dispatch<SetStateAction<User | null>>;
   loading: boolean;
   login: (credentials: UserCredentials) => Promise<User | null>;
   signUp: (data: SignUpData) => Promise<User | null>;
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = {
     user,
+    setUser,
     loading,
     login: handleLogin,
     signUp: handleSignUp,

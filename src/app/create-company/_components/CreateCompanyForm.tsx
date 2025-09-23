@@ -13,6 +13,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 type Industry = {
   Code: string;
@@ -25,6 +26,7 @@ interface CreateCompanyFormProps {
 
 export default function CreateCompanyForm({ industries }: CreateCompanyFormProps) {
   const router = useRouter();
+  const { user, setUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [industryCode, setIndustryCode] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -56,6 +58,13 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = () => {
+    // Elevate user role to Director upon company creation
+    if (user) {
+      const updatedUser = { ...user, role: 'Director' as const };
+      setUser(updatedUser);
+      localStorage.setItem('sitepilot-user', JSON.stringify(updatedUser));
+    }
+    
     const storedCompanyData = localStorage.getItem('sitepilot-company');
     const existingData = storedCompanyData ? JSON.parse(storedCompanyData) : {};
 
