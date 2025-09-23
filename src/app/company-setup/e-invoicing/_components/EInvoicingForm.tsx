@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 type StateCode = {
   Code: string;
-  Description: string;
+  State: string;
 };
 
 interface EInvoicingFormProps {
@@ -34,7 +34,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const getStateCodeDisplay = (code: string) => {
     const state = stateCodes.find((s) => s.Code.toLowerCase() === code.toLowerCase());
     if (!state) return "Select LHDN State...";
-    return `${state.Description} (${state.Code})`;
+    return `${state.State} (${state.Code})`;
   }
 
   return (
@@ -163,7 +163,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                     )}
                                   />
                                   <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{state.Code}</span>
-                                  <span className='flex-1'>{state.Description}</span>
+                                  <span className='flex-1'>{state.State}</span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
