@@ -87,6 +87,8 @@ export default function ProfilePage() {
   const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
   const getIdentifierLabel = (key: string) => eInvData?.customerType ? identifierLabels[eInvData.customerType] : 'Identifier';
 
+  const hasEInvData = companyData && companyData.eInvoicing && Object.keys(companyData.eInvoicing).length > 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -137,39 +139,39 @@ export default function ProfilePage() {
             <CardContent className="space-y-6">
               {companyData ? (
                 <>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <InfoField label="Company Name" value={companyData.name} />
-                            <InfoField label="Industry" value={companyData.industry} />
-                        </div>
-                        <InfoField label="Company Description" value={companyData.description} />
-                    </div>
+                  <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <InfoField label="Company Name" value={companyData.name} />
+                          <InfoField label="Industry" value={companyData.industry} />
+                      </div>
+                      <InfoField label="Company Description" value={companyData.description} />
+                  </div>
                   
-                  {Object.keys(eInvData).length > 0 ? (
+                  {hasEInvData ? (
                     <>
                       <Separator/>
                       <div className="space-y-4">
                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
-                           <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion})` : 'Disabled'} />
-                                {eInvData.eInvEnabled && (
-                                  <>
-                                    <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
-                                    <InfoField label="TIN" value={eInvData.tin} />
-                                    <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
-                                    <InfoField label="SST Number" value={eInvData.sstNumber} />
-                                    <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
-                                    <InfoField label="E-Invoicing Email" value={eInvData.email} />
-                                    <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
-                                    <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
-                                  </>
-                                )}
-                           </div>
-                           {eInvData.eInvEnabled && fullAddress && (
-                                <div className="pt-4">
-                                    <InfoField label="Address" value={fullAddress} />
-                                </div>
-                           )}
+                          <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
+                              <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion})` : 'Disabled'} />
+                              {eInvData.eInvEnabled && (
+                                <>
+                                  <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
+                                  <InfoField label="TIN" value={eInvData.tin} />
+                                  <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
+                                  <InfoField label="SST Number" value={eInvData.sstNumber} />
+                                  <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
+                                  <InfoField label="E-Invoicing Email" value={eInvData.email} />
+                                  <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
+                                  <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
+                                </>
+                              )}
+                          </div>
+                          {eInvData.eInvEnabled && fullAddress && (
+                              <div className="pt-4">
+                                  <InfoField label="Address" value={fullAddress} />
+                              </div>
+                          )}
                       </div>
                     </>
                   ) : null }
@@ -194,3 +196,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
