@@ -394,58 +394,56 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 </FormItem>
                             )}
                         />
-                        {eInvEnabled && (
-                            <FormField
-                                control={form.control}
-                                name="lhdnStateCode"
-                                render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>LHDN State Code{isMalaysiaBased && <RequiredIndicator />}</FormLabel>
-                                    <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                                        >
-                                            {getStateCodeDisplay(field.value || '')}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                        <CommandInput placeholder="Search state..." />
-                                        <CommandList>
-                                            <CommandEmpty>No state found.</CommandEmpty>
-                                            <CommandGroup>
-                                            {stateCodes.map((state) => (
-                                                <CommandItem
-                                                    key={state.Code}
-                                                    value={`${state.Code} ${state.State}`}
-                                                    onSelect={() => {
-                                                        form.setValue("lhdnStateCode", state.Code)
-                                                        setOpenStateCode(false)
-                                                    }}
-                                                >
-                                                <Check
-                                                    className={cn("mr-2 h-4 w-4", field.value === state.Code ? "opacity-100" : "opacity-0")}
-                                                />
-                                                <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm aria-selected:bg-primary aria-selected:text-primary-foreground'>{state.Code}</span>
-                                                <span className='flex-1'>{state.State}</span>
-                                                </CommandItem>
-                                            ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        )}
+                        <FormField
+                            control={form.control}
+                            name="lhdnStateCode"
+                            render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>LHDN State Code{isMalaysiaBased && <RequiredIndicator />}</FormLabel>
+                                <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                    >
+                                        {getStateCodeDisplay(field.value || '')}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                    <CommandInput placeholder="Search state..." />
+                                    <CommandList>
+                                        <CommandEmpty>No state found.</CommandEmpty>
+                                        <CommandGroup>
+                                        {stateCodes.map((state) => (
+                                            <CommandItem
+                                                key={state.Code}
+                                                value={`${state.Code} ${state.State}`}
+                                                onSelect={() => {
+                                                    form.setValue("lhdnStateCode", state.Code)
+                                                    setOpenStateCode(false)
+                                                }}
+                                            >
+                                            <Check
+                                                className={cn("mr-2 h-4 w-4", field.value === state.Code ? "opacity-100" : "opacity-0")}
+                                            />
+                                            <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm aria-selected:bg-primary aria-selected:text-foreground'>{state.Code}</span>
+                                            <span className='flex-1'>{state.State}</span>
+                                            </CommandItem>
+                                        ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
                      </div>
                   </div>
                   <Separator/>
