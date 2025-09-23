@@ -108,6 +108,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const RequiredIndicator = () => <span className="text-destructive"> *</span>;
+
 export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const [openStateCode, setOpenStateCode] = useState(false)
   const { toast } = useToast();
@@ -210,7 +212,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                       name="digitalSignature"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Digital Signature PIN</FormLabel>
+                          <FormLabel>Digital Signature PIN{eInvEnabled && <RequiredIndicator />}</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="Enter your 6-digit PIN" {...field} />
                           </FormControl>
@@ -231,7 +233,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="customerType"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Customer Type</FormLabel>
+                                <FormLabel>Customer Type{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                     <SelectTrigger>
@@ -268,7 +270,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="identifier"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{identifierLabels[customerType]}</FormLabel>
+                                    <FormLabel>{identifierLabels[customerType]}{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                     <FormControl>
                                         <Input placeholder={identifierPlaceholders[customerType]} {...field} />
                                     </FormControl>
@@ -319,7 +321,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="email"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email</FormLabel>
+                                <FormLabel>Email{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
                                 <Input type="email" placeholder="billing@yourcompany.com" {...field} />
                                 </FormControl>
@@ -332,7 +334,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="contactNumber"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Contact Number</FormLabel>
+                                <FormLabel>Contact Number{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
                                 <Input placeholder="+6012-3456789" {...field} />
                                 </FormControl>
@@ -346,7 +348,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                       name="address1"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Address Line 1</FormLabel>
+                          <FormLabel>Address Line 1{eInvEnabled && <RequiredIndicator />}</FormLabel>
                           <FormControl>
                             <Input placeholder="Unit/Lot No, Building, Street Name" {...field} />
                           </FormControl>
@@ -373,7 +375,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="postalCode"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Postal Code</FormLabel>
+                                <FormLabel>Postal Code{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
                                     <Input placeholder="e.g., 50480" {...field} />
                                 </FormControl>
@@ -387,7 +389,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 name="lhdnStateCode"
                                 render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                    <FormLabel>LHDN State Code</FormLabel>
+                                    <FormLabel>LHDN State Code{eInvEnabled && isMalaysiaBased && <RequiredIndicator />}</FormLabel>
                                     <Popover open={openStateCode} onOpenChange={setOpenStateCode}>
                                     <PopoverTrigger asChild>
                                         <FormControl>
@@ -476,3 +478,5 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
+
+    
