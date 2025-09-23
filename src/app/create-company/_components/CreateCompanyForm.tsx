@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type Industry = {
   Code: string;
@@ -23,22 +24,41 @@ interface CreateCompanyFormProps {
 }
 
 export default function CreateCompanyForm({ industries }: CreateCompanyFormProps) {
-  const [open, setOpen] = useState(false)
-  const [value, setValue] = useState("")
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [industryCode, setIndustryCode] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
 
   const getIndustryDisplay = (code: string) => {
     const industry = industries.find((industry) => industry.Code === code);
     if (!industry) return "Select industry...";
     return `(${industry.Code}) ${industry.Description}`;
   }
+  
+  const handleContinue = () => {
+    const companyData = {
+      name: companyName,
+      industry: getIndustryDisplay(industryCode),
+      description: companyDescription,
+    };
+    localStorage.setItem('siteflow-company', JSON.stringify(companyData));
+    router.push('/company-setup/e-invoicing');
+  }
 
   return (
     <Card className="mt-6">
       <CardContent className="pt-6">
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div className="space-y-2">
             <Label htmlFor="company-name">Company Name</Label>
-            <Input id="company-name" placeholder="e.g., Acme Construction Inc." />
+            <Input 
+              id="company-name" 
+              placeholder="e.g., Acme Construction Inc." 
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="industry">Industry</Label>
@@ -54,7 +74,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                   className="w-full justify-between"
                 >
                   <span className="truncate">
-                    {getIndustryDisplay(value)}
+                    {getIndustryDisplay(industryCode)}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -70,14 +90,14 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                           key={`${industry.Code}-${industry.Description}`}
                           value={industry.Code}
                           onSelect={(currentValue) => {
-                            setValue(currentValue === value ? "" : currentValue)
+                            setIndustryCode(currentValue === industryCode ? "" : currentValue)
                             setOpen(false)
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              value === industry.Code ? "opacity-100" : "opacity-0"
+                              industryCode === industry.Code ? "opacity-100" : "opacity-0"
                             )}
                           />
                           <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{industry.Code}</span>
@@ -92,10 +112,20 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
           </div>
           <div className="space-y-2">
             <Label htmlFor="company-description">Company Description (Optional)</Label>
-            <Textarea id="company-description" placeholder="What does your company specialize in?" />
+            <Textarea 
+              id="company-description" 
+              placeholder="What does your company specialize in?" 
+              value={companyDescription}
+              onChange={(e) => setCompanyDescription(e.target.value)}
+            />
           </div>
-          <Button type="submit" className="w-full" asChild>
-            <Link href="/company-setup/e-invoicing">Create and Continue</Link>
+          <Button 
+            type="button" 
+            className="w-full"
+            disabled={!companyName || !industryCode}
+            onClick={handleContinue}
+          >
+            Create and Continue
           </Button>
         </form>
       </CardContent>

@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -123,6 +124,7 @@ type FormValues = z.infer<typeof formSchema>;
 const RequiredIndicator = () => <span className="text-destructive"> *</span>;
 
 export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
+  const router = useRouter();
   const [openStateCode, setOpenStateCode] = useState(false)
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,14 +162,28 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
 
   const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
+    
+    // Save to localStorage
+    const companyDataString = localStorage.getItem('siteflow-company');
+    const companyData = companyDataString ? JSON.parse(companyDataString) : {};
+    
+    const combinedData = {
+      ...companyData,
+      eInvoicing: values,
+    };
+
+    localStorage.setItem('siteflow-company', JSON.stringify(combinedData));
+    
     console.log(values);
     toast({
         title: "Form Submitted!",
         description: "Your e-invoicing details have been saved.",
     });
-    // In a real app, you would navigate away after a short delay
-    // For now, just log and reset the loading state
-    setTimeout(() => setIsSubmitting(false), 1500);
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+      router.push('/dashboard');
+    }, 1500);
   };
 
   return (
@@ -494,7 +510,3 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
-
-    
-
-    

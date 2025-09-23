@@ -1,24 +1,16 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Building, Mail, Phone, User as UserIcon } from 'lucide-react';
+import { Mail, Phone, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// Mock company data - in a real app, this would come from your database
-const companyData = {
-  name: 'Acme Construction Inc.',
-  industry: '(41001) Construction of buildings',
-  description: 'Specializing in commercial and residential construction projects with a focus on sustainable building practices.',
-  email: 'contact@acmeconstruction.com',
-  phone: '+603-1234-5678',
-  address: 'Level 10, Tower A, 123 Jalan Ampang, 50450 Kuala Lumpur, Malaysia',
-};
+import { Loader2 } from 'lucide-react';
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -30,10 +22,39 @@ const getInitials = (name: string) => {
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const [companyData, setCompanyData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!user) {
-    return null;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedCompanyData = localStorage.getItem('siteflow-company');
+        if (storedCompanyData) {
+          setCompanyData(JSON.parse(storedCompanyData));
+        }
+      } catch (error) {
+        console.error("Failed to parse company data from localStorage", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
+
+  const eInvData = companyData?.eInvoicing || {};
+  const fullAddress = [
+    eInvData.address1,
+    eInvData.address2,
+    eInvData.postalCode,
+    eInvData.lhdnStateCode,
+  ].filter(Boolean).join(', ');
 
   return (
     <div className="space-y-6">
@@ -71,28 +92,42 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Company Information</CardTitle>
-              <CardDescription>Details for {companyData.name}.</CardDescription>
+              {companyData?.name && <CardDescription>Details for {companyData.name}.</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" value={companyData.name} readOnly />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="industry">Industry</Label>
-                <Input id="industry" value={companyData.industry} readOnly />
-              </div>
-               <div className="space-y-2">
-                <Label>Contact Email</Label>
-                <Input value={companyData.email} readOnly />
-              </div>
-               <div className="space-y-2">
-                <Label>Address</Label>
-                <Input value={companyData.address} readOnly />
-              </div>
-               <div className="mt-6 flex justify-end">
-                <Button variant="outline">Edit Company Details</Button>
-               </div>
+              {companyData ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input id="company-name" value={companyData.name || ''} readOnly />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="industry">Industry</Label>
+                    <Input id="industry" value={companyData.industry || ''} readOnly />
+                  </div>
+                  {eInvData.email && (
+                    <div className="space-y-2">
+                      <Label>E-Invoicing Contact Email</Label>
+                      <Input value={eInvData.email} readOnly />
+                    </div>
+                  )}
+                  {fullAddress && (
+                    <div className="space-y-2">
+                      <Label>Address</Label>
+                      <Input value={fullAddress} readOnly />
+                    </div>
+                  )}
+                  <div className="mt-6 flex justify-end">
+                    <Button variant="outline">Edit Company Details</Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8">
+                  <Building className="h-12 w-12 mb-4" />
+                  <p className="font-semibold">No Company Information</p>
+                  <p className="text-sm">Complete the company setup to see details here.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
