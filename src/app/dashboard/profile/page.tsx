@@ -151,7 +151,7 @@ export default function ProfilePage() {
                       <div className="space-y-4">
                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (${eInvData.eInvVersion})` : 'Disabled'} />
+                                <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion})` : 'Disabled'} />
                                 {eInvData.eInvEnabled && (
                                   <>
                                     <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                                   </>
                                 )}
                            </div>
-                           {eInvData.eInvEnabled && fullAddress && (
+                           {eInvData.eInvEnabled && (
                                 <div className="pt-4">
                                     <InfoField label="Address" value={fullAddress} />
                                 </div>
