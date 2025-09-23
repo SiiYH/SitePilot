@@ -47,19 +47,6 @@ const identifierPlaceholders = {
   'government': 'Enter government entity ID',
 };
 
-const baseSchema = z.object({
-  tin: z.string().optional(),
-  identifier: z.string().min(1, 'This field is required.'),
-  sstNumber: z.string().optional(),
-  tourismTax: z.string().optional(),
-  email: z.string().email('Invalid email address.'),
-  contactNumber: z.string().min(1, 'Contact number is required.'),
-  address1: z.string().min(1, 'Address is required.'),
-  address2: z.string().optional(),
-  postalCode: z.string().min(1, 'Postal code is required.'),
-  lhdnStateCode: z.string().min(1, 'LHDN State is required.'),
-});
-
 const formSchema = z.object({
     eInvEnabled: z.boolean(),
     eInvVersion: z.enum(['v1', 'v2']),
@@ -71,24 +58,51 @@ const formSchema = z.object({
       'non-malaysian-individual',
       'government'
     ]),
-  }).and(baseSchema).superRefine((data, ctx) => {
+    tin: z.string().optional(),
+    identifier: z.string().optional(),
+    sstNumber: z.string().optional(),
+    tourismTax: z.string().optional(),
+    email: z.string().optional(),
+    contactNumber: z.string().optional(),
+    address1: z.string().optional(),
+    address2: z.string().optional(),
+    postalCode: z.string().optional(),
+    lhdnStateCode: z.string().optional(),
+    bankAccount: z.string().optional(),
+  }).superRefine((data, ctx) => {
+    if (!data.eInvEnabled) return;
+
+    if (!data.customerType) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Customer type is required.', path: ['customerType'] });
+    }
+    if (!data.email) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Email is required.', path: ['email'] });
+    } else if (!z.string().email().safeParse(data.email).success) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid email address.', path: ['email'] });
+    }
+    if (!data.contactNumber) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
+    }
+    if (!data.address1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Address is required.', path: ['address1'] });
+    }
+    if (!data.postalCode) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Postal code is required.', path: ['postalCode'] });
+    }
+    
+    if (!data.identifier) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'This field is required.', path: ['identifier'] });
+    }
+
     if (data.eInvVersion === 'v2') {
         if (!data.digitalSignature || data.digitalSignature.length !== 6) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A 6-digit PIN is required for v2.0",
-                path: ['digitalSignature'],
-            });
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A 6-digit PIN is required for v2.0", path: ['digitalSignature'] });
         }
     }
-    if (data.customerType === 'malaysia-individual' || data.customerType === 'non-malaysian-individual') {
-      if(!data.contactNumber){
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Contact number is mandatory",
-            path: ['contactNumber'],
-        });
-      }
+    if (data.customerType === 'malaysia-business' || data.customerType === 'malaysia-individual') {
+        if (!data.lhdnStateCode) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'LHDN State is required.', path: ['lhdnStateCode'] });
+        }
     }
   });
 
@@ -110,7 +124,9 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       address1: '',
       postalCode: '',
       lhdnStateCode: '',
+      identifier: '',
     },
+    mode: 'onChange',
   });
 
   const eInvEnabled = form.watch('eInvEnabled');
@@ -380,7 +396,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                             role="combobox"
                                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                                         >
-                                            {getStateCodeDisplay(field.value)}
+                                            {getStateCodeDisplay(field.value || '')}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                         </FormControl>
@@ -425,10 +441,19 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Financial Details</h3>
                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="bank-account">Bank Account Number</Label>
-                            <Input id="bank-account" placeholder="Enter bank account number" />
-                        </div>
+                        <FormField
+                            control={form.control}
+                            name="bankAccount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bank Account Number</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter bank account number" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                      </div>
                   </div>
                 </div>
@@ -451,5 +476,3 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
-
-    
