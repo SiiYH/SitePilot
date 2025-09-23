@@ -214,9 +214,10 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                               {stateCodes.map((state) => (
                                 <CommandItem
                                   key={state.Code}
-                                  value={state.Code}
+                                  value={`${state.Code} ${state.State}`}
                                   onSelect={(currentValue) => {
-                                    setStateCodeValue(currentValue === stateCodeValue ? "" : currentValue)
+                                    const code = stateCodes.find(s => `${s.Code} ${s.State}`.toLowerCase() === currentValue.toLowerCase())?.Code || ""
+                                    setStateCodeValue(code === stateCodeValue ? "" : code)
                                     setOpenStateCode(false)
                                   }}
                                 >
