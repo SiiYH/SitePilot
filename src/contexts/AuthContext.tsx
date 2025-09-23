@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (newUser) {
       setUser(newUser);
       localStorage.setItem('siteflow-user', JSON.stringify(newUser));
-      router.push('/dashboard');
+      router.push('/welcome');
     }
     setLoading(false);
     return newUser;
