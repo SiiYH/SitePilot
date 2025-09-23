@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -150,6 +150,18 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedCompanyData = localStorage.getItem('siteflow-company');
+      if (storedCompanyData) {
+        const company = JSON.parse(storedCompanyData);
+        if (company.eInvoicing) {
+          form.reset(company.eInvoicing);
+        }
+      }
+    }
+  }, [form]);
+
   const eInvEnabled = form.watch('eInvEnabled');
   const eInvVersion = form.watch('eInvVersion');
   const customerType = form.watch('customerType');
@@ -296,7 +308,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                     <FormLabel>TIN (Tax Identification Number){isTinRequired && <RequiredIndicator />}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder='e.g., C29183749201 or "NA"' {...field} />
+                                        <Input placeholder='e.g., C29183749201 or "NA"' {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -309,7 +321,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                     <FormLabel>{identifierLabels[customerType]}{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={identifierPlaceholders[customerType]} {...field} />
+                                        <Input placeholder={identifierPlaceholders[customerType]} {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -324,7 +336,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                     <FormLabel>SST Registration Number</FormLabel>
                                     <FormControl>
-                                    <Input placeholder='e.g., J12-3456-78901234 or "NA"' {...field} />
+                                    <Input placeholder='e.g., J12-3456-78901234 or "NA"' {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -337,7 +349,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                     <FormLabel>Tourism Tax Registration No. (Optional)</FormLabel>
                                     <FormControl>
-                                    <Input placeholder='Optional or "NA"' {...field} />
+                                    <Input placeholder='Optional or "NA"' {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -360,7 +372,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             <FormItem>
                                 <FormLabel>Email{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
-                                <Input type="email" placeholder="billing@yourcompany.com" {...field} />
+                                <Input type="email" placeholder="billing@yourcompany.com" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -373,7 +385,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             <FormItem>
                                 <FormLabel>Contact Number{isContactRequired && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
-                                <Input placeholder="+6012-3456789" {...field} />
+                                <Input placeholder="+6012-3456789" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -387,7 +399,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                         <FormItem>
                           <FormLabel>Address Line 1{eInvEnabled && <RequiredIndicator />}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Unit/Lot No, Building, Street Name" {...field} />
+                            <Input placeholder="Unit/Lot No, Building, Street Name" {...field} value={field.value ?? ''} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -400,7 +412,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                         <FormItem>
                           <FormLabel>Address Line 2 (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Taman/Desa/Kawasan, etc." {...field} />
+                            <Input placeholder="Taman/Desa/Kawasan, etc." {...field} value={field.value ?? ''} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -414,7 +426,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                 <FormLabel>Postal Code{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 50480" {...field} />
+                                    <Input placeholder="e.g., 50480" {...field} value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -487,7 +499,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 <FormItem>
                                     <FormLabel>Bank Account Number (Optional)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Enter bank account number" {...field} />
+                                        <Input placeholder="Enter bank account number" {...field} value={field.value ?? ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

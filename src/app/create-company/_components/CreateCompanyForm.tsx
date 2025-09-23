@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -30,14 +30,37 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedCompanyData = localStorage.getItem('siteflow-company');
+      if (storedCompanyData) {
+        const company = JSON.parse(storedCompanyData);
+        setCompanyName(company.name || '');
+        setCompanyDescription(company.description || '');
+
+        if (company.industry) {
+            // Extracts code like 'F' from '(F) CONSTRUCTION'
+            const codeMatch = company.industry.match(/^\(([^)]+)\)/);
+            if (codeMatch && codeMatch[1]) {
+                setIndustryCode(codeMatch[1]);
+            }
+        }
+      }
+    }
+  }, []);
+
   const getIndustryDisplay = (code: string) => {
-    const industry = industries.find((industry) => industry.Code === code);
+    const industry = industries.find((industry) => industry.Code.toLowerCase() === code.toLowerCase());
     if (!industry) return "Select industry...";
     return `(${industry.Code}) ${industry.Description}`;
   }
   
   const handleContinue = () => {
+    const storedCompanyData = localStorage.getItem('siteflow-company');
+    const existingData = storedCompanyData ? JSON.parse(storedCompanyData) : {};
+
     const companyData = {
+      ...existingData,
       name: companyName,
       industry: getIndustryDisplay(industryCode),
       description: companyDescription,
@@ -90,14 +113,14 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                           key={`${industry.Code}-${industry.Description}`}
                           value={industry.Code}
                           onSelect={(currentValue) => {
-                            setIndustryCode(currentValue === industryCode ? "" : currentValue)
+                            setIndustryCode(currentValue.toUpperCase() === industryCode.toUpperCase() ? "" : currentValue.toUpperCase())
                             setOpen(false)
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              industryCode === industry.Code ? "opacity-100" : "opacity-0"
+                              industryCode.toUpperCase() === industry.Code.toUpperCase() ? "opacity-100" : "opacity-0"
                             )}
                           />
                           <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{industry.Code}</span>
@@ -125,7 +148,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
             disabled={!companyName || !industryCode}
             onClick={handleContinue}
           >
-            Create and Continue
+            Save and Continue
           </Button>
         </form>
       </CardContent>
