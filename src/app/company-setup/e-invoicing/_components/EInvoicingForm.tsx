@@ -141,6 +141,11 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       postalCode: '',
       lhdnStateCode: '',
       identifier: '',
+      sstNumber: '',
+      tourismTax: '',
+      bankAccount: '',
+      digitalSignature: '',
+      tin: '',
     },
     mode: 'onChange',
   });
@@ -330,7 +335,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 name="tourismTax"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Tourism Tax Registration No.</FormLabel>
+                                    <FormLabel>Tourism Tax Registration No. (Optional)</FormLabel>
                                     <FormControl>
                                     <Input placeholder='Optional or "NA"' {...field} />
                                     </FormControl>
@@ -480,7 +485,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="bankAccount"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Bank Account Number</FormLabel>
+                                    <FormLabel>Bank Account Number (Optional)</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Enter bank account number" {...field} />
                                     </FormControl>
