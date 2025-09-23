@@ -18,7 +18,7 @@ export interface Task {
 }
 
 export interface Document {
-  id: string;
+  id:string;
   name: string;
   url: string;
   type: 'Blueprint' | 'Contract' | 'Permit' | 'Report';
@@ -34,6 +34,7 @@ export interface Milestone {
 
 export interface Project {
   id: string;
+  slug: string;
   name: string;
   description: string;
   progress: number;

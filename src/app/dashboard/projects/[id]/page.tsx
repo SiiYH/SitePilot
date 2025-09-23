@@ -12,9 +12,9 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, CheckCircle, Clock, GanttChartSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
-async function getProject(id: string): Promise<Project | undefined> {
+async function getProject(slug: string): Promise<Project | undefined> {
   // In a real app, this would be a database query.
-  return mockProjects.find(p => p.id === id);
+  return mockProjects.find(p => p.slug === slug);
 }
 
 // This function would typically get the current user from context/session
@@ -89,8 +89,8 @@ function OverviewTab({ project }: { project: Project }) {
     );
 }
 
-export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const project = await getProject(params.id);
+export default async function ProjectDetailsPage({ params }: { params: { slug: string } }) {
+  const project = await getProject(params.slug);
   const user = await getCurrentUser();
 
   if (!project) {

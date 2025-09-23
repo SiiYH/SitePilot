@@ -39,6 +39,17 @@ const formSchema = z.object({
   assignedEngineers: z.array(z.string()).min(1, 'At least one engineer must be assigned.'),
 });
 
+const createSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
+
 export default function CreateProjectDialog({ engineers, onProjectCreated }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +70,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
     // Mock project creation
     const newProject: Project = {
       id: `proj-${Date.now()}`,
+      slug: createSlug(values.name),
       name: values.name,
       description: values.description,
       deadline: values.deadline.toISOString(),

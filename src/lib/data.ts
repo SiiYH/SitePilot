@@ -34,6 +34,7 @@ export const mockUsers: User[] = [
 export const mockProjects: Project[] = [
   {
     id: 'proj-1',
+    slug: 'apex-tower',
     name: 'Apex Tower',
     description: 'A 50-story commercial skyscraper in the city center. Features state-of-the-art facilities and sustainable design.',
     progress: 75,
@@ -60,6 +61,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'proj-2',
+    slug: 'golden-gate-bridge-retrofit',
     name: 'Golden Gate Bridge Retrofit',
     description: 'Seismic retrofitting and maintenance project for the iconic Golden Gate Bridge to ensure long-term structural integrity.',
     progress: 40,
@@ -84,6 +86,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'proj-3',
+    slug: 'maple-creek-residences',
     name: 'Maple Creek Residences',
     description: 'Development of a new suburban community with 200 single-family homes, parks, and recreational facilities.',
     progress: 95,

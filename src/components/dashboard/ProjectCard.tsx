@@ -15,7 +15,7 @@ interface ProjectCardProps {
 export default function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
-      <Link href={`/dashboard/projects/${project.id}`} className="block">
+      <Link href={`/dashboard/projects/${project.slug}`} className="block">
         <div className="relative h-48 w-full">
           <Image
             src={project.imageUrl}
@@ -28,7 +28,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </Link>
       <CardHeader>
         <CardTitle>
-            <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
+            <Link href={`/dashboard/projects/${project.slug}`} className="hover:underline">
                 {project.name}
             </Link>
         </CardTitle>
@@ -55,7 +55,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full">
-          <Link href={`/dashboard/projects/${project.id}`}>View Details</Link>
+          <Link href={`/dashboard/projects/${project.slug}`}>View Details</Link>
         </Button>
       </CardFooter>
     </Card>
