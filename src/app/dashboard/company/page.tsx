@@ -66,7 +66,7 @@ export default function CompanyPage() {
   }
 
   const eInvData = companyData?.eInvoicing;
-  const hasEInvData = !!eInvData;
+  const hasEInvData = !!eInvData && Object.keys(eInvData).length > 0;
 
   const fullAddress = eInvData ? [
     eInvData.address1,
@@ -132,7 +132,7 @@ export default function CompanyPage() {
                                 <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
                             </div>
                             
-                            <Separator />
+                            <Separator className="my-4" />
 
                             {/* Contact & Address */}
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
@@ -145,7 +145,7 @@ export default function CompanyPage() {
                                 )}
                             </div>
 
-                            <Separator />
+                            <Separator className="my-4" />
 
                             {/* Financial Details */}
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
@@ -155,7 +155,16 @@ export default function CompanyPage() {
                       )}
                     </>
                   ) : (
-                      <p className="text-sm text-muted-foreground italic">No e-invoicing information has been provided.</p>
+                      <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg bg-muted/20">
+                          <p className="font-semibold">No E-Invoicing Information</p>
+                          <p className="text-sm mb-4">Add your e-invoicing details to enable this feature.</p>
+                          <Button asChild variant="outline">
+                            <Link href="/company-setup/e-invoicing">
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Add E-Invoicing Details
+                            </Link>
+                          </Button>
+                        </div>
                   )}
               </div>
             </>
