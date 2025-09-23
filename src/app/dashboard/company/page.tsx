@@ -119,17 +119,16 @@ export default function CompanyPage() {
                   <h3 className="text-base font-semibold">E-Invoicing Details</h3>
                    {hasEInvData ? (
                     <>
-                      <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (Version ${eInvData.eInvVersion || 'v1'})` : 'Disabled'} />
+                      <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled` : 'Disabled'} />
                       
                       {eInvData.eInvEnabled && (
                         <div className="space-y-4 pt-2">
+                            <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === 'v2' ? 'Version 2.0' : 'Version 1.0'} />
                             {/* Business Identifiers */}
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                 <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
                                 <InfoField label="TIN" value={eInvData.tin} />
                                 <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
-                                <InfoField label="SST Number" value={eInvData.sstNumber} />
-                                <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
                             </div>
                             
                             <Separator className="my-4" />
@@ -187,3 +186,5 @@ export default function CompanyPage() {
     </div>
   );
 }
+
+    

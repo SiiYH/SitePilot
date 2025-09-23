@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 type StateCode = {
   Code: string;
@@ -49,13 +50,15 @@ const identifierPlaceholders = {
 
 const formSchema = z.object({
     eInvEnabled: z.boolean(),
+    eInvVersion: z.enum(['v1', 'v2']).optional(),
+    digitalSignature: z.string().optional(),
     customerType: z.enum([
       'malaysia-business',
       'malaysia-individual',
       'non-malaysian-business',
       'non-malaysian-individual',
       'government'
-    ]),
+    ]).optional(),
     tin: z.string().optional(),
     identifier: z.string().optional(),
     email: z.string().optional(),
@@ -64,6 +67,7 @@ const formSchema = z.object({
     address2: z.string().optional(),
     postalCode: z.string().optional(),
     lhdnStateCode: z.string().optional(),
+    bankAccount: z.string().optional(),
   }).superRefine((data, ctx) => {
     if (!data.eInvEnabled) return;
 
@@ -99,10 +103,16 @@ const formSchema = z.object({
         }
     }
 
-    if (data.customerType === 'malaysia-individual' || data.customerType === 'non-malaysian-individual') {
-        if (!data.contactNumber) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
-        }
+    if (!data.contactNumber) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
+    }
+
+    if (!data.bankAccount) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Bank account number is required.', path: ['bankAccount'] });
+    }
+
+    if (data.eInvVersion === 'v2' && (!data.digitalSignature || data.digitalSignature.trim() === '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Digital signature is required for Version 2.', path: ['digitalSignature'] });
     }
   });
 
@@ -120,6 +130,8 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       eInvEnabled: true,
+      eInvVersion: 'v1',
+      digitalSignature: '',
       customerType: 'malaysia-business',
       email: '',
       contactNumber: '',
@@ -128,6 +140,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       lhdnStateCode: '',
       identifier: '',
       tin: '',
+      bankAccount: '',
     },
     mode: 'onChange',
   });
@@ -145,11 +158,11 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   }, [form]);
 
   const eInvEnabled = form.watch('eInvEnabled');
-  const customerType = form.watch('customerType');
+  const eInvVersion = form.watch('eInvVersion');
+  const customerType = form.watch('customerType') || 'malaysia-business';
   const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
 
   const isTinRequired = eInvEnabled && ['malaysia-business', 'malaysia-individual', 'non-malaysian-business', 'non-malaysian-individual'].includes(customerType);
-  const isContactRequired = eInvEnabled && ['malaysia-individual', 'non-malaysian-individual'].includes(customerType);
 
 
   const getStateCodeDisplay = (code: string) => {
@@ -207,6 +220,46 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
 
               {eInvEnabled && (
                 <div className="space-y-6 pt-4">
+                   <div className="space-y-4">
+                     <h3 className="text-lg font-semibold">E-Invoicing Configuration</h3>
+                        <FormField
+                            control={form.control}
+                            name="eInvVersion"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>E-Invoicing Version{eInvEnabled && <RequiredIndicator />}</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select e-invoicing version" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="v1">Version 1.0 (2024)</SelectItem>
+                                        <SelectItem value="v2">Version 2.0 (Preview)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                      {eInvVersion === 'v2' && (
+                        <FormField
+                            control={form.control}
+                            name="digitalSignature"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Digital Signature (PEM format){eInvEnabled && eInvVersion === 'v2' && <RequiredIndicator />}</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Paste your PEM-formatted digital signature here..." {...field} value={field.value ?? ''} rows={5} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                      )}
+                  </div>
+                  <Separator/>
                   <div className="space-y-4">
                      <h3 className="text-lg font-semibold">Business Identifiers</h3>
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -286,7 +339,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                             name="contactNumber"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Contact Number{isContactRequired && <RequiredIndicator />}</FormLabel>
+                                <FormLabel>Contact Number{eInvEnabled && <RequiredIndicator />}</FormLabel>
                                 <FormControl>
                                 <Input placeholder="+6012-3456789" {...field} value={field.value ?? ''} />
                                 </FormControl>
@@ -389,6 +442,25 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                         )}
                      </div>
                   </div>
+                  <Separator/>
+                   <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Financial Details</h3>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                            control={form.control}
+                            name="bankAccount"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Bank Account Number{eInvEnabled && <RequiredIndicator />}</FormLabel>
+                                <FormControl>
+                                <Input placeholder="Enter your bank account number" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -409,3 +481,5 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
+
+    
