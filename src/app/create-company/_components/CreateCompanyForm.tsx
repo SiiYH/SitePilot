@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                     <CommandGroup>
                       {industries.map((industry) => (
                         <CommandItem
-                          key={industry.Code}
+                          key={`${industry.Code}-${industry.Description}`}
                           value={industry.Code}
                           onSelect={(currentValue) => {
                             setValue(currentValue === value ? "" : currentValue)
