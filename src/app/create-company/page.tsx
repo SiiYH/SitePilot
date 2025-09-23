@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import CreateCompanyForm from './_components/CreateCompanyForm';
+import GoBackButton from './_components/GoBackButton';
 
 type Industry = {
   Code: string;
@@ -39,10 +40,7 @@ export default async function CreateCompanyPage() {
         <CreateCompanyForm industries={industries} />
         
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Or, return to{' '}
-          <Link href="/dashboard" className="font-medium text-primary hover:underline">
-            your dashboard
-          </Link>.
+          Or, <GoBackButton />
         </p>
       </div>
     </div>
