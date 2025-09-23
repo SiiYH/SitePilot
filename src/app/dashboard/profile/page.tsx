@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const getInitials = (name: string) => {
+  if (!name) return '';
   const names = name.split(' ');
   if (names.length > 1) {
     return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
@@ -76,18 +77,18 @@ export default function ProfilePage() {
     );
   }
 
-  const eInvData = companyData?.eInvoicing || {};
-  const fullAddress = [
+  const eInvData = companyData?.eInvoicing;
+  const hasEInvData = !!eInvData;
+
+  const fullAddress = eInvData ? [
     eInvData.address1,
     eInvData.address2,
     eInvData.postalCode,
     eInvData.lhdnStateCode,
-  ].filter(Boolean).join(', ');
+  ].filter(Boolean).join(', ') : '';
 
   const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
   const getIdentifierLabel = (key: string) => eInvData?.customerType ? identifierLabels[eInvData.customerType] : 'Identifier';
-
-  const hasEInvData = companyData && companyData.eInvoicing && Object.keys(companyData.eInvoicing).length > 0;
 
   return (
     <div className="space-y-6">
@@ -153,7 +154,7 @@ export default function ProfilePage() {
                       <div className="space-y-4">
                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
                           <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                              <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion})` : 'Disabled'} />
+                              <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion || '1.0'})` : 'Disabled'} />
                               {eInvData.eInvEnabled && (
                                 <>
                                   <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
@@ -164,14 +165,14 @@ export default function ProfilePage() {
                                   <InfoField label="E-Invoicing Email" value={eInvData.email} />
                                   <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
                                   <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
+                                  {fullAddress && (
+                                    <div className="md:col-span-2">
+                                        <InfoField label="Address" value={fullAddress} />
+                                    </div>
+                                  )}
                                 </>
                               )}
                           </div>
-                          {eInvData.eInvEnabled && fullAddress && (
-                              <div className="pt-4">
-                                  <InfoField label="Address" value={fullAddress} />
-                              </div>
-                          )}
                       </div>
                     </>
                   ) : null }
@@ -196,5 +197,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
