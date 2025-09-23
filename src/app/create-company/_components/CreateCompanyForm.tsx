@@ -34,6 +34,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
           </div>
           <div className="space-y-2">
             <Label htmlFor="industry">Industry</Label>
+            <p className="text-xs text-muted-foreground">
+              Based on official MSIC codes for Malaysian e-invoicing.
+            </p>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
