@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import CreateCompanyForm from './_components/CreateCompanyForm';
@@ -38,9 +39,9 @@ export default async function CreateCompanyPage() {
         <CreateCompanyForm industries={industries} />
         
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Or, go back to{' '}
-          <Link href="/welcome" className="font-medium text-primary hover:underline">
-            the previous step
+          Or, return to{' '}
+          <Link href="/dashboard" className="font-medium text-primary hover:underline">
+            your dashboard
           </Link>.
         </p>
       </div>
