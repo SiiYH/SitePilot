@@ -75,7 +75,7 @@ export default function ProfilePage() {
   ].filter(Boolean).join(', ');
 
   const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
-  const getIdentifierLabel = (key: string) => identifierLabels[key] || 'Identifier';
+  const getIdentifierLabel = (key: string) => eInvData?.customerType ? identifierLabels[eInvData.customerType] : 'Identifier';
 
   return (
     <div className="space-y-6">
@@ -135,7 +135,7 @@ export default function ProfilePage() {
                     </div>
                   )}
                   
-                  {eInvData.eInvEnabled && (
+                  {Object.keys(eInvData).length > 0 && (
                     <>
                       <Separator/>
                       <div className="space-y-4">
@@ -145,42 +145,46 @@ export default function ProfilePage() {
                                   <Label>E-Invoicing Status</Label>
                                   <Input value={eInvData.eInvEnabled ? `Enabled (${eInvData.eInvVersion})` : 'Disabled'} readOnly />
                               </div>
-                              <div className="space-y-2">
-                                <Label>Customer Type</Label>
-                                <Input value={getCustomerTypeLabel(eInvData.customerType)} readOnly />
-                              </div>
-                               {eInvData.tin && <div className="space-y-2">
-                                  <Label>TIN</Label>
-                                  <Input value={eInvData.tin} readOnly />
-                              </div>}
-                              {eInvData.identifier && <div className="space-y-2">
-                                  <Label>{getIdentifierLabel(eInvData.customerType)}</Label>
-                                  <Input value={eInvData.identifier} readOnly />
-                              </div>}
-                              {eInvData.sstNumber && <div className="space-y-2">
-                                  <Label>SST Number</Label>
-                                  <Input value={eInvData.sstNumber} readOnly />
-                              </div>}
-                              {eInvData.tourismTax && <div className="space-y-2">
-                                  <Label>Tourism Tax No.</Label>
-                                  <Input value={eInvData.tourismTax} readOnly />
-                              </div>}
-                               {eInvData.email && <div className="space-y-2">
-                                  <Label>E-Invoicing Email</Label>
-                                  <Input value={eInvData.email} readOnly />
-                              </div>}
-                              {eInvData.contactNumber && <div className="space-y-2">
-                                  <Label>E-Invoicing Contact</Label>
-                                  <Input value={eInvData.contactNumber} readOnly />
-                              </div>}
+                              {eInvData.eInvEnabled && (
+                                <>
+                                  <div className="space-y-2">
+                                    <Label>Customer Type</Label>
+                                    <Input value={getCustomerTypeLabel(eInvData.customerType)} readOnly />
+                                  </div>
+                                  {eInvData.tin && <div className="space-y-2">
+                                      <Label>TIN</Label>
+                                      <Input value={eInvData.tin} readOnly />
+                                  </div>}
+                                  {eInvData.identifier && <div className="space-y-2">
+                                      <Label>{getIdentifierLabel(eInvData.customerType)}</Label>
+                                      <Input value={eInvData.identifier} readOnly />
+                                  </div>}
+                                  {eInvData.sstNumber && <div className="space-y-2">
+                                      <Label>SST Number</Label>
+                                      <Input value={eInvData.sstNumber} readOnly />
+                                  </div>}
+                                  {eInvData.tourismTax && <div className="space-y-2">
+                                      <Label>Tourism Tax No.</Label>
+                                      <Input value={eInvData.tourismTax} readOnly />
+                                  </div>}
+                                  {eInvData.email && <div className="space-y-2">
+                                      <Label>E-Invoicing Email</Label>
+                                      <Input value={eInvData.email} readOnly />
+                                  </div>}
+                                  {eInvData.contactNumber && <div className="space-y-2">
+                                      <Label>E-Invoicing Contact</Label>
+                                      <Input value={eInvData.contactNumber} readOnly />
+                                  </div>}
+                                </>
+                              )}
                           </div>
-                          {fullAddress && (
+                          {eInvData.eInvEnabled && fullAddress && (
                             <div className="space-y-2">
                               <Label>Address</Label>
                               <Input value={fullAddress} readOnly />
                             </div>
                           )}
-                          {eInvData.bankAccount && (
+                          {eInvData.eInvEnabled && eInvData.bankAccount && (
                             <div className="space-y-2">
                               <Label>Bank Account Number</Label>
                               <Input value={eInvData.bankAccount} readOnly />
@@ -216,3 +220,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
