@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -549,12 +550,20 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      children,
       ...props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
+    
+    const child =
+      asChild && React.Children.count(children) > 1 ? (
+        <span className="flex w-full items-center gap-2">{children}</span>
+      ) : (
+        children
+      )
 
     const button = (
       <Comp
@@ -564,7 +573,9 @@ const SidebarMenuButton = React.forwardRef<
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
         {...props}
-      />
+      >
+        {child}
+      </Comp>
     )
 
     if (!tooltip) {
