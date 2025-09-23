@@ -145,6 +145,10 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     mode: 'onChange',
   });
 
+  const eInvEnabled = form.watch('eInvEnabled');
+  const eInvVersion = form.watch('eInvVersion');
+  const customerType = form.watch('customerType') || 'malaysia-business';
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedCompanyData = localStorage.getItem('siteflow-company');
@@ -156,11 +160,13 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       }
     }
   }, [form]);
-
-  const eInvEnabled = form.watch('eInvEnabled');
-  const eInvVersion = form.watch('eInvVersion');
-  const customerType = form.watch('customerType') || 'malaysia-business';
   
+  useEffect(() => {
+    if (customerType === 'non-malaysian-business' || customerType === 'non-malaysian-individual' || customerType === 'government') {
+      form.setValue('lhdnStateCode', '17');
+    }
+  }, [customerType, form]);
+
   const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
   const isTinRequired = eInvEnabled && ['malaysia-business', 'malaysia-individual', 'non-malaysian-business', 'non-malaysian-individual'].includes(customerType);
 
