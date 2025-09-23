@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Building, PlusCircle } from 'lucide-react';
+import { Mail, Phone, Building, PlusCircle, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -165,7 +165,7 @@ export default function ProfilePage() {
                                   </>
                                 )}
                            </div>
-                           {eInvData.eInvEnabled && (
+                           {eInvData.eInvEnabled && fullAddress && (
                                 <div className="pt-4">
                                     <InfoField label="Address" value={fullAddress} />
                                 </div>
