@@ -123,7 +123,7 @@ export default function CompanyPage() {
                       
                       {eInvData.eInvEnabled && (
                         <div className="space-y-4 pt-2">
-                            <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === 'v2' ? 'Version 2.0' : 'Version 1.0'} />
+                            <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === '1.1' ? 'Version 1.1' : 'Version 1.0'} />
                             {/* Business Identifiers */}
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                 <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />

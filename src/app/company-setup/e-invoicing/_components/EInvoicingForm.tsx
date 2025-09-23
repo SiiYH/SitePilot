@@ -50,7 +50,7 @@ const identifierPlaceholders = {
 
 const formSchema = z.object({
     eInvEnabled: z.boolean(),
-    eInvVersion: z.enum(['v1', 'v2']).optional(),
+    eInvVersion: z.enum(['1.0', '1.1']).optional(),
     digitalSignature: z.string().optional(),
     customerType: z.enum([
       'malaysia-business',
@@ -111,8 +111,8 @@ const formSchema = z.object({
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Bank account number is required.', path: ['bankAccount'] });
     }
 
-    if (data.eInvVersion === 'v2' && (!data.digitalSignature || data.digitalSignature.trim() === '')) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Digital signature is required for Version 2.', path: ['digitalSignature'] });
+    if (data.eInvVersion === '1.1' && (!data.digitalSignature || data.digitalSignature.trim() === '')) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Digital signature is required for Version 1.1.', path: ['digitalSignature'] });
     }
   });
 
@@ -130,7 +130,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       eInvEnabled: true,
-      eInvVersion: 'v1',
+      eInvVersion: '1.0',
       digitalSignature: '',
       customerType: 'malaysia-business',
       email: '',
@@ -235,21 +235,21 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="v1">Version 1.0 (2024)</SelectItem>
-                                        <SelectItem value="v2">Version 2.0 (Preview)</SelectItem>
+                                        <SelectItem value="1.0">Version 1.0</SelectItem>
+                                        <SelectItem value="1.1">Version 1.1</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
                                 </FormItem>
                             )}
                         />
-                      {eInvVersion === 'v2' && (
+                      {eInvVersion === '1.1' && (
                         <FormField
                             control={form.control}
                             name="digitalSignature"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Digital Signature (PEM format){eInvEnabled && eInvVersion === 'v2' && <RequiredIndicator />}</FormLabel>
+                                    <FormLabel>Digital Signature (PEM format){eInvEnabled && eInvVersion === '1.1' && <RequiredIndicator />}</FormLabel>
                                     <FormControl>
                                         <Textarea placeholder="Paste your PEM-formatted digital signature here..." {...field} value={field.value ?? ''} rows={5} />
                                     </FormControl>
