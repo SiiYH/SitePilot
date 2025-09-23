@@ -108,9 +108,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                   <CommandList>
                     <CommandEmpty>No industry found.</CommandEmpty>
                     <CommandGroup>
-                      {industries.map((industry) => (
+                      {industries.map((industry, index) => (
                         <CommandItem
-                          key={`${industry.Code}-${industry.Description}`}
+                          key={`${industry.Code}-${industry.Description}-${index}`}
                           value={industry.Code}
                           onSelect={(currentValue) => {
                             setIndustryCode(currentValue.toUpperCase() === industryCode.toUpperCase() ? "" : currentValue.toUpperCase())
