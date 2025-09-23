@@ -37,8 +37,10 @@ export default function AppSidebar() {
                   isActive={isActive(item.href)}
                   tooltip={{ children: item.tooltip, side: 'right' }}
                 >
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
