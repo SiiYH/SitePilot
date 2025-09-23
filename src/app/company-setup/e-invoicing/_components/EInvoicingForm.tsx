@@ -24,8 +24,8 @@ type StateCode = {
 type CustomerType =
   | 'malaysia-business'
   | 'malaysia-individual'
-  | 'non-malaysia-business'
-  | 'non-malaysia-individual'
+  | 'non-malaysian-business'
+  | 'non-malaysian-individual'
   | 'government';
 
 
@@ -50,12 +50,12 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     switch (customerType) {
       case 'malaysia-individual':
         return 'NRIC (MyKad/MyTentera/MyPR)';
-      case 'non-malaysia-individual':
+      case 'non-malaysian-individual':
         return 'Passport Number';
       case 'government':
         return 'Government Entity Identifier';
       case 'malaysia-business':
-      case 'non-malaysia-business':
+      case 'non-malaysian-business':
       default:
         return 'Business Registration Number (MyCoID)';
     }
@@ -65,13 +65,13 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     switch (customerType) {
       case 'malaysia-individual':
         return 'e.g., 901010141234';
-      case 'non-malaysia-individual':
+      case 'non-malaysian-individual':
         return 'Enter passport number';
       case 'government':
         return 'Enter government entity ID';
       case 'malaysia-business':
         return 'e.g., 202401000123 (1234567-A)';
-      case 'non-malaysia-business':
+      case 'non-malaysian-business':
         return 'Enter company registration number';
       default:
         return 'Enter registration number';
@@ -131,8 +131,8 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                       <SelectContent>
                         <SelectItem value="malaysia-business">Malaysia Business</SelectItem>
                         <SelectItem value="malaysia-individual">Malaysia Individual</SelectItem>
-                        <SelectItem value="non-malaysia-business">Non-Malaysia Business</SelectItem>
-                        <SelectItem value="non-malaysia-individual">Non-Malaysia Individual</SelectItem>
+                        <SelectItem value="non-malaysian-business">Non-Malaysian Business</SelectItem>
+                        <SelectItem value="non-malaysian-individual">Non-Malaysian Individual</SelectItem>
                         <SelectItem value="government">Government Entity</SelectItem>
                       </SelectContent>
                     </Select>
