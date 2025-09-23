@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type Industry = {
   Code: string;
@@ -78,7 +79,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                               value === industry.Code ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground'>{industry.Code}</span>
+                          <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{industry.Code}</span>
                           <span className='flex-1'>{industry.Description}</span>
                         </CommandItem>
                       ))}
@@ -92,8 +93,8 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
             <Label htmlFor="company-description">Company Description (Optional)</Label>
             <Textarea id="company-description" placeholder="What does your company specialize in?" />
           </div>
-          <Button type="submit" className="w-full">
-            Create and Continue
+          <Button type="submit" className="w-full" asChild>
+            <Link href="/company-setup/e-invoicing">Create and Continue</Link>
           </Button>
         </form>
       </CardContent>
