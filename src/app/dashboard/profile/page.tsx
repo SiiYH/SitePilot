@@ -36,11 +36,14 @@ const identifierLabels: { [key: string]: string } = {
 };
 
 const InfoField = ({ label, value }: { label: string; value?: string | null }) => {
-    if (!value) return null;
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className="text-sm break-words">{value}</p>
+            {value ? (
+                <p className="text-sm break-words">{value}</p>
+            ) : (
+                <p className="text-sm text-muted-foreground/70 italic">Not provided</p>
+            )}
         </div>
     );
 };
@@ -139,42 +142,36 @@ export default function ProfilePage() {
                             <InfoField label="Company Name" value={companyData.name} />
                             <InfoField label="Industry" value={companyData.industry} />
                         </div>
-                         {companyData.description && (
-                            <InfoField label="Company Description" value={companyData.description} />
-                        )}
+                        <InfoField label="Company Description" value={companyData.description} />
                     </div>
                   
-                  {Object.keys(eInvData).length > 0 && eInvData.eInvEnabled ? (
+                  {Object.keys(eInvData).length > 0 ? (
                     <>
                       <Separator/>
                       <div className="space-y-4">
                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                 <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (${eInvData.eInvVersion})` : 'Disabled'} />
-                                <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
-                                <InfoField label="TIN" value={eInvData.tin} />
-                                <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
-                                <InfoField label="SST Number" value={eInvData.sstNumber} />
-                                <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
-                                <InfoField label="E-Invoicing Email" value={eInvData.email} />
-                                <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
-                                <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
+                                {eInvData.eInvEnabled && (
+                                  <>
+                                    <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
+                                    <InfoField label="TIN" value={eInvData.tin} />
+                                    <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
+                                    <InfoField label="SST Number" value={eInvData.sstNumber} />
+                                    <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
+                                    <InfoField label="E-Invoicing Email" value={eInvData.email} />
+                                    <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
+                                    <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
+                                  </>
+                                )}
                            </div>
-                           {fullAddress && (
+                           {eInvData.eInvEnabled && fullAddress && (
                                 <div className="pt-4">
                                     <InfoField label="Address" value={fullAddress} />
                                 </div>
                            )}
                       </div>
                     </>
-                  ) : Object.keys(eInvData).length > 0 && !eInvData.eInvEnabled ? (
-                     <>
-                      <Separator/>
-                       <div className="space-y-4">
-                         <h3 className="text-base font-semibold">E-Invoicing Details</h3>
-                         <p className="text-sm text-muted-foreground">E-invoicing is currently disabled.</p>
-                       </div>
-                     </>
                   ) : null }
                 </>
               ) : (
@@ -197,5 +194,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
