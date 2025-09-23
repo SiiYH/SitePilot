@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Building, PlusCircle, User as UserIcon } from 'lucide-react';
+import { Building, PlusCircle, User as UserIcon, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -94,7 +94,10 @@ export default function CompanyPage() {
                 </div>
                  {companyData && (
                     <Button variant="outline" size="sm" asChild>
-                        <Link href="/create-company">Edit Details</Link>
+                        <Link href="/create-company">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Details
+                        </Link>
                     </Button>
                 )}
             </div>

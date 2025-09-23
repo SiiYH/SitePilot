@@ -31,21 +31,26 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   const [industryCode, setIndustryCode] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedCompanyData = localStorage.getItem('sitepilot-company');
       if (storedCompanyData) {
         const company = JSON.parse(storedCompanyData);
-        setCompanyName(company.name || '');
-        setCompanyDescription(company.description || '');
+        // Only pre-fill if the company has a name, indicating it's an existing company.
+        if (company.name) {
+          setIsEditing(true);
+          setCompanyName(company.name || '');
+          setCompanyDescription(company.description || '');
 
-        if (company.industry) {
-            // Extracts code like 'F' from '(F) CONSTRUCTION'
-            const codeMatch = company.industry.match(/^\(([^)]+)\)/);
-            if (codeMatch && codeMatch[1]) {
-                setIndustryCode(codeMatch[1]);
-            }
+          if (company.industry) {
+              // Extracts code like 'F' from '(F) CONSTRUCTION'
+              const codeMatch = company.industry.match(/^\(([^)]+)\)/);
+              if (codeMatch && codeMatch[1]) {
+                  setIndustryCode(codeMatch[1]);
+              }
+          }
         }
       }
     }
@@ -58,8 +63,8 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = () => {
-    // Elevate user role to Director upon company creation
-    if (user) {
+    // Elevate user role to Director upon company creation if they are not already one.
+    if (user && user.role !== 'Director' && !isEditing) {
       const updatedUser = { ...user, role: 'Director' as const };
       setUser(updatedUser);
       localStorage.setItem('sitepilot-user', JSON.stringify(updatedUser));
@@ -75,7 +80,12 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       description: companyDescription,
     };
     localStorage.setItem('sitepilot-company', JSON.stringify(companyData));
-    router.push('/company-setup/e-invoicing');
+    
+    if (isEditing) {
+      router.push('/dashboard/company');
+    } else {
+      router.push('/company-setup/e-invoicing');
+    }
   }
 
   return (
@@ -157,7 +167,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
             disabled={!companyName || !industryCode}
             onClick={handleContinue}
           >
-            Save and Continue
+            {isEditing ? 'Save Changes' : 'Save and Continue'}
           </Button>
         </form>
       </CardContent>
