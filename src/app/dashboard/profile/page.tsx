@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Building } from 'lucide-react';
+import { Mail, Phone, Building, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const getInitials = (name: string) => {
   const names = name.split(' ');
@@ -118,14 +119,22 @@ export default function ProfilePage() {
                     </div>
                   )}
                   <div className="mt-6 flex justify-end">
-                    <Button variant="outline">Edit Company Details</Button>
+                    <Button variant="outline" asChild>
+                      <Link href="/create-company">Edit Company Details</Link>
+                    </Button>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8">
                   <Building className="h-12 w-12 mb-4" />
                   <p className="font-semibold">No Company Information</p>
-                  <p className="text-sm">Complete the company setup to see details here.</p>
+                  <p className="text-sm mb-4">Complete the company setup to see details here.</p>
+                  <Button asChild>
+                    <Link href="/create-company">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Set Up Company
+                    </Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
