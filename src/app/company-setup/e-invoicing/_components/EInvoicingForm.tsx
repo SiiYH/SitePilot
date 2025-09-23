@@ -432,7 +432,7 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                                 <Check
                                                     className={cn("mr-2 h-4 w-4", field.value === state.Code ? "opacity-100" : "opacity-0")}
                                                 />
-                                                <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm'>{state.Code}</span>
+                                                <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm group-aria-selected:text-foreground'>{state.Code}</span>
                                                 <span className='flex-1'>{state.State}</span>
                                                 </CommandItem>
                                             ))}
