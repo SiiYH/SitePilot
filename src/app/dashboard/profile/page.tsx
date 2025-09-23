@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Building, PlusCircle, User as UserIcon } from 'lucide-react';
+import { Mail, Phone, Building, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -20,54 +20,26 @@ const getInitials = (name: string) => {
   return name.substring(0, 2).toUpperCase();
 };
 
-const customerTypeLabels: { [key: string]: string } = {
-  'malaysia-business': 'Malaysia Business',
-  'malaysia-individual': 'Malaysia Individual',
-  'non-malaysian-business': 'Non-Malaysian Business',
-  'non-malaysian-individual': 'Non-Malaysian Individual',
-  'government': 'Government Entity',
-};
 
-const identifierLabels: { [key: string]: string } = {
-  'malaysia-business': 'Business Registration Number (MyCoID)',
-  'malaysia-individual': 'NRIC (MyKad/MyTentera/MyPR)',
-  'non-malaysian-business': 'Business/Company Registration Number',
-  'non-malaysian-individual': 'Passport Number',
-  'government': 'Government Entity Identifier',
-};
-
-const InfoField = ({ label, value }: { label: string; value?: string | null }) => {
+const InfoField = ({ icon, label, value }: { icon: React.ElementType; label: string; value?: string | null }) => {
+    const Icon = icon;
     return (
-        <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            {value ? (
-                <p className="text-sm break-words">{value}</p>
-            ) : (
-                <p className="text-sm text-muted-foreground/70 italic">Not provided</p>
-            )}
+        <div className="flex items-start gap-4">
+            <Icon className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
+            <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                {value ? (
+                    <p className="text-sm break-words">{value}</p>
+                ) : (
+                    <p className="text-sm text-muted-foreground/70 italic">Not provided</p>
+                )}
+            </div>
         </div>
     );
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const [companyData, setCompanyData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedCompanyData = localStorage.getItem('siteflow-company');
-        if (storedCompanyData) {
-          setCompanyData(JSON.parse(storedCompanyData));
-        }
-      } catch (error) {
-        console.error("Failed to parse company data from localStorage", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading || !user) {
     return (
@@ -77,141 +49,63 @@ export default function ProfilePage() {
     );
   }
 
-  const eInvData = companyData?.eInvoicing;
-  const hasEInvData = !!eInvData;
-
-  const fullAddress = eInvData ? [
-    eInvData.address1,
-    eInvData.address2,
-    eInvData.postalCode,
-    eInvData.lhdnStateCode,
-  ].filter(Boolean).join(', ') : '';
-
-  const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
-  const getIdentifierLabel = (key: string) => eInvData?.customerType ? identifierLabels[eInvData.customerType] : 'Identifier';
-
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Profile & Settings</h2>
-        <p className="text-muted-foreground">Manage your personal and company information.</p>
+        <h2 className="text-2xl font-bold tracking-tight">My Profile</h2>
+        <p className="text-muted-foreground">Manage your personal information and account settings.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* User Profile Card */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader className="items-center text-center">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-              </Avatar>
-              <CardTitle>{user.name}</CardTitle>
-              <CardDescription>{user.role}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <Separator />
-                <div className="flex items-start gap-3 pt-4">
-                    <Mail className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
-                    <span className="text-sm break-all">{user.email || 'No email provided'}</span>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
-                    <span className="text-sm break-all">{user.phone || 'No phone provided'}</span>
-                </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Company Information Card */}
-        <div className="md:col-span-2">
-          <Card>
+        <Card className="max-w-2xl">
             <CardHeader>
-                <div className="flex items-start justify-between">
-                    <div>
-                        <CardTitle>Company Information</CardTitle>
-                        {companyData?.name && <CardDescription>Details for {companyData.name}.</CardDescription>}
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <Avatar className="h-24 w-24">
+                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                            </Avatar>
+                             <Button size="icon" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-2 border-background">
+                                <Upload className="h-4 w-4" />
+                                <span className="sr-only">Change profile picture</span>
+                            </Button>
+                        </div>
+                        <div>
+                            <CardTitle className="text-2xl">{user.name}</CardTitle>
+                            <CardDescription>{user.role}</CardDescription>
+                        </div>
                     </div>
-                     {companyData && (
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href="/create-company">Edit Details</Link>
-                        </Button>
-                    )}
+                     <Button variant="outline">
+                        <Edit className="mr-2 h-4 w-4"/>
+                        Edit Profile
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {companyData ? (
-                <>
-                  {/* General Company Info */}
-                  <div className="space-y-4">
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <InfoField label="Company Name" value={companyData.name} />
-                          <InfoField label="Industry" value={companyData.industry} />
-                      </div>
-                      <InfoField label="Company Description" value={companyData.description} />
-                  </div>
-                  
-                  {/* E-Invoicing Details */}
-                  {hasEInvData ? (
-                    <>
-                      <Separator/>
-                      <div className="space-y-4">
-                          <h3 className="text-base font-semibold">E-Invoicing Details</h3>
-                          <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled (v${eInvData.eInvVersion || '1.0'})` : 'Disabled'} />
-                          {eInvData.eInvEnabled && (
-                            <div className="space-y-4 pt-2">
-                                {/* Business Identifiers */}
-                                <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                    <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
-                                    <InfoField label="TIN" value={eInvData.tin} />
-                                    <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
-                                    <InfoField label="SST Number" value={eInvData.sstNumber} />
-                                    <InfoField label="Tourism Tax No." value={eInvData.tourismTax} />
-                                </div>
-                                
-                                <Separator />
-
-                                {/* Contact & Address */}
-                                <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                    <InfoField label="E-Invoicing Email" value={eInvData.email} />
-                                    <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
-                                    {fullAddress && (
-                                        <div className="md:col-span-2">
-                                            <InfoField label="Address" value={fullAddress} />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <Separator />
-
-                                {/* Financial Details */}
-                                <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                    <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
-                                </div>
-                            </div>
-                          )}
-                      </div>
-                    </>
-                  ) : null }
-                </>
-              ) : (
-                // Placeholder for when no company data exists
-                <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                  <Building className="h-12 w-12 mb-4" />
-                  <p className="font-semibold">No Company Information</p>
-                  <p className="text-sm mb-4">Complete the company setup to see details here.</p>
-                  <Button asChild>
-                    <Link href="/create-company">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Set Up Company
-                    </Link>
-                  </Button>
+               <Separator />
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <InfoField icon={Mail} label="Email Address" value={user.email} />
+                    <InfoField icon={Phone} label="Phone Number" value={user.phone} />
                 </div>
-              )}
+                <Separator />
+                 <Card className="bg-muted/40">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Company Settings</CardTitle>
+                      <CardDescription>
+                        View or edit your company's information, including e-invoicing details.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild>
+                        <Link href="/dashboard/company">
+                          <Building className="mr-2 h-4 w-4" />
+                          Go to Company Settings
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
             </CardContent>
-          </Card>
-        </div>
-      </div>
+        </Card>
     </div>
   );
 }
