@@ -14,7 +14,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -50,8 +49,6 @@ const identifierPlaceholders = {
 
 const formSchema = z.object({
     eInvEnabled: z.boolean(),
-    eInvVersion: z.enum(['v1', 'v2']),
-    digitalSignature: z.string().optional(),
     customerType: z.enum([
       'malaysia-business',
       'malaysia-individual',
@@ -61,15 +58,12 @@ const formSchema = z.object({
     ]),
     tin: z.string().optional(),
     identifier: z.string().optional(),
-    sstNumber: z.string().optional(),
-    tourismTax: z.string().optional(),
     email: z.string().optional(),
     contactNumber: z.string().optional(),
     address1: z.string().optional(),
     address2: z.string().optional(),
     postalCode: z.string().optional(),
     lhdnStateCode: z.string().optional(),
-    bankAccount: z.string().optional(),
   }).superRefine((data, ctx) => {
     if (!data.eInvEnabled) return;
 
@@ -93,12 +87,6 @@ const formSchema = z.object({
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'This field is required.', path: ['identifier'] });
     }
 
-    if (data.eInvVersion === 'v2') {
-        if (!data.digitalSignature || data.digitalSignature.length !== 6) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "A 6-digit PIN is required for v2.0", path: ['digitalSignature'] });
-        }
-    }
-
     if (data.customerType === 'malaysia-business' || data.customerType === 'malaysia-individual') {
         if (!data.lhdnStateCode) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'LHDN State is required.', path: ['lhdnStateCode'] });
@@ -116,7 +104,6 @@ const formSchema = z.object({
             ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Contact number is required.', path: ['contactNumber'] });
         }
     }
-
   });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -133,7 +120,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       eInvEnabled: true,
-      eInvVersion: 'v1',
       customerType: 'malaysia-business',
       email: '',
       contactNumber: '',
@@ -141,10 +127,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
       postalCode: '',
       lhdnStateCode: '',
       identifier: '',
-      sstNumber: '',
-      tourismTax: '',
-      bankAccount: '',
-      digitalSignature: '',
       tin: '',
     },
     mode: 'onChange',
@@ -163,7 +145,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   }, [form]);
 
   const eInvEnabled = form.watch('eInvEnabled');
-  const eInvVersion = form.watch('eInvVersion');
   const customerType = form.watch('customerType');
   const isMalaysiaBased = customerType === 'malaysia-business' || customerType === 'malaysia-individual';
 
@@ -180,7 +161,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const onSubmit = (values: FormValues) => {
     setIsSubmitting(true);
     
-    // Save to localStorage
     const companyDataString = localStorage.getItem('siteflow-company');
     const companyData = companyDataString ? JSON.parse(companyDataString) : {};
     
@@ -227,53 +207,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
 
               {eInvEnabled && (
                 <div className="space-y-6 pt-4">
-                  <FormField
-                    control={form.control}
-                    name="eInvVersion"
-                    render={({ field }) => (
-                        <FormItem className="space-y-2">
-                          <FormLabel>E-Invoicing Version</FormLabel>
-                            <RadioGroup 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value} 
-                                className="flex gap-4"
-                            >
-                                <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                    <RadioGroupItem value="v1" id="v1" />
-                                </FormControl>
-                                <Label htmlFor="v1">v1.0</Label>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                    <RadioGroupItem value="v2" id="v2" />
-                                </FormControl>
-                                <Label htmlFor="v2">v2.0 (with Digital Signature)</Label>
-                                </FormItem>
-                            </RadioGroup>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                  />
-                  {eInvVersion === 'v2' && (
-                    <FormField
-                      control={form.control}
-                      name="digitalSignature"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Digital Signature PIN{eInvEnabled && <RequiredIndicator />}</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter your 6-digit PIN" {...field} />
-                          </FormControl>
-                          <p className="text-xs text-muted-foreground">Required for v2.0 e-invoicing.</p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  
-                  <Separator/>
-
                   <div className="space-y-4">
                      <h3 className="text-lg font-semibold">Business Identifiers</h3>
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -327,36 +260,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 </FormItem>
                             )}
                         />
-                        {isMalaysiaBased && (
-                          <>
-                            <FormField
-                                control={form.control}
-                                name="sstNumber"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>SST Registration Number</FormLabel>
-                                    <FormControl>
-                                    <Input placeholder='e.g., J12-3456-78901234 or "NA"' {...field} value={field.value ?? ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="tourismTax"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tourism Tax Registration No. (Optional)</FormLabel>
-                                    <FormControl>
-                                    <Input placeholder='Optional or "NA"' {...field} value={field.value ?? ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                          </>
-                        )}
                       </div>
                   </div>
                   
@@ -484,27 +387,6 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
                                 )}
                             />
                         )}
-                     </div>
-                  </div>
-                  
-                   <Separator/>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Financial Details</h3>
-                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <FormField
-                            control={form.control}
-                            name="bankAccount"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Bank Account Number (Optional)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Enter bank account number" {...field} value={field.value ?? ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                      </div>
                   </div>
                 </div>
