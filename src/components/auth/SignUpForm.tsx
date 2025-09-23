@@ -154,7 +154,7 @@ export default function SignUpForm() {
               <FormLabel>Password</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                  <Input type={showPassword ? 'text' : 'password'} {...field} />
                   <Button
                     type="button"
                     variant="ghost"
@@ -162,7 +162,7 @@ export default function SignUpForm() {
                     className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:bg-transparent"
                     onClick={() => setShowPassword(prev => !prev)}
                   >
-                    {showPassword ? <EyeOff /> : <Eye />}
+                    {showPassword ? <Eye /> : <EyeOff />}
                     <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                   </Button>
                 </div>
@@ -180,7 +180,7 @@ export default function SignUpForm() {
               <FormLabel>Confirm Password</FormLabel>
               <FormControl>
                  <div className="relative">
-                  <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                  <Input type={showConfirmPassword ? 'text' : 'password'} {...field} />
                   <Button
                     type="button"
                     variant="ghost"
@@ -188,7 +188,7 @@ export default function SignUpForm() {
                     className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(prev => !prev)}
                   >
-                    {showConfirmPassword ? <EyeOff /> : <Eye />}
+                    {showConfirmPassword ? <Eye /> : <EyeOff />}
                     <span className="sr-only">{showConfirmPassword ? 'Hide password' : 'Show password'}</span>
                   </Button>
                 </div>
