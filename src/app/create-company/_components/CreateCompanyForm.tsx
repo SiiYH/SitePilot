@@ -24,6 +24,12 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState("")
 
+  const getIndustryDisplay = (code: string) => {
+    const industry = industries.find((industry) => industry.Code === code);
+    if (!industry) return "Select industry...";
+    return `(${industry.Code}) ${industry.Description}`;
+  }
+
   return (
     <Card className="mt-6">
       <CardContent className="pt-6">
@@ -46,9 +52,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                   className="w-full justify-between"
                 >
                   <span className="truncate">
-                    {value
-                      ? industries.find((industry) => industry.Code === value)?.Description
-                      : "Select industry..."}
+                    {getIndustryDisplay(value)}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -62,10 +66,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                       {industries.map((industry) => (
                         <CommandItem
                           key={industry.Code}
-                          value={industry.Description}
+                          value={industry.Code}
                           onSelect={(currentValue) => {
-                            const selectedIndustry = industries.find(i => i.Description.toLowerCase() === currentValue.toLowerCase());
-                            setValue(selectedIndustry ? selectedIndustry.Code : "")
+                            setValue(currentValue === value ? "" : currentValue)
                             setOpen(false)
                           }}
                         >
@@ -75,7 +78,8 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                               value === industry.Code ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {industry.Description}
+                          <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm'>{industry.Code}</span>
+                          <span className='flex-1'>{industry.Description}</span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
