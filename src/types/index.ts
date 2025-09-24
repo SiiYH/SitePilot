@@ -70,6 +70,7 @@ export interface Claim {
   submittedBy: string; // User ID
   receiptImageUrl?: string;
   receiptImageHint?: string;
+  remark?: string;
 }
 
 export interface AttendanceRecord {

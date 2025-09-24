@@ -141,7 +141,7 @@ export const mockClaims: Claim[] = [
   { id: 'claim-1', projectId: 'proj-1', title: 'Progress Claim - May 2024', amount: 50000, status: 'Paid', date: '2024-05-15', submittedBy: 'user-1' },
   { id: 'claim-2', projectId: 'proj-1', title: 'Progress Claim - June 2024', amount: 75000, status: 'Pending', date: '2024-06-20', submittedBy: 'user-4' },
   { id: 'claim-3', projectId: 'proj-2', title: 'Materials Deposit', amount: 120000, status: 'Paid', date: '2024-04-30', submittedBy: 'user-1', receiptImageUrl: 'https://picsum.photos/seed/receipt1/600/800', receiptImageHint: 'purchase receipt' },
-  { id: 'claim-4', projectId: 'proj-3', title: 'Final Finishing Works', amount: 25000, status: 'Overdue', date: '2024-06-01', submittedBy: 'user-4' },
+  { id: 'claim-4', projectId: 'proj-3', title: 'Final Finishing Works', amount: 25000, status: 'Overdue', date: '2024-06-01', submittedBy: 'user-4', remark: 'Payment is late due to incomplete paperwork. Please follow up with the subcontractor.' },
   { id: 'claim-5', projectId: 'proj-2', title: 'Seismic Damper Delivery', amount: 85000, status: 'Pending', date: '2024-06-18', submittedBy: 'user-1', receiptImageUrl: 'https://picsum.photos/seed/receipt2/600/800', receiptImageHint: 'delivery invoice' },
 ];
 

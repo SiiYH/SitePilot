@@ -5,16 +5,20 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mockClaims, mockProjects, mockUsers } from '@/lib/data';
 import { Claim, Project, User } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/use-auth';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+
 
 async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User } | undefined> {
   // In a real app, this would be a database call. We find the index to modify it later.
@@ -60,37 +64,51 @@ const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; 
 export default function ClaimDetailsPage() {
   const params = useParams();
   const id = params.id as string;
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User } | null>(null);
+  const [remark, setRemark] = useState('');
+  const [isEditingRemark, setIsEditingRemark] = useState(false);
 
   useEffect(() => {
     if (id) {
         getClaim(id).then(data => {
             if (data) {
                 setClaimData(data);
+                setRemark(data.claim.remark || '');
             } else {
                 notFound();
             }
         });
     }
   }, [id]);
-  
+
   if (!claimData) {
-    // This can be a loading state or the notFound() for when data is truly not there.
-    // For now, we'll return null or a loader.
     return null;
   }
 
   const { claim, project, submittedBy } = claimData;
 
   const handleStatusChange = (newStatus: Claim['status']) => {
-    // In a real app, you'd call an API to update this.
-    // For this mock, we update the state directly.
     const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
     if(claimIndex !== -1) {
         mockClaims[claimIndex].status = newStatus;
     }
     setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, status: newStatus } } : null);
   };
+  
+  const handleSaveRemark = () => {
+    const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
+    if(claimIndex !== -1) {
+        mockClaims[claimIndex].remark = remark;
+    }
+     setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, remark: remark } } : null);
+     setIsEditingRemark(false);
+     toast({
+        title: "Remark Saved",
+        description: "The remark has been successfully updated.",
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -106,104 +124,153 @@ export default function ClaimDetailsPage() {
       </div>
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <CardTitle>{claim.title}</CardTitle>
-                    <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
-                        {claim.status}
-                    </Badge>
-                </div>
-                <CardDescription>
-                    Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <InfoField icon={DollarSign} label="Amount">
-                        <p className="text-2xl font-bold">${claim.amount.toLocaleString()}</p>
-                    </InfoField>
-
-                    {project && (
-                        <InfoField icon={GanttChartSquare} label="Associated Project">
-                            <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
-                                {project.name}
-                            </Link>
-                        </InfoField>
-                    )}
-                    {submittedBy && (
-                        <InfoField icon={UserIcon} label="Submitted By">
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={submittedBy.avatarUrl} alt={submittedBy.name} />
-                                    <AvatarFallback>{getInitials(submittedBy.name)}</AvatarFallback>
-                                </Avatar>
-                                <p className="font-medium">{submittedBy.name}</p>
-                            </div>
-                        </InfoField>
-                    )}
-                </div>
-
-                <Card className="bg-muted/40">
-                    <CardHeader>
-                        <CardTitle className="text-xl">Manage Claim</CardTitle>
-                        <CardDescription>Update the status of this payment claim.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="max-w-xs">
-                            <Select value={claim.status} onValueChange={handleStatusChange}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Set status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Pending">Pending</SelectItem>
-                                    <SelectItem value="Paid">Paid</SelectItem>
-                                    <SelectItem value="Overdue">Overdue</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardContent>
-                </Card>
-            </CardContent>
-        </Card>
-        
-        {claim.receiptImageUrl && (
+        <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Paperclip className="h-5 w-5 text-primary" />
-                        <span>Attached Receipt</span>
-                    </CardTitle>
-                    <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
+                    <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <CardTitle>{claim.title}</CardTitle>
+                        <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
+                            {claim.status}
+                        </Badge>
+                    </div>
+                    <CardDescription>
+                        Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
+                    </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
-                                <Image
-                                    src={claim.receiptImageUrl}
-                                    alt="Receipt for claim"
-                                    fill
-                                    className="object-cover"
-                                    data-ai-hint={claim.receiptImageHint}
-                                />
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <InfoField icon={DollarSign} label="Amount">
+                            <p className="text-2xl font-bold">${claim.amount.toLocaleString()}</p>
+                        </InfoField>
+
+                        {project && (
+                            <InfoField icon={GanttChartSquare} label="Associated Project">
+                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
+                                    {project.name}
+                                </Link>
+                            </InfoField>
+                        )}
+                        {submittedBy && (
+                            <InfoField icon={UserIcon} label="Submitted By">
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={submittedBy.avatarUrl} alt={submittedBy.name} />
+                                        <AvatarFallback>{getInitials(submittedBy.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <p className="font-medium">{submittedBy.name}</p>
+                                </div>
+                            </InfoField>
+                        )}
+                    </div>
+
+                    <Card className="bg-muted/40">
+                        <CardHeader>
+                            <CardTitle className="text-xl">Manage Claim</CardTitle>
+                            <CardDescription>Update the status of this payment claim.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="max-w-xs">
+                                <Select value={claim.status} onValueChange={handleStatusChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Set status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Pending">Pending</SelectItem>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
-                             <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
-                             <div className="relative aspect-video w-full sm:aspect-[3/4]">
-                                <Image
-                                    src={claim.receiptImageUrl}
-                                    alt="Receipt for claim"
-                                    fill
-                                    className="object-contain"
-                                />
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                        </CardContent>
+                    </Card>
                 </CardContent>
             </Card>
-        )}
+
+            <Card>
+                 <CardHeader>
+                    <div className="flex items-center justify-between">
+                         <CardTitle className="flex items-center gap-2">
+                            <MessageSquare className="h-5 w-5 text-primary" />
+                            <span>Director's Remark</span>
+                        </CardTitle>
+                        {user?.role === 'Director' && !isEditingRemark && (
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)}>
+                                <Edit className="h-4 w-4 mr-2"/>
+                                Edit
+                            </Button>
+                        )}
+                    </div>
+                 </CardHeader>
+                 <CardContent>
+                    {isEditingRemark && user?.role === 'Director' ? (
+                        <div className="space-y-4">
+                            <Textarea 
+                                placeholder="Add a remark for this claim..."
+                                value={remark}
+                                onChange={(e) => setRemark(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                            {claim.remark || "No remark added."}
+                        </p>
+                    )}
+                 </CardContent>
+                 {isEditingRemark && user?.role === 'Director' && (
+                    <CardFooter className="justify-end gap-2">
+                        <Button variant="ghost" onClick={() => {
+                            setIsEditingRemark(false);
+                            setRemark(claim.remark || '');
+                        }}>Cancel</Button>
+                        <Button onClick={handleSaveRemark}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Remark
+                        </Button>
+                    </CardFooter>
+                 )}
+            </Card>
+        </div>
+        
+        <div className="space-y-6">
+            {claim.receiptImageUrl && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Paperclip className="h-5 w-5 text-primary" />
+                            <span>Attached Receipt</span>
+                        </CardTitle>
+                        <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                                    <Image
+                                        src={claim.receiptImageUrl}
+                                        alt="Receipt for claim"
+                                        fill
+                                        className="object-cover"
+                                        data-ai-hint={claim.receiptImageHint}
+                                    />
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="p-0 sm:max-w-3xl border-0 bg-transparent shadow-none">
+                                <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
+                                <div className="relative aspect-video w-full sm:aspect-[3/4]">
+                                    <Image
+                                        src={claim.receiptImageUrl}
+                                        alt="Receipt for claim"
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </CardContent>
+                </Card>
+            )}
+        </div>
       </div>
     </div>
   );
