@@ -1,6 +1,6 @@
 
-import { mockProjects, mockClaims } from '@/lib/data';
-import { Project, Claim } from '@/types';
+import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
+import { Project, Claim, User } from '@/types';
 import ClaimsOverview from '@/components/dashboard/views/admin/ClaimsOverview';
 
 async function getClaims(): Promise<Claim[]> {
@@ -11,9 +11,14 @@ async function getProjects(): Promise<Project[]> {
   return mockProjects;
 }
 
+async function getUsers(): Promise<User[]> {
+  return mockUsers;
+}
+
 export default async function ClaimsPage() {
   const claims = await getClaims();
   const projects = await getProjects();
+  const users = await getUsers();
   
   return (
     <div className="space-y-6">
@@ -23,7 +28,7 @@ export default async function ClaimsPage() {
           View and manage all payment claims.
         </p>
       </div>
-      <ClaimsOverview claims={claims} projects={projects} />
+      <ClaimsOverview claims={claims} projects={projects} users={users} />
     </div>
   );
 }

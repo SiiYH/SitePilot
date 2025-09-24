@@ -31,7 +31,7 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-            <ClaimsOverview claims={claims} projects={projects} />
+            <ClaimsOverview claims={claims} projects={projects} users={users} />
         </div>
         <div className="lg:col-span-1">
             <AttendanceSummary attendance={attendance} users={users} />

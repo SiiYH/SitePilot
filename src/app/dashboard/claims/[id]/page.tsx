@@ -3,25 +3,37 @@
 
 import { notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockClaims, mockProjects } from '@/lib/data';
-import { Claim, Project } from '@/types';
+import { mockClaims, mockProjects, mockUsers } from '@/lib/data';
+import { Claim, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-async function getClaim(id: string): Promise<{ claim: Claim; project?: Project } | undefined> {
+async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User } | undefined> {
   // In a real app, this would be a database call. We find the index to modify it later.
   const claim = mockClaims.find(c => c.id === id);
   if (!claim) {
     return undefined;
   }
   const project = mockProjects.find(p => p.id === claim.projectId);
-  return { claim, project };
+  const submittedBy = mockUsers.find(u => u.id === claim.submittedBy);
+  return { claim, project, submittedBy };
 }
+
+const getInitials = (name: string) => {
+    if (!name) return '';
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+};
+
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Paid': 'default',
@@ -44,7 +56,7 @@ const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; 
 };
 
 export default function ClaimDetailsPage({ params }: { params: { id: string } }) {
-  const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project } | null>(null);
+  const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User } | null>(null);
 
   useEffect(() => {
     getClaim(params.id).then(data => {
@@ -60,7 +72,7 @@ export default function ClaimDetailsPage({ params }: { params: { id: string } })
     return null;
   }
 
-  const { claim, project } = claimData;
+  const { claim, project, submittedBy } = claimData;
 
   const handleStatusChange = (newStatus: Claim['status']) => {
     // In a real app, you'd call an API to update this.
@@ -108,6 +120,17 @@ export default function ClaimDetailsPage({ params }: { params: { id: string } })
                         <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
                             {project.name}
                         </Link>
+                    </InfoField>
+                )}
+                 {submittedBy && (
+                     <InfoField icon={UserIcon} label="Submitted By">
+                        <div className="flex items-center gap-2">
+                             <Avatar className="h-8 w-8">
+                                <AvatarImage src={submittedBy.avatarUrl} alt={submittedBy.name} />
+                                <AvatarFallback>{getInitials(submittedBy.name)}</AvatarFallback>
+                            </Avatar>
+                            <p className="font-medium">{submittedBy.name}</p>
+                        </div>
                     </InfoField>
                 )}
             </div>

@@ -2,11 +2,12 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { Claim } from "@/types";
+import { Claim, User } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { mockUsers } from "@/lib/data";
 
 interface ClaimsTabProps {
   claims: Claim[];
@@ -19,6 +20,10 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
         router.push(`/dashboard/claims/${claimId}`);
     }
     
+    const getUserName = (userId: string) => {
+        return mockUsers.find(u => u.id === userId)?.name || 'N/A';
+    }
+
     const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
       'Paid': 'default',
       'Pending': 'secondary',
@@ -37,6 +42,7 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Claim ID</TableHead>
+                            <TableHead>Submitted By</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead className="text-right">Status</TableHead>
@@ -50,6 +56,7 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
                                 className="cursor-pointer"
                             >
                                 <TableCell className="font-medium">#{claim.id.split('-')[1]}</TableCell>
+                                <TableCell>{getUserName(claim.submittedBy)}</TableCell>
                                 <TableCell>${claim.amount.toLocaleString()}</TableCell>
                                 <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
                                 <TableCell className="text-right">

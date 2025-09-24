@@ -66,6 +66,7 @@ export interface Claim {
   amount: number;
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;
+  submittedBy: string; // User ID
 }
 
 export interface AttendanceRecord {
