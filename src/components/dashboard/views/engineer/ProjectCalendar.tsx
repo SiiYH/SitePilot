@@ -69,8 +69,9 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
         </button>
         {activeProjectsCount > 0 && (
           <Badge
-            variant={selected ? 'primary' : 'secondary'}
-            className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs"
+            className={cn("absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs font-bold",
+              selected ? "bg-primary-foreground text-primary" : "bg-secondary text-secondary-foreground"
+            )}
           >
             {activeProjectsCount}
           </Badge>
