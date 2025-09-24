@@ -174,12 +174,15 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-4 sm:h-10">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="claims">Claims</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="claims">Claims</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-6">
           <OverviewTab project={project} />
+        </TabsContent>
+        <TabsContent value="claims" className="mt-6">
+          <ClaimsTab claims={claims} />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
@@ -203,13 +206,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="claims" className="mt-6">
-          <ClaimsTab claims={claims} />
-        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-
-    
