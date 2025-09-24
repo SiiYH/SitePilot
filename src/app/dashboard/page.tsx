@@ -8,7 +8,7 @@ async function getCurrentUser(): Promise<User | undefined> {
   // For demo purposes, we'll hardcode the admin user.
   // In a real app, you would get this from your auth provider.
   // To test other roles, change 'Admin' to 'Engineer' or 'Director'
-  return mockUsers.find(u => u.role === 'Admin');
+  return mockUsers.find(u => u.role === 'Engineer');
 }
 
 async function getProjectsForUser(user: User): Promise<Project[]> {
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
       case 'Director':
         return <DirectorDashboard projects={projects} />;
       case 'Engineer':
-        return <EngineerDashboard tasks={tasks} user={user} />;
+        return <EngineerDashboard projects={projects} tasks={tasks} user={user} />;
       default:
         return <div>Welcome! Your dashboard is being set up.</div>;
     }
