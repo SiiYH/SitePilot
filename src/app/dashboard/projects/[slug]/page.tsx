@@ -48,7 +48,7 @@ const getInitials = (name: string) => {
 const InfoField = ({ label, value, unit, currency }: { label: string; value?: string | number | null; unit?: string; currency?: string }) => {
     if (!value && value !== 0) return null;
     
-    let displayValue = value;
+    let displayValue: string | number = value;
     if (typeof value === 'number' && currency) {
       displayValue = value.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
     } else if (typeof value === 'number') {
