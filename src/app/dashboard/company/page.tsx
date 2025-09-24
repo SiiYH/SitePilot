@@ -81,7 +81,7 @@ export default function CompanyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Company Information</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{companyData?.name || 'Company Information'}</h2>
         <p className="text-muted-foreground">View and manage your company's details and settings.</p>
       </div>
 
@@ -89,8 +89,7 @@ export default function CompanyPage() {
         <CardHeader>
             <div className="flex items-start justify-between">
                 <div>
-                    <CardTitle>{companyData?.name || 'Company Information'}</CardTitle>
-                    {companyData?.name && <CardDescription>Details for {companyData.name}.</CardDescription>}
+                    {companyData?.name && <CardTitle>Details for {companyData.name}</CardTitle>}
                 </div>
                  {companyData && (
                     <Button variant="outline" size="sm" asChild>
