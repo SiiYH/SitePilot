@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { mockProjects } from '@/lib/data'; // to update mock data
+import { Separator } from '@/components/ui/separator';
 
 interface EditProjectFormProps {
   project: Project;
@@ -31,6 +32,16 @@ const formSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   deadline: z.date({ required_error: 'A deadline is required.' }),
   assignedEngineers: z.array(z.string()).min(1, 'At least one engineer must be assigned.'),
+  jobNo: z.string().optional(),
+  orderNo: z.string().optional(),
+  siteName: z.string().optional(),
+  jobLocation: z.string().optional(),
+  distance: z.coerce.number().optional(),
+  performanceBondNo: z.string().optional(),
+  performanceBondAmount: z.coerce.number().optional(),
+  grossProfit: z.coerce.number().optional(),
+  marginProfit: z.coerce.number().optional(),
+  insurancePolicyNo: z.string().optional(),
 });
 
 export default function EditProjectForm({ project, engineers }: EditProjectFormProps) {
@@ -45,6 +56,16 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       description: project.description,
       deadline: parseISO(project.deadline),
       assignedEngineers: project.assignedEngineers,
+      jobNo: project.jobNo || '',
+      orderNo: project.orderNo || '',
+      siteName: project.siteName || '',
+      jobLocation: project.jobLocation || '',
+      distance: project.distance || undefined,
+      performanceBondNo: project.performanceBondNo || '',
+      performanceBondAmount: project.performanceBondAmount || undefined,
+      grossProfit: project.grossProfit || undefined,
+      marginProfit: project.marginProfit || undefined,
+      insurancePolicyNo: project.insurancePolicyNo || '',
     },
   });
 
@@ -84,32 +105,160 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Apex Tower" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="A short description of the project." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Apex Tower" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job/Site Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="A short description of the project." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Separator className="my-4"/>
+              <h4 className="text-sm font-semibold">Site Information</h4>
+              
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                 <FormField
+                    control={form.control}
+                    name="jobNo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Job No.</FormLabel>
+                        <FormControl><Input placeholder="e.g., JB-001" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="orderNo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Order No.</FormLabel>
+                        <FormControl><Input placeholder="e.g., ORD-2024-001" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+               </div>
+                <FormField
+                    control={form.control}
+                    name="siteName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Site Name</FormLabel>
+                        <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="jobLocation"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Job Location</FormLabel>
+                        <FormControl><Input placeholder="e.g., Kuala Lumpur City Centre" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="distance"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Distance (km)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+              <Separator className="my-4"/>
+              <h4 className="text-sm font-semibold">Financials & Insurance</h4>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                    control={form.control}
+                    name="performanceBondNo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Performance Bond No.</FormLabel>
+                        <FormControl><Input placeholder="e.g., PB-12345" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="performanceBondAmount"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Performance Bond Amt.</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                    control={form.control}
+                    name="grossProfit"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Gross Profit</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="marginProfit"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Margin Profit (%)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 20" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+                 <FormField
+                    control={form.control}
+                    name="insurancePolicyNo"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Insurance Policy No.</FormLabel>
+                        <FormControl><Input placeholder="e.g., INS-98765" {...field} /></FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+
+              <Separator className="my-4"/>
+              <h4 className="text-sm font-semibold">Schedule & Team</h4>
             <FormField
               control={form.control}
               name="deadline"

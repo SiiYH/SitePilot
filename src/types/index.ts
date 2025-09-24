@@ -46,6 +46,16 @@ export interface Project {
   tasks: Task[];
   documents: Document[];
   milestones: Milestone[];
+  jobNo?: string;
+  orderNo?: string;
+  siteName?: string;
+  jobLocation?: string;
+  distance?: number;
+  performanceBondNo?: string;
+  performanceBondAmount?: number;
+  grossProfit?: number;
+  marginProfit?: number;
+  insurancePolicyNo?: string;
 }
 
 export interface Claim {

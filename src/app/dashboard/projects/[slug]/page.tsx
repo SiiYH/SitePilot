@@ -3,17 +3,18 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { mockProjects } from '@/lib/data';
-import { Project, User, Task, Document, Milestone } from '@/types';
+import { Project, User } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, CheckCircle, Clock, Edit, GanttChartSquare } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
 
 async function getProject(slug: string): Promise<Project | undefined> {
   // In a real app, this would be a database query.
@@ -24,6 +25,17 @@ async function getProject(slug: string): Promise<Project | undefined> {
 async function getCurrentUser(): Promise<User> {
     return { id: 'user-2', name: 'Jane Smith', email: 'admin@sitepilot.com', role: 'Admin', avatarUrl: '' };
 }
+
+const InfoField = ({ label, value, unit }: { label: string; value?: string | number | null; unit?: string }) => {
+    if (!value) return null;
+    return (
+        <div className="space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p className="text-sm break-words">{value}{unit}</p>
+        </div>
+    );
+};
+
 
 function OverviewTab({ project }: { project: Project }) {
     const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
@@ -36,7 +48,11 @@ function OverviewTab({ project }: { project: Project }) {
                     <CardTitle>Project Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">{project.description}</p>
+                    <div>
+                        <h3 className="text-base font-semibold mb-2">Job/Site Description</h3>
+                        <p className="text-muted-foreground">{project.description}</p>
+                    </div>
+                    <Separator/>
                      <div>
                         <div className="mb-1 flex justify-between text-sm font-medium">
                             <span>Overall Progress</span>
@@ -47,6 +63,24 @@ function OverviewTab({ project }: { project: Project }) {
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4"/>
                         Project Deadline: {format(new Date(project.deadline), 'PPP')}
+                    </div>
+                     <Separator/>
+                    <h3 className="text-base font-semibold">Site Information</h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <InfoField label="Job No." value={project.jobNo} />
+                        <InfoField label="Order No." value={project.orderNo} />
+                        <InfoField label="Site Name" value={project.siteName} />
+                        <InfoField label="Job Location" value={project.jobLocation} />
+                        <InfoField label="Distance" value={project.distance} unit=" km" />
+                    </div>
+                    <Separator/>
+                     <h3 className="text-base font-semibold">Financials & Insurance</h3>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <InfoField label="Performance Bond No." value={project.performanceBondNo} />
+                        <InfoField label="Performance Bond Amt." value={project.performanceBondAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+                        <InfoField label="Gross Profit" value={project.grossProfit?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+                        <InfoField label="Margin Profit" value={project.marginProfit} unit="%" />
+                        <InfoField label="Insurance Policy No." value={project.insurancePolicyNo} />
                     </div>
                 </CardContent>
             </Card>
@@ -142,6 +176,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
           <Card>
             <CardHeader>
               <CardTitle>Task Management</CardTitle>
+              <CardDescription>All tasks associated with this project.</CardDescription>
             </CardHeader>
             <CardContent>
               <TasksTable tasks={project.tasks} user={user} />
@@ -152,6 +187,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
           <Card>
             <CardHeader>
               <CardTitle>Document Repository</CardTitle>
+              <CardDescription>All documents related to this project.</CardDescription>
             </CardHeader>
             <CardContent>
               <DocumentsList documents={project.documents} user={user} />
