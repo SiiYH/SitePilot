@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
@@ -62,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('sitepilot-user');
-    router.push('/welcome');
+    localStorage.removeItem('sitepilot-company');
+    router.push('/login');
   };
 
   const value = {

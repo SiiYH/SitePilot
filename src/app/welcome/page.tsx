@@ -44,7 +44,7 @@ export default function WelcomePage() {
            </Card>
         </div>
          <p className="mt-8 text-center text-sm text-muted-foreground">
-          If you need to log in to a different account, you can <Link href="/login" className="font-medium text-primary hover:underline">log out and log in again</Link>.
+          If you need to log in to a different account, you can <Link href="/login" className="font-medium text-primary hover:underline">log in</Link>.
         </p>
       </div>
     </div>
