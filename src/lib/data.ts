@@ -52,7 +52,7 @@ export const mockProjects: Project[] = [
     performanceBondAmount: 500000,
     grossProfit: 2000000,
     marginProfit: 20,
-    insurancePolicyNo: 'INS-98765',
+    insuranceAmount: 100000,
     tasks: [
       { id: 't1-1', title: 'Foundation Pouring', assignedTo: 'user-1', status: 'Completed', dueDate: '2023-08-15' },
       { id: 't1-2', title: 'Structural Steel Erection (Floors 1-25)', assignedTo: 'user-4', status: 'Completed', dueDate: '2024-02-28' },

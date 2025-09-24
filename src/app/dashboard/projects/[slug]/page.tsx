@@ -80,7 +80,7 @@ function OverviewTab({ project }: { project: Project }) {
                         <InfoField label="Performance Bond Amt." value={project.performanceBondAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
                         <InfoField label="Gross Profit" value={project.grossProfit?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
                         <InfoField label="Margin Profit" value={project.marginProfit} unit="%" />
-                        <InfoField label="Insurance Policy No." value={project.insurancePolicyNo} />
+                        <InfoField label="Insurance Amt." value={project.insuranceAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
                     </div>
                 </CardContent>
             </Card>

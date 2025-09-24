@@ -41,7 +41,7 @@ const formSchema = z.object({
   performanceBondAmount: z.coerce.number().optional(),
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
-  insurancePolicyNo: z.string().optional(),
+  insuranceAmount: z.coerce.number().optional(),
 });
 
 export default function EditProjectForm({ project, engineers }: EditProjectFormProps) {
@@ -65,7 +65,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       performanceBondAmount: project.performanceBondAmount || undefined,
       grossProfit: project.grossProfit || undefined,
       marginProfit: project.marginProfit || undefined,
-      insurancePolicyNo: project.insurancePolicyNo || '',
+      insuranceAmount: project.insuranceAmount || undefined,
     },
   });
 
@@ -246,11 +246,11 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                 </div>
                  <FormField
                     control={form.control}
-                    name="insurancePolicyNo"
+                    name="insuranceAmount"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Insurance Policy No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., INS-98765" {...field} /></FormControl>
+                        <FormLabel>Insurance Amt.</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}

@@ -47,7 +47,7 @@ const formSchema = z.object({
   performanceBondAmount: z.coerce.number().optional(),
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
-  insurancePolicyNo: z.string().optional(),
+  insuranceAmount: z.coerce.number().optional(),
 });
 
 const createSlug = (name: string) => {
@@ -265,11 +265,11 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                 </div>
                  <FormField
                     control={form.control}
-                    name="insurancePolicyNo"
+                    name="insuranceAmount"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Insurance Policy No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., INS-98765" {...field} /></FormControl>
+                        <FormLabel>Insurance Amt.</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
