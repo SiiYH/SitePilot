@@ -94,7 +94,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       setIsLoading(false);
       // It's good practice to push the router to the updated project page
       // to see the changes reflect.
-      router.push(`/dashboard/projects/${project.slug}`);
+      router.replace(`/dashboard/projects/${project.slug}`);
       router.refresh(); // To ensure server component re-fetches data
     }, 1000);
   };
@@ -403,3 +403,5 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     </Card>
   );
 }
+
+    
