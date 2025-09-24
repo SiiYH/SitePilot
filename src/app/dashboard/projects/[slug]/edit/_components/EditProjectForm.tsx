@@ -338,52 +338,48 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assign Engineers</FormLabel>
-                  <Controller
-                    control={form.control}
-                    name="assignedEngineers"
-                    render={({ field }) => (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox" className="w-full justify-between">
-                            {field.value?.length > 0
-                              ? `${field.value.length} engineer(s) selected`
-                              : 'Select engineers...'}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                          <Command>
-                            <CommandInput placeholder="Search engineers..." />
-                            <CommandList>
-                                <CommandEmpty>No engineers found.</CommandEmpty>
-                                <CommandGroup>
-                                {engineers.map((engineer) => (
-                                    <CommandItem
-                                    key={engineer.id}
-                                    onSelect={() => {
-                                        const selected = field.value || [];
-                                        const newValue = selected.includes(engineer.id)
-                                        ? selected.filter((id) => id !== engineer.id)
-                                        : [...selected, engineer.id];
-                                        field.onChange(newValue);
-                                    }}
-                                    >
-                                    <Check
-                                        className={cn(
-                                        'mr-2 h-4 w-4',
-                                        field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
-                                        )}
-                                    />
-                                    {engineer.name}
-                                    </CommandItem>
-                                ))}
-                                </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                          {field.value?.length > 0
+                            ? `${field.value.length} engineer(s) selected`
+                            : 'Select engineers...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search engineers..." />
+                        <CommandList>
+                            <CommandEmpty>No engineers found.</CommandEmpty>
+                            <CommandGroup>
+                            {engineers.map((engineer) => (
+                                <CommandItem
+                                key={engineer.id}
+                                onSelect={() => {
+                                    const selected = field.value || [];
+                                    const newValue = selected.includes(engineer.id)
+                                    ? selected.filter((id) => id !== engineer.id)
+                                    : [...selected, engineer.id];
+                                    field.onChange(newValue);
+                                }}
+                                >
+                                <Check
+                                    className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                />
+                                {engineer.name}
+                                </CommandItem>
+                            ))}
+                            </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -403,5 +399,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     </Card>
   );
 }
+
+    
 
     
