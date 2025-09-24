@@ -235,9 +235,9 @@ export default function ClaimDetailsPage() {
                             <span>Director's Remark</span>
                         </CardTitle>
                         {user?.role === 'Director' && !isEditingRemark && (
-                            <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)}>
-                                <Edit className="h-4 w-4 mr-2"/>
-                                Edit
+                            <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)} className="p-2 h-auto sm:h-9 sm:px-3 sm:py-2">
+                                <Edit className="h-4 w-4 sm:mr-2"/>
+                                <span className="sr-only sm:not-sr-only">Edit</span>
                             </Button>
                         )}
                     </div>
