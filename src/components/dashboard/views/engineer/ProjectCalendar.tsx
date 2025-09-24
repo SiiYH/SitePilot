@@ -3,10 +3,14 @@
 
 import { useState } from 'react';
 import { Project } from '@/types';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { isWithinInterval, startOfDay, parseISO } from 'date-fns';
+import { isWithinInterval, startOfDay, parseISO, format } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 interface ProjectCalendarProps {
   projects: Project[];
@@ -37,6 +41,10 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
     interval: getProjectInterval(p),
   }));
 
+  const activeProjectsForSelectedDay = date
+    ? projectsWithIntervals.filter(p => p.interval && isWithinInterval(startOfDay(date), p.interval))
+    : [];
+
   const DayWithProjectCount = ({ date }: { date: Date }) => {
     const day = startOfDay(date);
     const activeProjectsCount = projectsWithIntervals.filter(p => 
@@ -63,10 +71,10 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
       <CardHeader>
         <CardTitle>Project Calendar</CardTitle>
         <CardDescription>
-          A count of your active projects on each day.
+          A count of your active projects on each day. Click a day to see the list.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center">
+      <CardContent className="flex flex-col items-center gap-6">
         <Calendar
           mode="single"
           selected={date}
@@ -76,6 +84,38 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
             Day: ({ date }) => <DayWithProjectCount date={date as Date} />,
           }}
         />
+        {date && (
+            <div className='w-full'>
+                <Separator />
+                <div className='pt-6'>
+                    <h4 className="text-lg font-semibold">
+                        Active Projects for <span className="text-primary">{format(date, 'PPP')}</span>
+                    </h4>
+                    {activeProjectsForSelectedDay.length > 0 ? (
+                        <ul className="mt-4 space-y-3">
+                            {activeProjectsForSelectedDay.map(project => (
+                                <li key={project.id} className="rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                                    <div className="flex items-center justify-between">
+                                        <div className='space-y-1'>
+                                            <p className="font-medium">{project.name}</p>
+                                            <p className="text-sm text-muted-foreground">Deadline: {format(parseISO(project.deadline), 'PPP')}</p>
+                                        </div>
+                                        <Button asChild variant="ghost" size="icon">
+                                            <Link href={`/dashboard/projects/${project.slug}`}>
+                                                <ArrowRight />
+                                                <span className="sr-only">View Project</span>
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="mt-4 text-sm text-muted-foreground">No active projects on this day.</p>
+                    )}
+                </div>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
