@@ -123,8 +123,8 @@ export default function ClaimDetailsPage() {
         <p className="text-muted-foreground">Details for claim #{claim.id.split('-')[1]}</p>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="md:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
                     <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -189,7 +189,7 @@ export default function ClaimDetailsPage() {
             
         </div>
         
-        <div className="lg:col-span-1 space-y-6">
+        <div className="md:col-span-1 space-y-6">
             {claim.receiptImageUrl && (
                 <Card>
                     <CardHeader>
