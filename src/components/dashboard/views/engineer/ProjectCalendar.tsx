@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { isWithinInterval, startOfDay, parseISO, format, isSameDay } from 'date-fns';
+import { isWithinInterval, startOfDay, parseISO, format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -69,7 +69,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
         </button>
         {activeProjectsCount > 0 && (
           <Badge
-            variant={selected ? 'destructive' : 'secondary'}
+            variant={selected ? 'primary' : 'secondary'}
             className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs"
           >
             {activeProjectsCount}
@@ -92,7 +92,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
           mode="single"
           selected={date}
           onSelect={setDate}
-          className="rounded-md border p-4"
+          className="rounded-md"
           components={{
             Day: DayWithProjectCount,
           }}
@@ -100,14 +100,14 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
         {date && (
             <div className='w-full'>
                 <Separator />
-                <div className='pt-6'>
-                    <h4 className="text-lg font-semibold">
+                <div className='mt-6 rounded-lg bg-muted/30 p-4'>
+                    <h4 className="text-md font-semibold">
                         Active Projects for <span className="text-primary">{format(date, 'PPP')}</span>
                     </h4>
                     {activeProjectsForSelectedDay.length > 0 ? (
-                        <ul className="mt-4 space-y-3">
+                        <ul className="mt-4 space-y-2">
                             {activeProjectsForSelectedDay.map(project => (
-                                <li key={project.id} className="rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                                <li key={project.id} className="rounded-lg border bg-background p-3 transition-colors hover:bg-muted/50">
                                     <div className="flex items-center justify-between">
                                         <div className='space-y-1'>
                                             <p className="font-medium">{project.name}</p>
@@ -124,7 +124,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
                             ))}
                         </ul>
                     ) : (
-                        <p className="mt-4 text-sm text-muted-foreground">No active projects on this day.</p>
+                        <p className="mt-2 text-sm text-muted-foreground">No active projects on this day.</p>
                     )}
                 </div>
             </div>
