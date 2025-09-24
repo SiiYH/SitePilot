@@ -2,10 +2,11 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockProjects, mockClaims } from '@/lib/data';
+import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
 import { Project, User, Claim } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
@@ -13,7 +14,7 @@ import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, CheckCircle, Clock, Edit } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Edit, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 
@@ -24,12 +25,25 @@ async function getProject(slug: string): Promise<Project | undefined> {
 
 // This function would typically get the current user from context/session
 async function getCurrentUser(): Promise<User> {
-    return { id: 'user-2', name: 'Jane Smith', email: 'admin@sitepilot.com', role: 'Admin', avatarUrl: '' };
+    return mockUsers.find(u => u.role === 'Admin')!;
 }
 
 async function getClaimsForProject(projectId: string): Promise<Claim[]> {
   return mockClaims.filter(claim => claim.projectId === projectId);
 }
+
+async function getAssignedEngineers(engineerIds: string[]): Promise<User[]> {
+    return mockUsers.filter(user => engineerIds.includes(user.id));
+}
+
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const names = name.split(' ');
+  if (names.length > 1) {
+    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
 
 
 const InfoField = ({ label, value, unit }: { label: string; value?: string | number | null; unit?: string }) => {
@@ -42,8 +56,37 @@ const InfoField = ({ label, value, unit }: { label: string; value?: string | num
     );
 };
 
+function AssignedTeam({ engineers }: { engineers: User[] }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <span>Assigned Team</span>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {engineers.map(engineer => (
+                        <div key={engineer.id} className="flex items-center gap-3">
+                            <Avatar>
+                                <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
+                                <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-medium">{engineer.name}</p>
+                                <p className="text-sm text-muted-foreground">{engineer.role}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
-function OverviewTab({ project }: { project: Project }) {
+
+function OverviewTab({ project, engineers }: { project: Project, engineers: User[] }) {
     const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
     const upcomingMilestones = project.milestones.filter(m => m.status === 'Upcoming');
 
@@ -90,13 +133,14 @@ function OverviewTab({ project }: { project: Project }) {
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <InfoField label="Performance Bond No." value={project.performanceBondNo} />
                         <InfoField label="Performance Bond Amt." value={project.performanceBondAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
-                        <InfoField label="Gross Profit" value={project.grossProfit?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+                        <InfoField label="Gross Profit" value={project.grossProfit?.toLocaleString('en-US', { style: 'currency', 'currency': 'USD' })} />
                         <InfoField label="Margin Profit" value={project.marginProfit} unit="%" />
                         <InfoField label="Insurance Amt." value={project.insuranceAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
                     </div>
                 </CardContent>
             </Card>
             <div className="space-y-6">
+                <AssignedTeam engineers={engineers} />
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -105,14 +149,18 @@ function OverviewTab({ project }: { project: Project }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                            {achievedMilestones.map(m => (
-                                <li key={m.id} className="flex justify-between">
-                                    <span>{m.name}</span>
-                                    <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        {achievedMilestones.length > 0 ? (
+                             <ul className="space-y-2 text-sm text-muted-foreground">
+                                {achievedMilestones.map(m => (
+                                    <li key={m.id} className="flex justify-between">
+                                        <span>{m.name}</span>
+                                        <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No milestones achieved yet.</p>
+                        )}
                     </CardContent>
                 </Card>
                  <Card>
@@ -123,14 +171,18 @@ function OverviewTab({ project }: { project: Project }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                           {upcomingMilestones.map(m => (
-                                <li key={m.id} className="flex justify-between">
-                                    <span>{m.name}</span>
-                                    <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        {upcomingMilestones.length > 0 ? (
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                            {upcomingMilestones.map(m => (
+                                    <li key={m.id} className="flex justify-between">
+                                        <span>{m.name}</span>
+                                        <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No upcoming milestones.</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -147,6 +199,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
   }
   
   const claims = await getClaimsForProject(project.id);
+  const assignedEngineers = await getAssignedEngineers(project.assignedEngineers);
 
   return (
     <div className="space-y-6">
@@ -185,7 +238,7 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab project={project} />
+          <OverviewTab project={project} engineers={assignedEngineers} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
           <ClaimsTab claims={claims} />
