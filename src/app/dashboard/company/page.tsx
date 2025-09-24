@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Building, PlusCircle, User as UserIcon, Edit } from 'lucide-react';
+import { Building, PlusCircle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -157,37 +157,38 @@ export default function CompanyPage() {
                       )}
                     </>
                   ) : (
-                      <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg bg-muted/20">
+                      <Card className="bg-muted/30">
+                        <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                           <p className="font-semibold">No E-Invoicing Information</p>
-                          <p className="text-sm mb-4">Add your e-invoicing details to enable this feature.</p>
+                          <p className="mb-4 text-sm">Add your e-invoicing details to enable this feature.</p>
                           <Button asChild variant="outline">
                             <Link href="/company-setup/e-invoicing">
                               <PlusCircle className="mr-2 h-4 w-4" />
                               Add E-Invoicing Details
                             </Link>
                           </Button>
-                        </div>
+                        </CardContent>
+                      </Card>
                   )}
               </div>
             </>
           ) : (
-            // Placeholder for when no company data exists
-            <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-              <Building className="h-12 w-12 mb-4" />
-              <p className="font-semibold">No Company Information</p>
-              <p className="text-sm mb-4">Complete the company setup to see details here.</p>
-              <Button asChild>
-                <Link href="/create-company">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Set Up Company
-                </Link>
-              </Button>
-            </div>
+            <Card className="bg-muted/30">
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Building className="mb-4 h-12 w-12" />
+                <p className="font-semibold">No Company Information</p>
+                <p className="mb-4 text-sm">Complete the company setup to see details here.</p>
+                <Button asChild>
+                  <Link href="/create-company">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Set Up Company
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
