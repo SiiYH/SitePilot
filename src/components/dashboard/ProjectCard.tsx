@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Project } from '@/types';
@@ -45,7 +46,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span>{format(new Date(project.deadline), 'MMM dd, yyyy')}</span>
+            <span>{format(new Date(project.endDate), 'MMM dd, yyyy')}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />

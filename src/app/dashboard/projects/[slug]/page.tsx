@@ -66,9 +66,15 @@ function OverviewTab({ project }: { project: Project }) {
                         </div>
                         <Progress value={project.progress} />
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-2 h-4 w-4"/>
-                        Project Deadline: {format(new Date(project.deadline), 'PPP')}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="mr-2 h-4 w-4"/>
+                          Start Date: {format(new Date(project.startDate), 'PPP')}
+                      </div>
+                       <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="mr-2 h-4 w-4"/>
+                          End Date: {format(new Date(project.endDate), 'PPP')}
+                      </div>
                     </div>
                      <Separator/>
                     <h3 className="text-base font-semibold">Site Information</h3>

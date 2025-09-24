@@ -39,7 +39,8 @@ export interface Project {
   name: string;
   description: string;
   progress: number;
-  deadline: string;
+  startDate: string;
+  endDate: string;
   imageUrl: string;
   imageHint: string;
   assignedEngineers: string[]; // User IDs

@@ -20,19 +20,13 @@ interface ProjectCalendarProps {
 }
 
 const getProjectInterval = (project: Project): { start: Date; end: Date } | null => {
-  const dates = [
-    ...project.tasks.map(t => parseISO(t.dueDate)),
-    ...project.documents.map(d => parseISO(d.uploadedAt)),
-    ...project.milestones.map(m => parseISO(m.date)),
-  ];
+  const startDate = parseISO(project.startDate);
+  const endDate = parseISO(project.endDate);
 
-  if (dates.length === 0) {
+  if (!startDate || !endDate) {
     return null;
   }
-
-  const startDate = new Date(Math.min(...dates.map(d => d.getTime())));
-  const endDate = parseISO(project.deadline);
-
+  
   return { start: startOfDay(startDate), end: startOfDay(endDate) };
 };
 
@@ -112,7 +106,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
                                     <div className="flex items-center justify-between">
                                         <div className='space-y-1'>
                                             <p className="font-medium">{project.name}</p>
-                                            <p className="text-sm text-muted-foreground">Deadline: {format(parseISO(project.deadline), 'PPP')}</p>
+                                            <p className="text-sm text-muted-foreground">End Date: {format(parseISO(project.endDate), 'PPP')}</p>
                                         </div>
                                         <Button asChild variant="ghost" size="icon">
                                             <Link href={`/dashboard/projects/${project.slug}`}>
