@@ -100,13 +100,13 @@ export default function ClaimDetailsPage({ params }: { params: { id: string } })
       <Card>
         <CardHeader>
             <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                 <CardTitle>Claim from {project ? project.name : 'N/A'}</CardTitle>
+                 <CardTitle>{claim.title}</CardTitle>
                  <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
                     {claim.status}
                 </Badge>
             </div>
              <CardDescription>
-                Submitted on {format(new Date(claim.date), 'PPP')}
+                Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

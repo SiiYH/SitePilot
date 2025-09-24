@@ -41,7 +41,7 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Claim ID</TableHead>
+                            <TableHead>Claim</TableHead>
                             <TableHead>Submitted By</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Date</TableHead>
@@ -55,7 +55,7 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
                                 onClick={() => handleRowClick(claim.id)}
                                 className="cursor-pointer"
                             >
-                                <TableCell className="font-medium">#{claim.id.split('-')[1]}</TableCell>
+                                <TableCell className="font-medium">{claim.title}</TableCell>
                                 <TableCell>{getUserName(claim.submittedBy)}</TableCell>
                                 <TableCell>${claim.amount.toLocaleString()}</TableCell>
                                 <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>

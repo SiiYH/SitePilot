@@ -63,6 +63,7 @@ export interface Project {
 export interface Claim {
   id: string;
   projectId: string;
+  title: string;
   amount: number;
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;

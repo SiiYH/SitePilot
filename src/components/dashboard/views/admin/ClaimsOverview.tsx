@@ -28,7 +28,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
     }
     
     const getUserName = (userId: string) => {
-        return users.find(u => u.id === userId)?.name || 'N/A';
+        return users.find(u => u.id === userId)?.name || 'NA';
     }
 
     const handleRowClick = (claimId: string) => {
@@ -45,6 +45,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Claim</TableHead>
                             <TableHead>Project</TableHead>
                             <TableHead>Submitted By</TableHead>
                             <TableHead>Amount</TableHead>
@@ -59,7 +60,8 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                 onClick={() => handleRowClick(claim.id)}
                                 className="cursor-pointer"
                             >
-                                <TableCell className="font-medium">{getProjectName(claim.projectId)}</TableCell>
+                                <TableCell className="font-medium">{claim.title}</TableCell>
+                                <TableCell>{getProjectName(claim.projectId)}</TableCell>
                                 <TableCell>{getUserName(claim.submittedBy)}</TableCell>
                                 <TableCell>${claim.amount.toLocaleString()}</TableCell>
                                 <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
