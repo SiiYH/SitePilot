@@ -1,3 +1,4 @@
+
 import { Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TasksTable from '../TasksTable';
@@ -12,8 +13,8 @@ interface EngineerDashboardProps {
 
 export default function EngineerDashboard({ projects, tasks, user }: EngineerDashboardProps) {
     return (
-        <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>My Assigned Tasks</CardTitle>
@@ -31,7 +32,7 @@ export default function EngineerDashboard({ projects, tasks, user }: EngineerDas
                 </Card>
                 <ProjectCalendar projects={projects} />
             </div>
-            <div>
+            <div className="lg:col-span-1">
                 <AttendanceCard />
             </div>
         </div>
