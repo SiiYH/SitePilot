@@ -9,6 +9,7 @@ import { mockUsers } from '@/lib/data';
 import ProgressOverview from './admin/ProgressOverview';
 import ClaimsOverview from './admin/ClaimsOverview';
 import AttendanceSummary from './admin/AttendanceSummary';
+import AdminAlerts from './admin/AdminAlerts';
 
 interface AdminDashboardProps {
   projects: Project[];
@@ -25,8 +26,11 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
 
+  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.assignedTo));
+
   return (
     <div className="space-y-6">
+      <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
