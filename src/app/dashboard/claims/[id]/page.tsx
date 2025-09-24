@@ -63,15 +63,15 @@ export default function ClaimDetailsPage() {
   const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User } | null>(null);
 
   useEffect(() => {
-    getClaim(id).then(data => {
-      if (data) {
-        setClaimData(data);
-      } else {
-        // Handle case where claim is not found
-        // For now, we can console log, in a real app you might redirect or show a not found component
-        console.log('Claim not found');
-      }
-    });
+    if (id) {
+        getClaim(id).then(data => {
+            if (data) {
+                setClaimData(data);
+            } else {
+                notFound();
+            }
+        });
+    }
   }, [id]);
   
   if (!claimData) {
@@ -190,7 +190,7 @@ export default function ClaimDetailsPage() {
                             </div>
                         </DialogTrigger>
                         <DialogContent className="max-w-3xl border-0 bg-transparent p-0 shadow-none">
-                             <div className="relative aspect-[3/4] w-full">
+                             <div className="relative aspect-video w-full sm:aspect-[3/4]">
                                 <Image
                                     src={claim.receiptImageUrl}
                                     alt="Receipt for claim"
