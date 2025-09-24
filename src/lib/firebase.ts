@@ -6,9 +6,9 @@ const firebaseConfig = {
   authDomain: "sitepilot-29e80.firebaseapp.com",
   projectId: "sitepilot-29e80",
   storageBucket: "sitepilot-29e80.appspot.com",
-  messagingSenderId: "441624896794",
-  appId: "1:441624896794:web:8dd3f4219f45775086d421",
-  measurementId: "G-8L5J7W8J4P"
+  messagingSenderId: "961120405483",
+  appId: "1:961120405483:web:91099236c1d02d203efbae",
+  measurementId: "G-WVD74EE0QZ"
 };
 
 // Initialize Firebase
