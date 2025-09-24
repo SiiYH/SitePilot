@@ -68,6 +68,8 @@ export interface Claim {
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;
   submittedBy: string; // User ID
+  receiptImageUrl?: string;
+  receiptImageHint?: string;
 }
 
 export interface AttendanceRecord {
