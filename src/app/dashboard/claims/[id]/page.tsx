@@ -1,15 +1,20 @@
 
-import { notFound } from 'next/navigation';
+'use client';
+
+import { notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mockClaims, mockProjects } from '@/lib/data';
 import { Claim, Project } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState, useEffect } from 'react';
 
 async function getClaim(id: string): Promise<{ claim: Claim; project?: Project } | undefined> {
+  // In a real app, this would be a database call. We find the index to modify it later.
   const claim = mockClaims.find(c => c.id === id);
   if (!claim) {
     return undefined;
@@ -38,14 +43,34 @@ const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; 
     );
 };
 
-export default async function ClaimDetailsPage({ params }: { params: { id: string } }) {
-  const data = await getClaim(params.id);
+export default function ClaimDetailsPage({ params }: { params: { id: string } }) {
+  const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project } | null>(null);
 
-  if (!data) {
-    notFound();
+  useEffect(() => {
+    getClaim(params.id).then(data => {
+      if (data) {
+        setClaimData(data);
+      }
+    });
+  }, [params.id]);
+  
+  if (!claimData) {
+    // This can be a loading state or the notFound() for when data is truly not there.
+    // For now, we'll return null or a loader.
+    return null;
   }
 
-  const { claim, project } = data;
+  const { claim, project } = claimData;
+
+  const handleStatusChange = (newStatus: Claim['status']) => {
+    // In a real app, you'd call an API to update this.
+    // For this mock, we update the state directly.
+    const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
+    if(claimIndex !== -1) {
+        mockClaims[claimIndex].status = newStatus;
+    }
+    setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, status: newStatus } } : null);
+  };
 
   return (
     <div className="space-y-6">
@@ -62,7 +87,7 @@ export default async function ClaimDetailsPage({ params }: { params: { id: strin
       
       <Card>
         <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                  <CardTitle>Claim from {project ? project.name : 'N/A'}</CardTitle>
                  <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
                     {claim.status}
@@ -72,7 +97,7 @@ export default async function ClaimDetailsPage({ params }: { params: { id: strin
                 Submitted on {format(new Date(claim.date), 'PPP')}
             </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <InfoField icon={DollarSign} label="Amount">
                     <p className="text-2xl font-bold">${claim.amount.toLocaleString()}</p>
@@ -86,6 +111,27 @@ export default async function ClaimDetailsPage({ params }: { params: { id: strin
                     </InfoField>
                 )}
             </div>
+
+            <Card className="bg-muted/40">
+                <CardHeader>
+                    <CardTitle className="text-xl">Manage Claim</CardTitle>
+                    <CardDescription>Update the status of this payment claim.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="max-w-xs">
+                        <Select value={claim.status} onValueChange={handleStatusChange}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Set status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Paid">Paid</SelectItem>
+                                <SelectItem value="Overdue">Overdue</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+            </Card>
         </CardContent>
       </Card>
     </div>

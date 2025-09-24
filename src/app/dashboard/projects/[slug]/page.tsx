@@ -1,6 +1,7 @@
 
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { mockProjects } from '@/lib/data';
 import { Project, User, Task, Document, Milestone } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, CheckCircle, Clock, GanttChartSquare } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, Edit, GanttChartSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 async function getProject(slug: string): Promise<Project | undefined> {
@@ -115,7 +117,15 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
           <Badge>In Progress</Badge>
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
              <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-             <GenerateReportButton project={project} />
+             <div className="flex flex-col gap-2 sm:flex-row">
+                <Button variant="outline" asChild>
+                    <Link href={`/dashboard/projects/${project.slug}/edit`}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Project
+                    </Link>
+                </Button>
+                <GenerateReportButton project={project} />
+             </div>
           </div>
       </div>
       
