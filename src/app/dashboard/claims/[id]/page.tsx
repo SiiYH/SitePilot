@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
@@ -189,7 +189,8 @@ export default function ClaimDetailsPage() {
                                 />
                             </div>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl border-0 bg-transparent p-0 shadow-none">
+                        <DialogContent className="max-w-3xl p-0 border-0 bg-transparent shadow-none">
+                             <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
                              <div className="relative aspect-video w-full sm:aspect-[3/4]">
                                 <Image
                                     src={claim.receiptImageUrl}
