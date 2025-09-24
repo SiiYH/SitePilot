@@ -54,6 +54,7 @@ export const mockProjects: Project[] = [
     grossProfit: 2000000,
     marginProfit: 20,
     insuranceAmount: 100000,
+    currency: 'USD',
     tasks: [
       { id: 't1-1', title: 'Foundation Pouring', assignedTo: 'user-1', status: 'Completed', dueDate: '2023-08-15' },
       { id: 't1-2', title: 'Structural Steel Erection (Floors 1-25)', assignedTo: 'user-4', status: 'Completed', dueDate: '2024-02-28' },
@@ -87,6 +88,7 @@ export const mockProjects: Project[] = [
     siteName: 'Golden Gate Bridge',
     jobLocation: 'San Francisco, CA',
     distance: 50,
+    currency: 'USD',
     tasks: [
       { id: 't2-1', title: 'Lead Paint Removal', assignedTo: 'user-1', status: 'Completed', dueDate: '2024-01-31' },
       { id: 't2-2', title: 'Install new seismic dampers', assignedTo: 'user-1', status: 'In Progress', dueDate: '2024-11-30' },
@@ -118,6 +120,7 @@ export const mockProjects: Project[] = [
     siteName: 'Maple Creek Community',
     jobLocation: 'Maple Creek, ON',
     distance: 25,
+    currency: 'CAD',
     tasks: [
         { id: 't3-1', title: 'Landscaping and Irrigation', assignedTo: 'user-4', status: 'In Progress', dueDate: '2024-07-31' },
         { id: 't3-2', title: 'Final Home Inspections', assignedTo: 'user-4', status: 'In Progress', dueDate: '2024-08-15' },

@@ -27,6 +27,8 @@ import { User, Project } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface CreateProjectDialogProps {
   engineers: User[];
@@ -49,6 +51,7 @@ const formSchema = z.object({
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
   insuranceAmount: z.coerce.number().optional(),
+  currency: z.string().optional(),
 });
 
 const createSlug = (name: string) => {
@@ -61,6 +64,7 @@ const createSlug = (name: string) => {
     .replace(/-+/g, '-');
 };
 
+const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
 export default function CreateProjectDialog({ engineers, onProjectCreated }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
@@ -73,6 +77,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       name: '',
       description: '',
       assignedEngineers: [],
+      currency: 'MYR',
     },
   });
 
@@ -265,17 +270,39 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                     )}
                     />
                 </div>
-                 <FormField
-                    control={form.control}
-                    name="insuranceAmount"
-                    render={({ field }) => (
+                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="insuranceAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Insurance Amt.</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Insurance Amt.</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
-                        <FormMessage />
+                          <FormLabel>Currency</FormLabel>
+                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a currency" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
-                    )}
-                />
+                      )}
+                    />
+                </div>
 
 
               <Separator className="my-4"/>

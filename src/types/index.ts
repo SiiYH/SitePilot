@@ -57,6 +57,7 @@ export interface Project {
   grossProfit?: number;
   marginProfit?: number;
   insuranceAmount?: number;
+  currency?: string;
 }
 
 export interface Claim {

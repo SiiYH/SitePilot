@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { mockProjects } from '@/lib/data'; // to update mock data
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface EditProjectFormProps {
   project: Project;
@@ -43,7 +44,10 @@ const formSchema = z.object({
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
   insuranceAmount: z.coerce.number().optional(),
+  currency: z.string().optional(),
 });
+
+const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
 export default function EditProjectForm({ project, engineers }: EditProjectFormProps) {
   const router = useRouter();
@@ -68,6 +72,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       grossProfit: project.grossProfit || undefined,
       marginProfit: project.marginProfit || undefined,
       insuranceAmount: project.insuranceAmount || undefined,
+      currency: project.currency || 'MYR',
     },
   });
 
@@ -145,7 +150,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Job No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., JB-001" {...field} /></FormControl>
+                        <FormControl><Input placeholder="e.g., JB-001" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -156,7 +161,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Order No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., ORD-2024-001" {...field} /></FormControl>
+                        <FormControl><Input placeholder="e.g., ORD-2024-001" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -168,7 +173,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Site Name</FormLabel>
-                        <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
+                        <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -179,7 +184,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Job Location</FormLabel>
-                        <FormControl><Input placeholder="e.g., Kuala Lumpur City Centre" {...field} /></FormControl>
+                        <FormControl><Input placeholder="e.g., Kuala Lumpur City Centre" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -190,7 +195,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Distance (km)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 15" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -206,7 +211,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Performance Bond No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., PB-12345" {...field} /></FormControl>
+                        <FormControl><Input placeholder="e.g., PB-12345" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -217,7 +222,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Performance Bond Amt.</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 500000" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -230,7 +235,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Gross Profit</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -241,23 +246,45 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Margin Profit (%)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 20" {...field} /></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
                     />
                 </div>
-                 <FormField
-                    control={form.control}
-                    name="insuranceAmount"
-                    render={({ field }) => (
+                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                        control={form.control}
+                        name="insuranceAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Insurance Amt.</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 100000" {...field} value={field.value || ''} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Insurance Amt.</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
-                        <FormMessage />
+                          <FormLabel>Currency</FormLabel>
+                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a currency" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
-                    )}
-                />
+                      )}
+                    />
+                </div>
 
 
               <Separator className="my-4"/>
@@ -333,24 +360,24 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
               />
             </div>
             <FormField
-              control={form.control}
-              name="assignedEngineers"
-              render={({ field }) => (
+                control={form.control}
+                name="assignedEngineers"
+                render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign Engineers</FormLabel>
-                  <Popover>
+                    <FormLabel>Assign Engineers</FormLabel>
+                    <Popover>
                     <PopoverTrigger asChild>
-                      <FormControl>
+                        <FormControl>
                         <Button variant="outline" role="combobox" className="w-full justify-between">
-                          {field.value?.length > 0
+                            {field.value?.length > 0
                             ? `${field.value.length} engineer(s) selected`
                             : 'Select engineers...'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
-                      </FormControl>
+                        </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                      <Command>
+                        <Command>
                         <CommandInput placeholder="Search engineers..." />
                         <CommandList>
                             <CommandEmpty>No engineers found.</CommandEmpty>
@@ -377,12 +404,12 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                             ))}
                             </CommandGroup>
                         </CommandList>
-                      </Command>
+                        </Command>
                     </PopoverContent>
-                  </Popover>
-                  <FormMessage />
+                    </Popover>
+                    <FormMessage />
                 </FormItem>
-              )}
+                )}
             />
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
@@ -399,7 +426,3 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     </Card>
   );
 }
-
-    
-
-    

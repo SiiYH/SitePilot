@@ -45,18 +45,28 @@ const getInitials = (name: string) => {
   return name.substring(0, 2).toUpperCase();
 };
 
-
-const InfoField = ({ label, value, unit }: { label: string; value?: string | number | null; unit?: string }) => {
+const InfoField = ({ label, value, unit, currency }: { label: string; value?: string | number | null; unit?: string; currency?: string }) => {
     if (!value && value !== 0) return null;
+    
+    let displayValue = value;
+    if (typeof value === 'number' && currency) {
+      displayValue = value.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    } else if (typeof value === 'number') {
+      displayValue = value.toLocaleString();
+    }
+
+
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className="text-sm break-words">{value}{unit}</p>
+            <p className="text-sm break-words">{displayValue}{unit}</p>
         </div>
     );
 };
 
 function AssignedTeam({ engineers }: { engineers: User[] }) {
+    if (engineers.length === 0) return null;
+
     return (
         <Card>
             <CardHeader>
@@ -132,10 +142,11 @@ function OverviewTab({ project, engineers }: { project: Project, engineers: User
                      <h3 className="text-base font-semibold">Financials & Insurance</h3>
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <InfoField label="Performance Bond No." value={project.performanceBondNo} />
-                        <InfoField label="Performance Bond Amt." value={project.performanceBondAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
-                        <InfoField label="Gross Profit" value={project.grossProfit?.toLocaleString('en-US', { style: 'currency', 'currency': 'USD' })} />
+                        <InfoField label="Performance Bond Amt." value={project.performanceBondAmount} currency={project.currency}/>
+                        <InfoField label="Gross Profit" value={project.grossProfit} currency={project.currency} />
                         <InfoField label="Margin Profit" value={project.marginProfit} unit="%" />
-                        <InfoField label="Insurance Amt." value={project.insuranceAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} />
+                        <InfoField label="Insurance Amt." value={project.insuranceAmount} currency={project.currency} />
+                        <InfoField label="Currency" value={project.currency} />
                     </div>
                 </CardContent>
             </Card>
