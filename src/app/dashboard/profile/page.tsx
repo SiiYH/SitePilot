@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,24 @@ const InfoField = ({ icon, label, value }: { icon: React.ElementType; label: str
 };
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, updateUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && user) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newAvatarUrl = e.target?.result as string;
+        updateUser({ ...user, avatarUrl: newAvatarUrl });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -65,7 +82,14 @@ export default function ProfilePage() {
                                 <AvatarImage src={user.avatarUrl} alt={user.name} />
                                 <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                             </Avatar>
-                             <Button size="icon" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-2 border-background">
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                accept="image/*"
+                            />
+                             <Button size="icon" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-2 border-background" onClick={handleAvatarClick}>
                                 <Upload className="h-4 w-4" />
                                 <span className="sr-only">Change profile picture</span>
                             </Button>
@@ -75,9 +99,11 @@ export default function ProfilePage() {
                             <CardDescription>{user.role}</CardDescription>
                         </div>
                     </div>
-                     <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4"/>
-                        Edit Profile
+                     <Button variant="outline" asChild>
+                        <Link href="/dashboard/profile/edit">
+                            <Edit className="mr-2 h-4 w-4"/>
+                            Edit Profile
+                        </Link>
                     </Button>
                 </div>
             </CardHeader>

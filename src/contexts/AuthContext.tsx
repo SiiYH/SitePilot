@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (credentials: UserCredentials) => Promise<User | null>;
   signUp: (data: SignUpData) => Promise<User | null>;
   logout: () => void;
+  updateUser: (data: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,6 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  const handleUpdateUser = (data: User) => {
+    setUser(data);
+    localStorage.setItem('sitepilot-user', JSON.stringify(data));
+  };
+
+
   const value = {
     user,
     setUser,
@@ -74,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login: handleLogin,
     signUp: handleSignUp,
     logout: handleLogout,
+    updateUser: handleUpdateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
