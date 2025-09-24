@@ -38,7 +38,7 @@ const formSchema = z.object({
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
-  assignedEngineers: z.array(z.string()).min(1, 'At least one engineer must be assigned.'),
+  assignedEngineers: z.array(z.string()),
   jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
