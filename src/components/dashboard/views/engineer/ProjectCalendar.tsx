@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { isWithinInterval, startOfDay, parseISO, format } from 'date-fns';
+import { isWithinInterval, startOfDay, parseISO, format, isSameDay } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { DayProps, useDayRender } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 
 interface ProjectCalendarProps {
   projects: Project[];
@@ -45,18 +47,28 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
     ? projectsWithIntervals.filter(p => p.interval && isWithinInterval(startOfDay(date), p.interval))
     : [];
 
-  const DayWithProjectCount = ({ date }: { date: Date }) => {
-    const day = startOfDay(date);
+  const DayWithProjectCount = (props: DayProps) => {
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const { buttonProps, activeModifiers } = useDayRender(props.date, props.displayMonth, buttonRef);
+    const { selected } = activeModifiers;
+
+    const day = startOfDay(props.date);
     const activeProjectsCount = projectsWithIntervals.filter(p => 
       p.interval && isWithinInterval(day, p.interval)
     ).length;
 
     return (
-      <div className="relative flex h-full w-full items-center justify-center">
-        <span>{date.getDate()}</span>
+       <div
+        className={cn("relative flex h-full w-full items-center justify-center", {
+          'font-bold text-primary-foreground': selected,
+        })}
+      >
+        <button ref={buttonRef} {...buttonProps} className={cn(buttonProps.className, 'h-9 w-9 p-0')}>
+          {props.date.getDate()}
+        </button>
         {activeProjectsCount > 0 && (
           <Badge
-            variant="secondary"
+            variant={selected ? 'destructive' : 'secondary'}
             className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-xs"
           >
             {activeProjectsCount}
@@ -81,7 +93,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
           onSelect={setDate}
           className="rounded-md border p-4"
           components={{
-            Day: ({ date }) => <DayWithProjectCount date={date as Date} />,
+            Day: DayWithProjectCount,
           }}
         />
         {date && (
