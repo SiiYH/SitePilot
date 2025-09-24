@@ -9,7 +9,6 @@ import { mockUsers } from '@/lib/data';
 import ProgressOverview from './admin/ProgressOverview';
 import ClaimsOverview from './admin/ClaimsOverview';
 import AttendanceSummary from './admin/AttendanceSummary';
-import TeamWorkload from './admin/TeamWorkload';
 
 interface AdminDashboardProps {
   projects: Project[];
@@ -38,8 +37,6 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
             <AttendanceSummary attendance={attendance} users={users} />
         </div>
       </div>
-
-      <TeamWorkload users={users} projects={projects} />
 
       <div>
         <div className="mb-4 flex items-center justify-between">

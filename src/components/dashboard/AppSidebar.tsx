@@ -2,7 +2,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building } from 'lucide-react';
+import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users } from 'lucide-react';
 import Link from 'next/link';
 
 import Logo from '@/components/icons/Logo';
@@ -12,6 +12,7 @@ const mainMenuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tooltip: 'Dashboard' },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban, tooltip: 'Projects' },
   { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks' },
+  { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team' },
 ];
 
 const settingsMenuItems = [
