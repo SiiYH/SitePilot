@@ -2,10 +2,12 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockProjects } from '@/lib/data';
-import { Project, User } from '@/types';
+import { useRouter } from 'next/navigation';
+import { mockProjects, mockClaims } from '@/lib/data';
+import { Project, User, Claim } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
@@ -26,8 +28,13 @@ async function getCurrentUser(): Promise<User> {
     return { id: 'user-2', name: 'Jane Smith', email: 'admin@sitepilot.com', role: 'Admin', avatarUrl: '' };
 }
 
+async function getClaimsForProject(projectId: string): Promise<Claim[]> {
+  return mockClaims.filter(claim => claim.projectId === projectId);
+}
+
+
 const InfoField = ({ label, value, unit }: { label: string; value?: string | number | null; unit?: string }) => {
-    if (!value) return null;
+    if (!value && value !== 0) return null;
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
@@ -126,6 +133,66 @@ function OverviewTab({ project }: { project: Project }) {
     );
 }
 
+function ClaimsTab({ claims }: { claims: Claim[] }) {
+    const router = useRouter();
+
+    const handleRowClick = (claimId: string) => {
+        router.push(`/dashboard/claims/${claimId}`);
+    }
+    
+    const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+      'Paid': 'default',
+      'Pending': 'secondary',
+      'Overdue': 'destructive',
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Claims</CardTitle>
+                <CardDescription>All payment claims associated with this project. Click a claim to view details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {claims.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Claim ID</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {claims.map(claim => (
+                            <TableRow 
+                                key={claim.id} 
+                                onClick={() => handleRowClick(claim.id)}
+                                className="cursor-pointer"
+                            >
+                                <TableCell className="font-medium">#{claim.id.split('-')[1]}</TableCell>
+                                <TableCell>${claim.amount.toLocaleString()}</TableCell>
+                                <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
+                                <TableCell className="text-right">
+                                    <Badge variant={statusVariant[claim.status] || 'outline'}>
+                                        {claim.status}
+                                    </Badge>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                ) : (
+                     <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+                        <h3 className="text-lg font-semibold text-muted-foreground">No Claims Found</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">There are no payment claims associated with this project yet.</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default async function ProjectDetailsPage({ params }: { params: { slug: string } }) {
   const project = await getProject(params.slug);
   const user = await getCurrentUser();
@@ -133,6 +200,8 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
   if (!project) {
     notFound();
   }
+  
+  const claims = await getClaimsForProject(project.id);
 
   return (
     <div className="space-y-6">
@@ -164,10 +233,11 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
       </div>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-3 sm:h-10">
+        <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-4 sm:h-10">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="claims">Claims</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-6">
           <OverviewTab project={project} />
@@ -194,7 +264,13 @@ export default async function ProjectDetailsPage({ params }: { params: { slug: s
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="claims" className="mt-6">
+          <ClaimsTab claims={claims} />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+
+    
