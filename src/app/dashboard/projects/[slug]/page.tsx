@@ -47,22 +47,32 @@ const getInitials = (name: string) => {
 
 const InfoField = ({ label, value, unit, currency }: { label: string; value?: string | number | null; unit?: string; currency?: string }) => {
     if (!value && value !== 0) return null;
-    
-    let displayValue: string | number = value;
-    if (typeof value === 'number' && currency) {
-      displayValue = value.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    } else if (typeof value === 'number') {
-      displayValue = value.toLocaleString();
+
+    let displayValue: string | React.ReactNode = value;
+
+    if (typeof value === 'number') {
+        if (currency === 'MYR') {
+            displayValue = (
+                <>
+                    {value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    <span className="ml-1 text-xs text-muted-foreground">{currency}</span>
+                </>
+            );
+        } else if (currency) {
+            displayValue = value.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        } else {
+            displayValue = value.toLocaleString();
+        }
     }
-
-
+    
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <p className="text-sm break-words">{displayValue}{unit}</p>
+            <div className="text-sm break-words">{displayValue}{unit && <span className="text-muted-foreground">{unit}</span>}</div>
         </div>
     );
 };
+
 
 function AssignedTeam({ engineers }: { engineers: User[] }) {
     if (engineers.length === 0) return null;
