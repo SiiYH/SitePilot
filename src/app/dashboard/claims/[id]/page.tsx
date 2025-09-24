@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
@@ -173,18 +174,32 @@ export default function ClaimDetailsPage() {
                         <Paperclip className="h-5 w-5 text-primary" />
                         <span>Attached Receipt</span>
                     </CardTitle>
-                    <CardDescription>Image submitted as proof for this claim.</CardDescription>
+                    <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg border">
-                        <Image
-                            src={claim.receiptImageUrl}
-                            alt="Receipt for claim"
-                            fill
-                            className="object-cover"
-                            data-ai-hint={claim.receiptImageHint}
-                        />
-                    </div>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                                <Image
+                                    src={claim.receiptImageUrl}
+                                    alt="Receipt for claim"
+                                    fill
+                                    className="object-cover"
+                                    data-ai-hint={claim.receiptImageHint}
+                                />
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl border-0 bg-transparent p-0 shadow-none">
+                             <div className="relative aspect-[3/4] w-full">
+                                <Image
+                                    src={claim.receiptImageUrl}
+                                    alt="Receipt for claim"
+                                    fill
+                                    className="object-contain"
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
         )}
