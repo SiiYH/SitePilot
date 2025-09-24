@@ -1,5 +1,6 @@
-import { mockProjects, mockUsers } from '@/lib/data';
-import { Project, User } from '@/types';
+
+import { mockProjects, mockUsers, mockClaims, mockAttendance } from '@/lib/data';
+import { Project, User, Claim, AttendanceRecord } from '@/types';
 import AdminDashboard from '@/components/dashboard/views/AdminDashboard';
 import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
@@ -8,7 +9,7 @@ async function getCurrentUser(): Promise<User | undefined> {
   // For demo purposes, we'll hardcode the admin user.
   // In a real app, you would get this from your auth provider.
   // To test other roles, change 'Admin' to 'Engineer' or 'Director'
-  return mockUsers.find(u => u.role === 'Engineer');
+  return mockUsers.find(u => u.role === 'Admin');
 }
 
 async function getProjectsForUser(user: User): Promise<Project[]> {
@@ -38,11 +39,14 @@ export default async function DashboardPage() {
   
   const projects = await getProjectsForUser(user);
   const tasks = getTasksForUser(user);
+  const claims: Claim[] = (user.role === 'Admin' || user.role === 'Director') ? mockClaims : [];
+  const attendance: AttendanceRecord[] = (user.role === 'Admin' || user.role === 'Director') ? mockAttendance : [];
+  const users: User[] = (user.role === 'Admin' || user.role === 'Director') ? mockUsers : [];
 
   const renderDashboard = () => {
     switch (user.role) {
       case 'Admin':
-        return <AdminDashboard projects={projects} />;
+        return <AdminDashboard projects={projects} claims={claims} attendance={attendance} users={users} />;
       case 'Director':
         return <DirectorDashboard projects={projects} />;
       case 'Engineer':

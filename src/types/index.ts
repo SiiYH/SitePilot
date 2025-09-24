@@ -1,3 +1,4 @@
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 
 export interface User {
@@ -45,4 +46,18 @@ export interface Project {
   tasks: Task[];
   documents: Document[];
   milestones: Milestone[];
+}
+
+export interface Claim {
+  id: string;
+  projectId: string;
+  amount: number;
+  status: 'Pending' | 'Paid' | 'Overdue';
+  date: string;
+}
+
+export interface AttendanceRecord {
+  userId: string;
+  status: 'Clocked In' | 'Clocked Out';
+  location: string | null;
 }

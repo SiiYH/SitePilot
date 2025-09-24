@@ -1,4 +1,5 @@
-import type { User, Project } from '@/types';
+
+import type { User, Project, Claim, AttendanceRecord } from '@/types';
 
 export const mockUsers: User[] = [
   {
@@ -108,4 +109,17 @@ export const mockProjects: Project[] = [
         { id: 'm3-3', name: 'Project Handover', status: 'Upcoming', date: '2024-08-30' },
     ]
   },
+];
+
+export const mockClaims: Claim[] = [
+  { id: 'claim-1', projectId: 'proj-1', amount: 50000, status: 'Paid', date: '2024-05-15' },
+  { id: 'claim-2', projectId: 'proj-1', amount: 75000, status: 'Pending', date: '2024-06-20' },
+  { id: 'claim-3', projectId: 'proj-2', amount: 120000, status: 'Paid', date: '2024-04-30' },
+  { id: 'claim-4', projectId: 'proj-3', amount: 25000, status: 'Overdue', date: '2024-06-01' },
+  { id: 'claim-5', projectId: 'proj-2', amount: 85000, status: 'Pending', date: '2024-06-18' },
+];
+
+export const mockAttendance: AttendanceRecord[] = [
+    { userId: 'user-1', status: 'Clocked In', location: '3.141, 101.686' },
+    { userId: 'user-4', status: 'Clocked In', location: '3.141, 101.686' },
 ];
