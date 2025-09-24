@@ -60,11 +60,11 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
 
     return (
        <div
-        className={cn("relative flex h-full w-full items-center justify-center", {
-          'font-bold text-primary-foreground': selected,
-        })}
+        className={cn("relative flex h-full w-full items-center justify-center")}
       >
-        <button ref={buttonRef} {...buttonProps} className={cn(buttonProps.className, 'h-9 w-9 p-0')}>
+        <button ref={buttonRef} {...buttonProps} className={cn(buttonProps.className, 'h-9 w-9 p-0', {
+          "font-bold text-primary-foreground": selected
+        })}>
           {props.date.getDate()}
         </button>
         {activeProjectsCount > 0 && (
