@@ -123,8 +123,8 @@ export default function ClaimDetailsPage() {
         <p className="text-muted-foreground">Details for claim #{claim.id.split('-')[1]}</p>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3 space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
                     <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -186,6 +186,47 @@ export default function ClaimDetailsPage() {
                 </CardContent>
             </Card>
 
+            
+        </div>
+        
+        <div className="lg:col-span-1 space-y-6">
+            {claim.receiptImageUrl && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Paperclip className="h-5 w-5 text-primary" />
+                            <span>Attached Receipt</span>
+                        </CardTitle>
+                        <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                                    <Image
+                                        src={claim.receiptImageUrl}
+                                        alt="Receipt for claim"
+                                        fill
+                                        className="object-cover"
+                                        data-ai-hint={claim.receiptImageHint}
+                                    />
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="p-0 sm:max-w-3xl border-0 bg-transparent shadow-none">
+                                <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
+                                <div className="relative aspect-video w-full sm:aspect-[3/4]">
+                                    <Image
+                                        src={claim.receiptImageUrl}
+                                        alt="Receipt for claim"
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </CardContent>
+                </Card>
+            )}
             <Card>
                  <CardHeader>
                     <div className="flex items-center justify-between">
@@ -230,46 +271,6 @@ export default function ClaimDetailsPage() {
                     </CardFooter>
                  )}
             </Card>
-        </div>
-        
-        <div className="lg:col-span-2 space-y-6">
-            {claim.receiptImageUrl && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Paperclip className="h-5 w-5 text-primary" />
-                            <span>Attached Receipt</span>
-                        </CardTitle>
-                        <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
-                                    <Image
-                                        src={claim.receiptImageUrl}
-                                        alt="Receipt for claim"
-                                        fill
-                                        className="object-cover"
-                                        data-ai-hint={claim.receiptImageHint}
-                                    />
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="p-0 sm:max-w-3xl border-0 bg-transparent shadow-none">
-                                <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
-                                <div className="relative aspect-video w-full sm:aspect-[3/4]">
-                                    <Image
-                                        src={claim.receiptImageUrl}
-                                        alt="Receipt for claim"
-                                        fill
-                                        className="object-contain"
-                                    />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </CardContent>
-                </Card>
-            )}
         </div>
       </div>
     </div>
