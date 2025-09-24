@@ -1,7 +1,7 @@
 
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { mockClaims, mockProjects, mockUsers } from '@/lib/data';
 import { Claim, Project, User } from '@/types';
@@ -56,16 +56,22 @@ const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; 
     );
 };
 
-export default function ClaimDetailsPage({ params }: { params: { id: string } }) {
+export default function ClaimDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User } | null>(null);
 
   useEffect(() => {
-    getClaim(params.id).then(data => {
+    getClaim(id).then(data => {
       if (data) {
         setClaimData(data);
+      } else {
+        // Handle case where claim is not found
+        // For now, we can console log, in a real app you might redirect or show a not found component
+        console.log('Claim not found');
       }
     });
-  }, [params.id]);
+  }, [id]);
   
   if (!claimData) {
     // This can be a loading state or the notFound() for when data is truly not there.
