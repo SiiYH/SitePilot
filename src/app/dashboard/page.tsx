@@ -1,47 +1,62 @@
 
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { mockProjects, mockUsers, mockClaims, mockAttendance } from '@/lib/data';
 import { Project, User, Claim, AttendanceRecord } from '@/types';
 import AdminDashboard from '@/components/dashboard/views/AdminDashboard';
 import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
+import { useAuth } from '@/hooks/use-auth';
 
-async function getCurrentUser(): Promise<User | undefined> {
-  // For demo purposes, we'll hardcode the admin user.
-  // In a real app, you would get this from your auth provider.
-  // To test other roles, change 'Admin' to 'Engineer' or 'Director'
-  return mockUsers.find(u => u.role === 'Admin');
-}
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Project['tasks']>([]);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-async function getProjectsForUser(user: User): Promise<Project[]> {
-  if (user.role === 'Admin' || user.role === 'Director') {
-    return mockProjects;
-  }
-  if (user.role === 'Engineer') {
-    return mockProjects.filter(p => p.assignedEngineers.includes(user.id));
-  }
-  return [];
-}
+  useEffect(() => {
+    if (user) {
+      const getProjectsForUser = (user: User): Project[] => {
+        if (user.role === 'Admin' || user.role === 'Director') {
+          return mockProjects;
+        }
+        if (user.role === 'Engineer') {
+          return mockProjects.filter(p => p.assignedEngineers.includes(user.id));
+        }
+        return [];
+      };
 
-function getTasksForUser(user: User): Project['tasks'] {
-    if (user.role === 'Engineer') {
-        return mockProjects.flatMap(p => p.tasks.filter(t => t.assignedTo === user.id));
+      const getTasksForUser = (user: User): Project['tasks'] => {
+        if (user.role === 'Engineer') {
+          return mockProjects.flatMap(p => p.tasks.filter(t => t.assignedTo === user.id));
+        }
+        return [];
+      };
+
+      setProjects(getProjectsForUser(user));
+      setTasks(getTasksForUser(user));
+
+      if (user.role === 'Admin' || user.role === 'Director') {
+        setClaims(mockClaims);
+        setAttendance(mockAttendance);
+        setUsers(mockUsers);
+      }
+      setLoading(false);
     }
-    return [];
-}
+  }, [user]);
 
-
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  
-  if (!user) {
-    return <div>Could not load user data.</div>;
+  if (loading || !user) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-  
-  const projects = await getProjectsForUser(user);
-  const tasks = getTasksForUser(user);
-  const claims: Claim[] = (user.role === 'Admin' || user.role === 'Director') ? mockClaims : [];
-  const attendance: AttendanceRecord[] = (user.role === 'Admin' || user.role === 'Director') ? mockAttendance : [];
-  const users: User[] = (user.role === 'Admin' || user.role === 'Director') ? mockUsers : [];
 
   const renderDashboard = () => {
     switch (user.role) {
