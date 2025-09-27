@@ -2,27 +2,26 @@
 'use client';
 
 import { useMemo } from 'react';
-import { User, Project, Claim } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-interface EngineerSummaryReportProps {
-  users: User[];
-  projects: Project[];
-  claims: Claim[];
-}
+import { useReportContext } from '@/contexts/ReportContext';
 
 interface SummaryData {
-  engineerName: string;
-  completedSites: number;
-  totalAmount: number;
-  claimAmount: number;
-  ongoingSites: number;
-  dueSites: number;
+  "Engineer Name": string;
+  "Completed Sites": number;
+  "Total Amount (RM)": number;
+  "Claim (RM)": number;
+  "Ongoing Sites": number;
+  "Due Sites": number;
 }
 
-export default function EngineerSummaryReport({ users, projects, claims }: EngineerSummaryReportProps) {
+export default function EngineerSummaryReport() {
+  const { reportData } = useReportContext();
+  const { users, projects, claims } = reportData;
+
   const summaryData: SummaryData[] = useMemo(() => {
+    if (!users || !projects || !claims) return [];
+    
     const engineers = users.filter(u => u.role === 'Engineer');
 
     return engineers.map(engineer => {
@@ -42,22 +41,16 @@ export default function EngineerSummaryReport({ users, projects, claims }: Engin
       }).length;
 
       return {
-        engineerName: engineer.name,
-        completedSites,
-        totalAmount,
-        claimAmount,
-        ongoingSites,
-        dueSites,
+        "Engineer Name": engineer.name,
+        "Completed Sites": completedSites,
+        "Total Amount (RM)": totalAmount,
+        "Claim (RM)": claimAmount,
+        "Ongoing Sites": ongoingSites,
+        "Due Sites": dueSites,
       };
     });
   }, [users, projects, claims]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   return (
     <Card className="print-card">
@@ -80,13 +73,13 @@ export default function EngineerSummaryReport({ users, projects, claims }: Engin
                 </TableHeader>
                 <TableBody>
                     {summaryData.map(data => (
-                    <TableRow key={data.engineerName}>
-                        <TableCell className="font-medium">{data.engineerName}</TableCell>
-                        <TableCell className="text-right">{data.completedSites}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(data.totalAmount)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(data.claimAmount)}</TableCell>
-                        <TableCell className="text-right">{data.ongoingSites}</TableCell>
-                        <TableCell className="text-right">{data.dueSites}</TableCell>
+                    <TableRow key={data['Engineer Name']}>
+                        <TableCell className="font-medium">{data['Engineer Name']}</TableCell>
+                        <TableCell className="text-right">{data['Completed Sites']}</TableCell>
+                        <TableCell className="text-right">{data['Total Amount (RM)'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell className="text-right">{data['Claim (RM)'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell className="text-right">{data['Ongoing Sites']}</TableCell>
+                        <TableCell className="text-right">{data['Due Sites']}</TableCell>
                     </TableRow>
                     ))}
                 </TableBody>
