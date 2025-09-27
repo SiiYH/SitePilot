@@ -1,73 +1,65 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Project } from "@/types";
-import { DollarSign, GanttChartSquare, CheckCircle } from "lucide-react";
+
+'use client';
+
+import { useState } from 'react';
+import ProjectCard from '@/components/dashboard/ProjectCard';
+import CreateProjectDialog from './admin/CreateProjectDialog';
+import { Project, User, Claim, AttendanceRecord } from '@/types';
+import { mockUsers } from '@/lib/data';
+import ProgressOverview from './admin/ProgressOverview';
+import ClaimsOverview from './admin/ClaimsOverview';
+import AttendanceSummary from './admin/AttendanceSummary';
+import AdminAlerts from './admin/AdminAlerts';
 
 interface DirectorDashboardProps {
-    projects: Project[];
+  projects: Project[];
+  claims: Claim[];
+  attendance: AttendanceRecord[];
+  users: User[];
 }
 
-export default function DirectorDashboard({ projects }: DirectorDashboardProps) {
-    const totalProjects = projects.length;
-    const completedProjects = projects.filter(p => p.progress === 100).length;
-    const overallProgress = projects.reduce((acc, p) => acc + p.progress, 0) / totalProjects || 0;
+export default function DirectorDashboard({ projects: initialProjects, claims, attendance, users }: DirectorDashboardProps) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const engineers = mockUsers.filter(u => u.role === 'Engineer');
 
-    return (
-        <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-                        <GanttChartSquare className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalProjects}</div>
-                        <p className="text-xs text-muted-foreground">
-                            All active and completed projects.
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed Projects</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{completedProjects}</div>
-                         <p className="text-xs text-muted-foreground">
-                            {((completedProjects / totalProjects) * 100).toFixed(0)}% completion rate.
-                        </p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{overallProgress.toFixed(0)}%</div>
-                        <Progress value={overallProgress} className="mt-2 h-2" />
-                    </CardContent>
-                </Card>
-            </div>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Projects At a Glance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {projects.map(project => (
-                            <div key={project.id}>
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium">{project.name}</span>
-                                    <span className="text-muted-foreground">{project.progress}%</span>
-                                </div>
-                                <Progress value={project.progress} className="mt-1 h-2" />
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+  const handleProjectCreated = (newProject: Project) => {
+    setProjects(prevProjects => [newProject, ...prevProjects]);
+  };
+
+  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.assignedTo));
+
+  return (
+    <div className="space-y-6">
+      <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+      <ProgressOverview projects={projects} />
+      
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+            <ClaimsOverview claims={claims} projects={projects} users={users} />
         </div>
-    )
+        <div className="lg:col-span-1">
+            <AttendanceSummary attendance={attendance} users={users} />
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-semibold">Active Projects</h3>
+          <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
+        </div>
+        {projects.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {projects.map(project => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+            <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new project.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

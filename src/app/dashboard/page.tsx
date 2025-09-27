@@ -63,7 +63,7 @@ export default function DashboardPage() {
       case 'Admin':
         return <AdminDashboard projects={projects} claims={claims} attendance={attendance} users={users} />;
       case 'Director':
-        return <DirectorDashboard projects={projects} />;
+        return <DirectorDashboard projects={projects} claims={claims} attendance={attendance} users={users} />;
       case 'Engineer':
         return <EngineerDashboard projects={projects} tasks={tasks} user={user} />;
       default:

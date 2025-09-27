@@ -88,8 +88,10 @@ export default function ClaimDetailsPage() {
   }
 
   const { claim, project, submittedBy } = claimData;
+  const canManageClaim = user?.role === 'Director';
 
   const handleStatusChange = (newStatus: Claim['status']) => {
+    if (!canManageClaim) return;
     const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
     if(claimIndex !== -1) {
         mockClaims[claimIndex].status = newStatus;
@@ -166,20 +168,30 @@ export default function ClaimDetailsPage() {
                     <Card className="bg-muted/40">
                         <CardHeader>
                             <CardTitle className="text-xl">Manage Claim</CardTitle>
-                            <CardDescription>Update the status of this payment claim.</CardDescription>
+                            <CardDescription>
+                                {canManageClaim 
+                                    ? "Update the status of this payment claim." 
+                                    : "Only Directors can change the claim status."}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="max-w-xs">
-                                <Select value={claim.status} onValueChange={handleStatusChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Set status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Pending">Pending</SelectItem>
-                                        <SelectItem value="Paid">Paid</SelectItem>
-                                        <SelectItem value="Overdue">Overdue</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {canManageClaim ? (
+                                    <Select value={claim.status} onValueChange={handleStatusChange}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Set status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Pending">Pending</SelectItem>
+                                            <SelectItem value="Paid">Paid</SelectItem>
+                                            <SelectItem value="Overdue">Overdue</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                     <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
+                                        {claim.status}
+                                    </Badge>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
