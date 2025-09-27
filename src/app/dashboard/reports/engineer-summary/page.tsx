@@ -1,29 +1,29 @@
 
+'use client';
+
+import { useEffect } from 'react';
 import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
 import { User, Project, Claim } from '@/types';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import ReportsPageLayout from '../ReportsPageLayout';
-import { ReportProvider } from '@/contexts/ReportContext';
+import { useReportContext } from '@/contexts/ReportContext';
 
 
-async function getData(): Promise<{ users: User[], projects: Project[], claims: Claim[] }> {
-  const users = mockUsers;
-  const projects = mockProjects;
-  const claims = mockClaims;
-  return { users, projects, claims };
-}
+// This is now a client component to allow updating the context
+export default function EngineerSummaryPage() {
+  const { setReportData } = useReportContext();
 
-export default async function EngineerSummaryPage() {
-  const { users, projects, claims } = await getData();
-  
-  const reportData = {
-    users,
-    projects,
-    claims,
-  };
+  useEffect(() => {
+    // In a real app, you'd fetch this data. For now, we use mocks.
+    const reportData = {
+      users: mockUsers,
+      projects: mockProjects,
+      claims: mockClaims,
+    };
+    setReportData(reportData);
+  }, [setReportData]);
 
   return (
-    <ReportProvider reportData={reportData}>
       <ReportsPageLayout>
         <div className="space-y-6">
           <div className="print-hidden">
@@ -35,6 +35,5 @@ export default async function EngineerSummaryPage() {
           <EngineerSummaryReport />
         </div>
       </ReportsPageLayout>
-    </ReportProvider>
   );
 }

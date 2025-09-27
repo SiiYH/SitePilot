@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, ReactNode, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
 import { User, Project, Claim } from '@/types';
 import * as XLSX from 'xlsx';
 
@@ -13,16 +13,18 @@ interface ReportDataContext {
 
 interface ReportContextType {
   reportData: ReportDataContext;
+  setReportData: (data: ReportDataContext) => void;
   exportToExcel: () => void;
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
-export function ReportProvider({ children, reportData }: { children: ReactNode; reportData: ReportDataContext }) {
+export function ReportProvider({ children, reportData: initialReportData }: { children: ReactNode; reportData: ReportDataContext }) {
+  const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
   
   const summaryData = useMemo(() => {
     const { users, projects, claims } = reportData;
-    if (!users || !projects || !claims) return [];
+    if (!users.length || !projects.length || !claims.length) return [];
     
     const engineers = users.filter(u => u.role === 'Engineer');
 
@@ -54,6 +56,7 @@ export function ReportProvider({ children, reportData }: { children: ReactNode; 
   }, [reportData]);
 
   const exportToExcel = () => {
+    if(summaryData.length === 0) return;
     const worksheet = XLSX.utils.json_to_sheet(summaryData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Engineer Summary');
@@ -62,6 +65,7 @@ export function ReportProvider({ children, reportData }: { children: ReactNode; 
 
   const value = {
     reportData,
+    setReportData,
     exportToExcel,
   };
 
