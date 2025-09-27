@@ -287,4 +287,5 @@ export default function ClaimDetailsPage() {
       </div>
     </div>
   );
-}
+
+    
