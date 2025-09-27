@@ -11,9 +11,19 @@ interface ReportDataContext {
   claims: Claim[];
 }
 
+interface SummaryData {
+  "Engineer Name": string;
+  "Completed Sites": number;
+  "Total Amount (RM)": number;
+  "Claim (RM)": number;
+  "Ongoing Sites": number;
+  "Due Sites": number;
+}
+
 interface ReportContextType {
   reportData: ReportDataContext;
   setReportData: (data: ReportDataContext) => void;
+  summaryData: SummaryData[];
   exportToExcel: () => void;
 }
 
@@ -22,9 +32,9 @@ const ReportContext = createContext<ReportContextType | undefined>(undefined);
 export function ReportProvider({ children, reportData: initialReportData }: { children: ReactNode; reportData: ReportDataContext }) {
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
   
-  const summaryData = useMemo(() => {
+  const summaryData: SummaryData[] = useMemo(() => {
     const { users, projects, claims } = reportData;
-    if (!users.length || !projects.length || !claims.length) return [];
+    if (!users.length || !projects.length) return [];
     
     const engineers = users.filter(u => u.role === 'Engineer');
 
@@ -66,6 +76,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const value = {
     reportData,
     setReportData,
+    summaryData,
     exportToExcel,
   };
 

@@ -4,7 +4,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Printer, FileDown, FileSpreadsheet } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,16 +50,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
                 <span>Print to PDF</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={context.exportToExcel}>
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-2">
-                    <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
-                    <path d="M12.98 4.72a.75.75 0 1 0-1.5.06v.97a.75.75 0 0 0 1.5-.06v-.97Z" />
-                    <path d="M14.48 5.47a.75.75 0 1 1-1.06-1.06l.68-.69a.75.75 0 0 1 1.06 1.06l-.68.69Z" />
-                    <path d="m15.97.05-3.38 3.38a.75.75 0 0 0 1.06 1.06l3.38-3.38a.75.75 0 0 0-1.06-1.06Z" />
-                    <path d="m19.28 4.97-3.97 3.97a.75.75 0 0 0 1.06 1.06l3.97-3.97a.75.75 0 0 0-1.06-1.06Z" />
-                    <path d="m19.97 9.53-4.47 4.47a.75.75 0 1 0 1.06 1.06l4.47-4.47a.75.75 0 1 0-1.06-1.06Z" />
-                    <path d="m15.72 15.28.06.06a.75.75 0 0 0 1.06-1.06l-.06-.06a.75.75 0 0 0-1.06 1.06Z" />
-                    <path d="m16.47 14.22-.69.68a.75.75 0 1 0 1.06 1.06l.69-.68a.75.75 0 1 0-1.06-1.06Z" />
-                </svg>
+                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 <span>Export to Excel</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

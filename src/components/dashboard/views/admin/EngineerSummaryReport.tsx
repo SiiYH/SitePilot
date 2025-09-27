@@ -16,41 +16,7 @@ interface SummaryData {
 }
 
 export default function EngineerSummaryReport() {
-  const { reportData } = useReportContext();
-  const { users, projects, claims } = reportData;
-
-  const summaryData: SummaryData[] = useMemo(() => {
-    if (!users || !projects || !claims) return [];
-    
-    const engineers = users.filter(u => u.role === 'Engineer');
-
-    return engineers.map(engineer => {
-      const assignedProjects = projects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const engineerClaims = claims.filter(c => c.submittedBy === engineer.id);
-
-      const completedSites = assignedProjects.filter(p => p.progress === 100).length;
-      const ongoingSites = assignedProjects.filter(p => p.progress < 100).length;
-      
-      const totalAmount = assignedProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
-      const claimAmount = engineerClaims.reduce((acc, c) => acc + c.amount, 0);
-
-      const dueSites = assignedProjects.filter(p => {
-        const isOverdue = new Date(p.endDate) < new Date() && p.progress < 100;
-        const hasOverdueTasks = p.tasks.some(t => t.assignedTo === engineer.id && t.status === 'Overdue');
-        return isOverdue || hasOverdueTasks;
-      }).length;
-
-      return {
-        "Engineer Name": engineer.name,
-        "Completed Sites": completedSites,
-        "Total Amount (RM)": totalAmount,
-        "Claim (RM)": claimAmount,
-        "Ongoing Sites": ongoingSites,
-        "Due Sites": dueSites,
-      };
-    });
-  }, [users, projects, claims]);
-
+  const { summaryData } = useReportContext();
 
   return (
     <Card className="print-card">
