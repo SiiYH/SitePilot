@@ -8,6 +8,7 @@ import { Building, PlusCircle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -41,6 +42,8 @@ const InfoField = ({ label, value }: { label: string; value?: string | null }) =
 export default function CompanyPage() {
   const [companyData, setCompanyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const canEdit = user?.role === 'Admin' || user?.role === 'Director';
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -91,7 +94,7 @@ export default function CompanyPage() {
                 <div>
                     {companyData?.name && <CardTitle>Details for {companyData.name}</CardTitle>}
                 </div>
-                 {companyData && (
+                 {companyData && canEdit && (
                     <Button variant="outline" size="sm" asChild>
                         <Link href="/create-company">
                           <Edit className="mr-2 h-4 w-4" />
