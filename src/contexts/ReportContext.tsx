@@ -4,6 +4,9 @@
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
 import { User, Project, Claim } from '@/types';
 import * as XLSX from 'xlsx';
+import { DateRange } from 'react-day-picker';
+import { isWithinInterval, parseISO } from 'date-fns';
+
 
 interface ReportDataContext {
   users: User[];
@@ -25,12 +28,15 @@ interface ReportContextType {
   setReportData: (data: ReportDataContext) => void;
   summaryData: SummaryData[];
   exportToExcel: () => void;
+  dateRange: DateRange | undefined;
+  setDateRange: (dateRange: DateRange) => void;
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
 
 export function ReportProvider({ children, reportData: initialReportData }: { children: ReactNode; reportData: ReportDataContext }) {
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   const summaryData: SummaryData[] = useMemo(() => {
     const { users, projects, claims } = reportData;
@@ -38,9 +44,14 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     
     const engineers = users.filter(u => u.role === 'Engineer');
 
+    const interval = dateRange?.from && dateRange?.to ? { start: dateRange.from, end: dateRange.to } : null;
+
+    const filteredProjects = interval ? projects.filter(p => isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)) : projects;
+    const filteredClaims = interval ? claims.filter(c => isWithinInterval(parseISO(c.date), interval)) : claims;
+
     return engineers.map(engineer => {
-      const assignedProjects = projects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const engineerClaims = claims.filter(c => c.submittedBy === engineer.id);
+      const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
+      const engineerClaims = filteredClaims.filter(c => c.submittedBy === engineer.id);
 
       const completedSites = assignedProjects.filter(p => p.progress === 100).length;
       const ongoingSites = assignedProjects.filter(p => p.progress < 100).length;
@@ -63,7 +74,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         "Due Sites": dueSites,
       };
     });
-  }, [reportData]);
+  }, [reportData, dateRange]);
 
   const exportToExcel = () => {
     if(summaryData.length === 0) return;
@@ -78,6 +89,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     setReportData,
     summaryData,
     exportToExcel,
+    dateRange,
+    setDateRange,
   };
 
   return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;
