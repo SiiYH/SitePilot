@@ -60,8 +60,8 @@ export default function EngineerSummaryReport({ users, projects, claims }: Engin
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="print-card">
+      <CardHeader className="print-hidden">
         <CardTitle>Summary Details</CardTitle>
         <CardDescription>Metrics are calculated based on all projects and claims in the system.</CardDescription>
       </CardHeader>

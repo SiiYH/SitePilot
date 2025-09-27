@@ -78,3 +78,31 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .print-only {
+    display: none;
+  }
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .print-hidden {
+      display: none !important;
+    }
+    .print-only {
+      display: block;
+    }
+    .print-container {
+      display: block !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+     .print-card {
+      border: 1px solid hsl(var(--border));
+      box-shadow: none;
+    }
+  }
+}

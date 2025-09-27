@@ -15,7 +15,7 @@ const mainMenuItems = [
   { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['Engineer'] },
   { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['Admin', 'Director'] },
   { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/reports/engineer-summary', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director'] },
+  { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director'] },
 ];
 
 const settingsMenuItems = [
@@ -39,10 +39,10 @@ export default function AppSidebar() {
 
   return (
     <>
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-4 print-hidden">
         <Logo />
       </SidebarHeader>
-      <SidebarContent className="flex-grow">
+      <SidebarContent className="flex-grow print-hidden">
         <SidebarMenu>
           {mainMenuItems.map((item) => (
             userHasAccess(item.roles) &&
@@ -61,7 +61,7 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarContent className="mt-auto flex-none">
+      <SidebarContent className="mt-auto flex-none print-hidden">
         <SidebarSeparator />
          <SidebarMenu className="py-2">
           {settingsMenuItems.map((item) => (
