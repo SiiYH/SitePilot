@@ -3,14 +3,14 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockClaims, mockProjects, mockUsers } from '@/lib/data';
+import { mockClaims, mockUsers } from '@/lib/data';
 import { Claim, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 
-async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User } | undefined> {
+async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | undefined> {
   // In a real app, this would be a database call. We find the index to modify it later.
   const claim = mockClaims.find(c => c.id === id);
   if (!claim) {
@@ -28,7 +28,8 @@ async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, 
   }
   const project = mockProjects.find(p => p.id === claim.projectId);
   const submittedBy = mockUsers.find(u => u.id === claim.submittedBy);
-  return { claim, project, submittedBy };
+  const approvedBy = claim.approvedBy ? mockUsers.find(u => u.id === claim.approvedBy) : undefined;
+  return { claim, project, submittedBy, approvedBy };
 }
 
 const getInitials = (name: string) => {
@@ -66,7 +67,7 @@ export default function ClaimDetailsPage() {
   const id = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
-  const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User } | null>(null);
+  const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | null>(null);
   const [remark, setRemark] = useState('');
   const [isEditingRemark, setIsEditingRemark] = useState(false);
 
@@ -83,20 +84,32 @@ export default function ClaimDetailsPage() {
     }
   }, [id]);
 
-  if (!claimData) {
+  if (!claimData || !user) {
     return null;
   }
 
-  const { claim, project, submittedBy } = claimData;
-  const canManageClaim = user?.role === 'Director';
+  const { claim, project, submittedBy, approvedBy } = claimData;
+  const canManageClaim = user.role === 'Director';
 
   const handleStatusChange = (newStatus: Claim['status']) => {
     if (!canManageClaim) return;
     const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
     if(claimIndex !== -1) {
-        mockClaims[claimIndex].status = newStatus;
+        const updatedClaim = { ...mockClaims[claimIndex], status: newStatus };
+        if (newStatus === 'Paid') {
+            updatedClaim.approvedBy = user.id;
+            updatedClaim.approvedAt = new Date().toISOString();
+        } else {
+            // If status is changed from Paid to something else, clear approval info
+            delete updatedClaim.approvedBy;
+            delete updatedClaim.approvedAt;
+        }
+        mockClaims[claimIndex] = updatedClaim;
+
+        getClaim(id).then(data => {
+            if (data) setClaimData(data);
+        });
     }
-    setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, status: newStatus } } : null);
   };
   
   const handleSaveRemark = () => {
@@ -193,12 +206,16 @@ export default function ClaimDetailsPage() {
                                     </Badge>
                                 )}
                             </div>
+                            {claim.status === 'Paid' && approvedBy && claim.approvedAt && (
+                                <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                    <span>Approved by {approvedBy.name} on {format(new Date(claim.approvedAt), 'PPP')}</span>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </CardContent>
             </Card>
-
-            
         </div>
         
         <div className="md:col-span-1 space-y-6">
@@ -287,5 +304,4 @@ export default function ClaimDetailsPage() {
       </div>
     </div>
   );
-
-    
+}

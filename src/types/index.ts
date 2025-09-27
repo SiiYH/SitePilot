@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 
 export interface User {
@@ -71,6 +72,8 @@ export interface Claim {
   receiptImageUrl?: string;
   receiptImageHint?: string;
   remark?: string;
+  approvedBy?: string; // User ID of Director who approved
+  approvedAt?: string; // ISO date string
 }
 
 export interface AttendanceRecord {
