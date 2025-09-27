@@ -14,10 +14,12 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 // This is now a client component to allow updating the context
 export default function EngineerSummaryPage() {
   const { setReportData, setDateRange } = useReportContext();
+  const { toast } = useToast();
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
@@ -33,8 +35,12 @@ export default function EngineerSummaryPage() {
     setReportData(reportData);
     if (date) {
       setDateRange(date);
+      toast({
+        title: 'Report Loaded',
+        description: 'The summary has been updated for the selected date range.',
+      });
     }
-  }, [setReportData, setDateRange, date]);
+  }, [setReportData, setDateRange, date, toast]);
 
   return (
       <ReportsPageLayout>
