@@ -83,6 +83,19 @@
   .print-only {
     display: none;
   }
+
+  @page {
+    size: A4;
+    margin: 1.5cm;
+    
+    @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 10px;
+        color: hsl(var(--muted-foreground));
+    }
+  }
+
+
   @media print {
     body {
       -webkit-print-color-adjust: exact;
@@ -92,7 +105,7 @@
       display: none !important;
     }
     .print-only {
-      display: block;
+      display: block !important;
     }
     .print-container {
       display: block !important;
@@ -103,6 +116,19 @@
      .print-card {
       border: 1px solid hsl(var(--border));
       box-shadow: none;
+    }
+    
+    #print-header, #print-footer {
+        display: block;
+    }
+    
+    /* Page numbering - handled by @page rule */
+    #print-footer .page-number::after {
+        content: counter(page);
+    }
+
+    #print-footer .total-pages::after {
+        content: counter(pages);
     }
   }
 }
