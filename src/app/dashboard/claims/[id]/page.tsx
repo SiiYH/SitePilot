@@ -3,7 +3,7 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockClaims, mockUsers } from '@/lib/data';
+import { mockClaims, mockUsers, mockProjects } from '@/lib/data';
 import { Claim, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
