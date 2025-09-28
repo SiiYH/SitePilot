@@ -77,7 +77,6 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData, dateRange]);
 
   const exportToExcel = () => {
-    if(summaryData.length === 0) return;
     const worksheet = XLSX.utils.json_to_sheet(summaryData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Engineer Summary');
