@@ -87,12 +87,6 @@
   @page {
     size: A4;
     margin: 1.5cm;
-    
-    @bottom-right {
-        content: "Page " counter(page) " of " counter(pages);
-        font-size: 10px;
-        color: hsl(var(--muted-foreground));
-    }
   }
 
 
@@ -119,10 +113,19 @@
     }
     
     #print-header, #print-footer {
-        display: block;
+        position: fixed;
+        width: 100%;
+    }
+
+    #print-header {
+      top: 0;
     }
     
-    /* Page numbering - handled by @page rule */
+    #print-footer {
+      bottom: 0;
+    }
+    
+    /* Page numbering */
     #print-footer .page-number::after {
         content: counter(page);
     }
