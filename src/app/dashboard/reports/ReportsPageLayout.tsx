@@ -18,8 +18,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   const pathname = usePathname();
   const isReportDetailsPage = pathname.includes('/engineer-summary');
   
-  // Conditionally get the context to avoid errors on pages that don't need it.
-  const context = isReportDetailsPage ? useReportContext() : null;
+  const context = useReportContext();
   const { user } = useAuth();
 
   const handlePrint = () => {
@@ -27,14 +26,12 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   };
 
   const handleExcelExport = () => {
-    if (context) {
-        context.exportToExcel();
-    }
+    context.exportToExcel();
   }
 
   return (
     <div className="print-container space-y-6">
-      <div className="print-hidden flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="print-hidden flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
         {isReportDetailsPage ? (
           <Button variant="outline" asChild>
             <Link href="/dashboard/reports">
@@ -43,13 +40,13 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
             </Link>
           </Button>
         ) : (
-          <div /> // Placeholder to keep layout consistent
+          <div /> 
         )}
         
         {isReportDetailsPage && (
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <FileDown className="mr-2 h-4 w-4" />
                 Export
               </Button>
