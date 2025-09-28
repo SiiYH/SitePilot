@@ -17,12 +17,20 @@ import { useAuth } from '@/hooks/use-auth';
 export default function ReportsPageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isReportDetailsPage = pathname.includes('/engineer-summary');
-  const context = useReportContext();
+  
+  // Conditionally get the context to avoid errors on pages that don't need it.
+  const context = isReportDetailsPage ? useReportContext() : null;
   const { user } = useAuth();
 
   const handlePrint = () => {
     window.print();
   };
+
+  const handleExcelExport = () => {
+    if (context) {
+        context.exportToExcel();
+    }
+  }
 
   return (
     <div className="print-container space-y-6">
@@ -51,7 +59,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
                 <Printer className="mr-2 h-4 w-4" />
                 <span>Print to PDF</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={context.exportToExcel}>
+              <DropdownMenuItem onClick={handleExcelExport}>
                  <FileSpreadsheet className="mr-2 h-4 w-4" />
                 <span>Export to Excel</span>
               </DropdownMenuItem>
