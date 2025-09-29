@@ -65,7 +65,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
             amount: undefined,
             currency: 'MYR',
         });
-        const projectCurrency = projects.find(p => p.id === defaultProjectId)?.currency;
+        const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
         if (projectCurrency) {
             form.setValue('currency', projectCurrency);
         }
@@ -74,7 +74,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
             fileInputRef.current.value = '';
         }
     }
-  }, [open, defaultProjectId, form, projects]);
+  }, [open, defaultProjectId, form, projects, selectedProjectId]);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -280,7 +280,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                               if(fileInputRef.current) fileInputRef.current.value = '';
                           }}
                       >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4 fill-destructive-foreground" />
                       </Button>
                   </div>
               )}
