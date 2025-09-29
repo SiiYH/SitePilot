@@ -30,6 +30,7 @@ const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
   title: z.string().min(3, 'Claim title must be at least 3 characters.'),
+  eInvoiceNo: z.string().optional(),
   description: z.string().optional(),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than 0.'),
   currency: z.string().min(3, 'Currency is required.'),
@@ -48,6 +49,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     defaultValues: {
       projectId: defaultProjectId || '',
       title: '',
+      eInvoiceNo: '',
       description: '',
       amount: '' as any, // Use empty string for controlled input
       currency: 'MYR',
@@ -61,8 +63,9 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         form.reset({
             projectId: defaultProjectId || '',
             title: '',
+            eInvoiceNo: '',
             description: '',
-            amount: '' as any, // Use empty string for controlled input
+            amount: '' as any,
             currency: 'MYR',
         });
         const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
@@ -96,6 +99,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       id: `claim-${Date.now()}`,
       projectId: values.projectId,
       title: values.title,
+      eInvoiceNo: values.eInvoiceNo,
       description: values.description,
       amount: values.amount,
       currency: values.currency,
@@ -199,6 +203,19 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
               />
               <FormField
                 control={form.control}
+                name="eInvoiceNo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-Invoice No. (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., INV-2024-12345" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -238,7 +255,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                       <FormItem className="flex-grow">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                          <Input type="number" placeholder="e.g., 1500.00" {...field} />
+                          <Input type="number" placeholder="e.g., 1500.00" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                       </FormItem>

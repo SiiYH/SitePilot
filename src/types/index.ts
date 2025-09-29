@@ -78,6 +78,7 @@ export interface Claim {
   remark?: string;
   approvedBy?: string; // User ID of Director who approved
   approvedAt?: string; // ISO date string
+  eInvoiceNo?: string;
 }
 
 export interface CreateClaimDialogProps {

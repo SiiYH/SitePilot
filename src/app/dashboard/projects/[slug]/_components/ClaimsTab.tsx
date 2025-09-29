@@ -89,6 +89,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTab
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Claim</TableHead>
+                                    <TableHead>E-Inv No.</TableHead>
                                     <TableHead>Submitted By</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Date</TableHead>
@@ -103,6 +104,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTab
                                         className="cursor-pointer"
                                     >
                                         <TableCell className="font-medium">{claim.title}</TableCell>
+                                        <TableCell>{claim.eInvoiceNo || 'N/A'}</TableCell>
                                         <TableCell>{getUserName(claim.submittedBy)}</TableCell>
                                         <TableCell><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</TableCell>
                                         <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>

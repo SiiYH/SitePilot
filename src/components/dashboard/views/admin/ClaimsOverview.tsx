@@ -115,6 +115,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Claim</TableHead>
+                                <TableHead>E-Inv No.</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Submitted By</TableHead>
                                 <TableHead>Amount</TableHead>
@@ -131,6 +132,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                         className="cursor-pointer"
                                     >
                                         <TableCell className="font-medium">{claim.title}</TableCell>
+                                        <TableCell>{claim.eInvoiceNo || 'N/A'}</TableCell>
                                         <TableCell>{getProjectName(claim.projectId)}</TableCell>
                                         <TableCell>{getUserName(claim.submittedBy)}</TableCell>
                                         <TableCell><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</TableCell>
@@ -144,7 +146,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center">
                                         No claims found for the selected status.
                                     </TableCell>
                                 </TableRow>
