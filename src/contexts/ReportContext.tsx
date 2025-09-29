@@ -92,7 +92,15 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   
   const filteredTasks = useMemo(() => {
     const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
-    return interval ? allTasks.filter(t => isWithinInterval(parseISO(t.dueDate), interval)) : allTasks;
+    if (!interval) return allTasks;
+    return allTasks.filter(t => {
+      try {
+        return isWithinInterval(parseISO(t.dueDate), interval);
+      } catch (e) {
+        // Ignore tasks with invalid dates
+        return false;
+      }
+    });
   }, [reportData.projects, interval]);
 
 

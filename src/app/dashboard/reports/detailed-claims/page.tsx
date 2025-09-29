@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
-import { Calendar as CalendarIcon, User } from 'lucide-react';
+import { Calendar as CalendarIcon, User, X } from 'lucide-react';
 import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
 import ReportsPageLayout from '../ReportsPageLayout';
 import { useReportContext } from '@/contexts/ReportContext';
@@ -37,9 +37,7 @@ export default function DetailedClaimsPage() {
   }, [setReportData]);
 
   useEffect(() => {
-     if (date) {
-      setDateRange(date);
-    }
+    setDateRange(date);
     setSelectedEngineerId(selectedEngineer === 'all' ? undefined : selectedEngineer);
     toast({
         title: 'Report Loaded',
@@ -57,56 +55,70 @@ export default function DetailedClaimsPage() {
                 A detailed breakdown of all claims.
                 </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <User className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Select Engineer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Engineers</SelectItem>
-                  {engineers.map(engineer => (
-                    <SelectItem key={engineer.id} value={engineer.id}>
-                      {engineer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Popover>
-                  <PopoverTrigger asChild>
-                  <Button
-                      id="date"
-                      variant={'outline'}
-                      className={cn(
-                      'w-full justify-start text-left font-normal sm:w-[300px]',
-                      !date && 'text-muted-foreground'
-                      )}
-                  >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date?.from ? (
-                      date.to ? (
-                          <>
-                          {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
-                          </>
-                      ) : (
-                          format(date.from, 'LLL dd, y')
-                      )
-                      ) : (
-                      <span>Pick a date</span>
-                      )}
-                  </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={date?.from}
-                      selected={date}
-                      onSelect={setDate}
-                      numberOfMonths={2}
-                  />
-                  </PopoverContent>
-              </Popover>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+               <div className="grid gap-2">
+                  <span className="text-sm font-medium">Engineer</span>
+                  <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <User className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select Engineer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Engineers</SelectItem>
+                      {engineers.map(engineer => (
+                        <SelectItem key={engineer.id} value={engineer.id}>
+                          {engineer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+               </div>
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Date range</span>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            id="date"
+                            variant={'outline'}
+                            className={cn(
+                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                            !date && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date?.from ? (
+                            date.to ? (
+                                <>
+                                {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                                </>
+                            ) : (
+                                format(date.from, 'LLL dd, y')
+                            )
+                            ) : (
+                            <span>All time</span>
+                            )}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={date?.from}
+                            selected={date}
+                            onSelect={setDate}
+                            numberOfMonths={2}
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {date && (
+                        <Button variant="ghost" onClick={() => setDate(undefined)} className="px-2">
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Clear date filter</span>
+                        </Button>
+                    )}
+                </div>
+              </div>
             </div>
           </div>
           <DetailedClaimsReport />
@@ -114,4 +126,5 @@ export default function DetailedClaimsPage() {
       </ReportsPageLayout>
   );
 }
+
 
