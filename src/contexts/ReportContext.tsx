@@ -79,11 +79,30 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [dateRange]);
 
   const filteredProjects = useMemo(() => {
-    return interval ? reportData.projects.filter(p => isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)) : reportData.projects;
-  }, [reportData.projects, interval]);
+    let projectsToFilter = reportData.projects;
+
+    if (selectedProjectId) {
+      projectsToFilter = projectsToFilter.filter(p => p.id === selectedProjectId);
+    }
+    if (selectedEngineerId) {
+      projectsToFilter = projectsToFilter.filter(p => p.assignedEngineers.includes(selectedEngineerId));
+    }
+    if (interval) {
+        projectsToFilter = projectsToFilter.filter(p => {
+          try {
+            return isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)
+          } catch {
+            return false;
+          }
+        });
+    }
+
+    return projectsToFilter;
+  }, [reportData.projects, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredClaims = useMemo(() => {
      let claimsToFilter = reportData.claims;
+
      if (selectedEngineerId) {
         claimsToFilter = claimsToFilter.filter(c => c.submittedBy === selectedEngineerId);
      }
@@ -91,27 +110,44 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       claimsToFilter = claimsToFilter.filter(c => c.projectId === selectedProjectId);
     }
      if (interval) {
-        claimsToFilter = claimsToFilter.filter(c => isWithinInterval(parseISO(c.date), interval));
+        claimsToFilter = claimsToFilter.filter(c => {
+          try {
+            return isWithinInterval(parseISO(c.date), interval)
+          } catch {
+            return false;
+          }
+        });
      }
      return claimsToFilter;
   }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
     const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
-    if (!interval) return allTasks;
-    return allTasks.filter(t => {
-      try {
-        return isWithinInterval(parseISO(t.dueDate), interval);
-      } catch (e) {
-        // Ignore tasks with invalid dates
-        return false;
-      }
-    });
-  }, [reportData.projects, interval]);
+    
+    let tasksToFilter = allTasks;
+
+    if (selectedEngineerId) {
+      tasksToFilter = tasksToFilter.filter(t => t.assignedTo === selectedEngineerId);
+    }
+    if (selectedProjectId) {
+      tasksToFilter = tasksToFilter.filter(t => t.projectId === selectedProjectId);
+    }
+    if (interval) {
+      tasksToFilter = tasksToFilter.filter(t => {
+        try {
+          return isWithinInterval(parseISO(t.dueDate), interval);
+        } catch (e) {
+          // Ignore tasks with invalid dates
+          return false;
+        }
+      });
+    }
+    return tasksToFilter;
+  }, [reportData.projects, interval, selectedEngineerId, selectedProjectId]);
 
 
   const summaryData: SummaryData[] = useMemo(() => {
-    if (!engineers.length || !filteredProjects.length) return [];
+    if (!engineers.length) return [];
 
     return engineers.map(engineer => {
       const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
@@ -124,9 +160,13 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const claimAmount = engineerClaims.reduce((acc, c) => acc + c.amount, 0);
 
       const dueSites = assignedProjects.filter(p => {
-        const isOverdue = new Date(p.endDate) < new Date() && p.progress < 100;
-        const hasOverdueTasks = p.tasks.some(t => t.assignedTo === engineer.id && t.status === 'Overdue');
-        return isOverdue || hasOverdueTasks;
+        try {
+            const isOverdue = new Date(p.endDate) < new Date() && p.progress < 100;
+            const hasOverdueTasks = p.tasks.some(t => t.assignedTo === engineer.id && t.status === 'Overdue');
+            return isOverdue || hasOverdueTasks;
+        } catch {
+            return false;
+        }
       }).length;
 
       return {
@@ -149,8 +189,13 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const completedTasks = assignedTasks.filter(t => t.status === 'Completed').length;
       const overdueTasks = assignedTasks.filter(t => t.status === 'Overdue').length;
       
-      const onTimeTasks = assignedTasks.filter(t => 
-        t.status === 'Completed' && new Date(t.dueDate) >= new Date() // Simplified logic
+      const onTimeTasks = assignedTasks.filter(t => {
+          try {
+            return t.status === 'Completed' && new Date(t.dueDate) >= new Date() // Simplified logic
+          } catch {
+              return false;
+          }
+        }
       ).length;
 
       const onTimeRate = completedTasks > 0 ? (onTimeTasks / completedTasks) * 100 : 0;
