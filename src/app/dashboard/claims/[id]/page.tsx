@@ -18,6 +18,7 @@ import Image from 'next/image';
 import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 
 async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | undefined> {
@@ -222,40 +223,50 @@ export default function ClaimDetailsPage() {
         </div>
         
         <div className="md:col-span-1 space-y-6">
-            {claim.receiptImageUrl && (
+            {claim.receiptImageUrls && claim.receiptImageUrls.length > 0 && (
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Paperclip className="h-5 w-5 text-primary" />
-                            <span>Attached Receipt</span>
+                            <span>Attached Receipt(s)</span>
                         </CardTitle>
-                        <CardDescription>Image submitted as proof for this claim. Click to enlarge.</CardDescription>
+                        <CardDescription>Image(s) submitted as proof for this claim. Click to enlarge.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
-                                    <Image
-                                        src={claim.receiptImageUrl}
-                                        alt="Receipt for claim"
-                                        fill
-                                        className="object-cover"
-                                        data-ai-hint={claim.receiptImageHint}
-                                    />
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="p-0 sm:max-w-3xl border-0 bg-transparent shadow-none">
-                                <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
-                                <div className="relative aspect-video w-full sm:aspect-[3/4]">
-                                    <Image
-                                        src={claim.receiptImageUrl}
-                                        alt="Receipt for claim"
-                                        fill
-                                        className="object-contain"
-                                    />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                        <Carousel className="w-full max-w-xs mx-auto">
+                            <CarouselContent>
+                                {claim.receiptImageUrls.map((url, index) => (
+                                    <CarouselItem key={index}>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <div className="relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                                                    <Image
+                                                        src={url}
+                                                        alt={`Receipt for claim ${index + 1}`}
+                                                        fill
+                                                        className="object-cover"
+                                                        data-ai-hint="uploaded receipt"
+                                                    />
+                                                </div>
+                                            </DialogTrigger>
+                                            <DialogContent className="p-0 sm:max-w-3xl border-0 bg-transparent shadow-none">
+                                                <DialogTitle className="sr-only">Enlarged Receipt Image</DialogTitle>
+                                                <div className="relative aspect-video w-full sm:aspect-[3/4]">
+                                                    <Image
+                                                        src={url}
+                                                        alt={`Receipt for claim ${index + 1}`}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious />
+                            <CarouselNext />
+                        </Carousel>
                     </CardContent>
                 </Card>
             )}

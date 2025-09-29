@@ -33,13 +33,13 @@ const formSchema = z.object({
   description: z.string().optional(),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than 0.'),
   currency: z.string().min(3, 'Currency is required.'),
-  receiptImage: z.any().optional(),
+  receiptImages: z.any().optional(),
 });
 
 export default function CreateClaimDialog({ projects, onClaimCreated, userId, defaultProjectId }: CreateClaimDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -68,8 +68,10 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
         if (projectCurrency) {
             form.setValue('currency', projectCurrency);
+        } else {
+            form.setValue('currency', 'MYR');
         }
-        setImagePreview(null);
+        setImagePreviews([]);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -82,6 +84,8 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
       }
+    } else {
+        form.setValue('currency', 'MYR');
     }
   }, [selectedProjectId, projects, form]);
 
@@ -98,8 +102,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       status: 'Pending',
       date: new Date().toISOString(),
       submittedBy: userId,
-      receiptImageUrl: imagePreview || undefined,
-      receiptImageHint: imagePreview ? 'uploaded receipt' : undefined,
+      receiptImageUrls: imagePreviews,
     };
     
     mockClaims.unshift(newClaim);
@@ -116,15 +119,32 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   };
   
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = event.target.files;
+    if (files) {
+      const remainingSlots = 3 - imagePreviews.length;
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+      if (files.length > remainingSlots) {
+        toast({
+            variant: 'destructive',
+            title: 'Upload Limit Exceeded',
+            description: `You can only upload up to 3 images. ${filesToProcess.length} images were added.`,
+        });
+      }
+
+      filesToProcess.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreviews(prev => [...prev, e.target?.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
+
+  const removeImage = (index: number) => {
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -227,10 +247,10 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
               </div>
                <FormField
                   control={form.control}
-                  name="receiptImage"
+                  name="receiptImages"
                   render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Receipt (Optional)</FormLabel>
+                      <FormLabel>Receipt(s) (Max 3)</FormLabel>
                       <FormControl>
                       <div>
                           <input
@@ -239,10 +259,16 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                           onChange={handleFileChange}
                           className="hidden"
                           accept="image/*"
+                          multiple
                           />
-                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={imagePreviews.length >= 3}
+                          >
                               <Upload className="mr-2 h-4 w-4" />
-                              Upload Image
+                              Upload Image(s)
                           </Button>
                       </div>
                       </FormControl>
@@ -250,38 +276,39 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                   </FormItem>
                   )}
               />
-              {imagePreview && (
-                  <div className="relative mt-2">
-                     <Dialog>
-                        <DialogTrigger asChild>
-                           <div className="relative aspect-video w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
-                              <Image src={imagePreview} alt="Receipt preview" fill className="object-contain"/>
-                           </div>
-                        </DialogTrigger>
-                        <DialogContent className="p-0 sm:max-w-2xl border-0 bg-transparent shadow-none">
-                            <DialogTitle className="sr-only">Enlarged Receipt Preview</DialogTitle>
-                            <div className="relative aspect-video w-full">
-                                <Image
-                                    src={imagePreview}
-                                    alt="Receipt preview"
-                                    fill
-                                    className="object-contain"
-                                />
-                            </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                          onClick={() => {
-                              setImagePreview(null);
-                              if(fileInputRef.current) fileInputRef.current.value = '';
-                          }}
-                      >
-                          <X className="h-4 w-4 fill-destructive-foreground" />
-                      </Button>
+              {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                     {imagePreviews.map((preview, index) => (
+                         <div key={index} className="relative mt-2">
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                <div className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                                    <Image src={preview} alt={`Receipt preview ${index + 1}`} fill className="object-cover"/>
+                                </div>
+                                </DialogTrigger>
+                                <DialogContent className="p-0 sm:max-w-2xl border-0 bg-transparent shadow-none">
+                                    <DialogTitle className="sr-only">Enlarged Receipt Preview</DialogTitle>
+                                    <div className="relative aspect-video w-full">
+                                        <Image
+                                            src={preview}
+                                            alt={`Receipt preview ${index + 1}`}
+                                            fill
+                                            className="object-contain"
+                                        />
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                onClick={() => removeImage(index)}
+                            >
+                                <X className="h-4 w-4 fill-destructive-foreground" />
+                            </Button>
+                        </div>
+                     ))}
                   </div>
               )}
             </div>

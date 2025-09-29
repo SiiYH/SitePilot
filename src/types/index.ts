@@ -73,7 +73,7 @@ export interface Claim {
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;
   submittedBy: string; // User ID
-  receiptImageUrl?: string;
+  receiptImageUrls?: string[];
   receiptImageHint?: string;
   remark?: string;
   approvedBy?: string; // User ID of Director who approved
