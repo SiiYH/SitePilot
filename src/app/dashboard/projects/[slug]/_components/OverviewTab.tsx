@@ -24,15 +24,13 @@ const InfoField = ({ label, value, unit, currency }: { label: string; value?: st
     let displayValue: string | React.ReactNode = value;
 
     if (typeof value === 'number') {
-        if (currency === 'MYR') {
+        if (currency) {
             displayValue = (
                 <>
                     {value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     <span className="ml-1 text-xs text-muted-foreground">{currency}</span>
                 </>
             );
-        } else if (currency) {
-            displayValue = value.toLocaleString('en-US', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
         } else {
             displayValue = value.toLocaleString();
         }
