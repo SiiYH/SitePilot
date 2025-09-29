@@ -27,3 +27,5 @@ export default async function EditProjectPage({ params }: { params: { slug: stri
     </div>
   );
 }
+
+    
