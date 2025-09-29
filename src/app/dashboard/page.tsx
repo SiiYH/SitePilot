@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { mockProjects, mockUsers, mockClaims, mockAttendance } from '@/lib/data';
-import { Project, User, Claim, AttendanceRecord } from '@/types';
+import { Project, User, Claim, AttendanceRecord, Task } from '@/types';
 import AdminDashboard from '@/components/dashboard/views/AdminDashboard';
 import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 export default function DashboardPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Project['tasks']>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -25,7 +25,11 @@ export default function DashboardPage() {
         const engineerProjects = mockProjects.filter(p => p.assignedEngineers.includes(user.id));
         setProjects(engineerProjects);
         
-        const engineerTasks = engineerProjects.flatMap(p => p.tasks.filter(t => t.assignedTo === user.id));
+        const engineerTasks = engineerProjects.flatMap(p => 
+            p.tasks
+            .filter(t => t.assignedTo === user.id)
+            .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
+        );
         setTasks(engineerTasks);
         
       } else if (user.role === 'Admin' || user.role === 'Director') {

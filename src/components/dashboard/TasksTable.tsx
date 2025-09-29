@@ -1,5 +1,7 @@
+
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Task, User, UserRole } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -36,11 +38,14 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
   }
 
+  const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Task</TableHead>
+          {showProjectColumn && <TableHead>Project</TableHead>}
           <TableHead>Assigned To</TableHead>
           <TableHead>Due Date</TableHead>
           <TableHead className="text-right">Status</TableHead>
@@ -50,6 +55,17 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
         {tasks.map(task => (
           <TableRow key={task.id}>
             <TableCell className="font-medium">{task.title}</TableCell>
+             {showProjectColumn && (
+              <TableCell>
+                {task.projectSlug ? (
+                  <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
+                    {task.projectName}
+                  </Link>
+                ) : (
+                  task.projectName || 'N/A'
+                )}
+              </TableCell>
+            )}
             <TableCell>{getUserName(task.assignedTo)}</TableCell>
             <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">

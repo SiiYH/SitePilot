@@ -17,6 +17,8 @@ export interface Task {
   assignedTo: string; // User ID
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
   dueDate: string;
+  projectName?: string;
+  projectSlug?: string;
 }
 
 export interface Document {
