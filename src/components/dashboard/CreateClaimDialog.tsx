@@ -59,6 +59,8 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
       }
+    } else {
+        form.setValue('currency', 'MYR');
     }
   }, [selectedProjectId, projects, form]);
 
@@ -164,7 +166,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                     render={({ field }) => (
                         <FormItem className="w-24">
                         <FormLabel>Currency</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="CUR" />
