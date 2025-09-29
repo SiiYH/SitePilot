@@ -47,9 +47,9 @@ export default function ProjectStatusReport() {
                   <TableRow key={index}>
                     <TableCell className="font-medium">{data['Project Name']}</TableCell>
                     <TableCell>
-                        <div className='flex items-center gap-2'>
-                             <Progress value={data.Progress} className="h-2 w-16" />
-                             <span className='w-8 text-left'>{data.Progress}%</span>
+                        <div className='flex flex-col items-start gap-1 w-24'>
+                             <span className='text-xs font-medium text-muted-foreground'>{data.Progress}%</span>
+                             <Progress value={data.Progress} className="h-2 w-full" />
                         </div>
                     </TableCell>
                     <TableCell>
