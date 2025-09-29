@@ -2,6 +2,7 @@
 'use client';
 
 import { ReportProvider } from '@/contexts/ReportContext';
+import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
 
 export default function ReportsLayout({
   children,
@@ -11,9 +12,9 @@ export default function ReportsLayout({
   // Provide a default empty context at the layout level.
   // Specific report pages will provide their own data.
   const defaultReportData = {
-    users: [],
-    projects: [],
-    claims: [],
+    users: mockUsers,
+    projects: mockProjects,
+    claims: mockClaims,
   };
 
   return (

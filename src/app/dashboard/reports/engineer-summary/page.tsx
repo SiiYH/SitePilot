@@ -4,9 +4,7 @@
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
-import { User, Project, Claim } from '@/types';
+import { Calendar as CalendarIcon, X } from 'lucide-react';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import ReportsPageLayout from '../ReportsPageLayout';
 import { useReportContext } from '@/contexts/ReportContext';
@@ -18,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // This is now a client component to allow updating the context
 export default function EngineerSummaryPage() {
-  const { setReportData, setDateRange } = useReportContext();
+  const { setDateRange } = useReportContext();
   const { toast } = useToast();
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
@@ -26,21 +24,12 @@ export default function EngineerSummaryPage() {
   });
 
   useEffect(() => {
-    // In a real app, you'd fetch this data. For now, we use mocks.
-    const reportData = {
-      users: mockUsers,
-      projects: mockProjects,
-      claims: mockClaims,
-    };
-    setReportData(reportData);
-    if (date) {
-      setDateRange(date);
-      toast({
-        title: 'Report Loaded',
-        description: 'The summary has been updated for the selected date range.',
-      });
-    }
-  }, [setReportData, setDateRange, date, toast]);
+    setDateRange(date);
+    toast({
+      title: 'Report Loaded',
+      description: 'The summary has been updated for the selected date range.',
+    });
+  }, [setDateRange, date, toast]);
 
   return (
       <ReportsPageLayout>
@@ -52,43 +41,53 @@ export default function EngineerSummaryPage() {
                 A summary of performance and financial metrics for each engineer.
                 </p>
             </div>
-             <div className="grid gap-2 sm:max-w-xs">
+             <div className="flex flex-col gap-4">
+              <div className="grid gap-2">
                 <span className="text-sm font-medium">Date range</span>
-                <Popover>
-                    <PopoverTrigger asChild>
-                    <Button
-                        id="date"
-                        variant={'outline'}
-                        className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !date && 'text-muted-foreground'
-                        )}
-                    >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date?.from ? (
-                        date.to ? (
-                            <>
-                            {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
-                            </>
-                        ) : (
-                            format(date.from, 'LLL dd, y')
-                        )
-                        ) : (
-                        <span>Pick a date</span>
-                        )}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={date?.from}
-                        selected={date}
-                        onSelect={setDate}
-                        numberOfMonths={2}
-                    />
-                    </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            id="date"
+                            variant={'outline'}
+                            className={cn(
+                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                            !date && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date?.from ? (
+                            date.to ? (
+                                <>
+                                {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                                </>
+                            ) : (
+                                format(date.from, 'LLL dd, y')
+                            )
+                            ) : (
+                            <span>All time</span>
+                            )}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={date?.from}
+                            selected={date}
+                            onSelect={setDate}
+                            numberOfMonths={2}
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {date && (
+                        <Button variant="ghost" onClick={() => setDate(undefined)} className="px-2">
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Clear date filter</span>
+                        </Button>
+                    )}
+                </div>
+              </div>
             </div>
           </div>
           <EngineerSummaryReport />

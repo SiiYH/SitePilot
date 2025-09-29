@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function ReportsPageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isReportDetailsPage = pathname.includes('/engineer-summary') || pathname.includes('/engineer-performance');
+  const isReportDetailsPage = pathname.includes('/engineer-summary') || pathname.includes('/engineer-performance') || pathname.includes('/detailed-claims');
   
   const context = useReportContext();
   const { user } = useAuth();
@@ -35,6 +35,9 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
     }
     if (pathname.includes('/engineer-performance')) {
       return "SitePilot - Engineer Performance Report";
+    }
+    if (pathname.includes('/detailed-claims')) {
+        return "SitePilot - Detailed Claims Report";
     }
     return "SitePilot Report";
   }

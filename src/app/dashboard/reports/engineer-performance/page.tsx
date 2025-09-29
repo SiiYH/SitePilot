@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 import { Calendar as CalendarIcon, User, X } from 'lucide-react';
-import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
 import ReportsPageLayout from '../ReportsPageLayout';
 import { useReportContext } from '@/contexts/ReportContext';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 
 export default function EngineerPerformancePage() {
-  const { setReportData, setDateRange, setSelectedEngineerId, reportData } = useReportContext();
+  const { setDateRange, setSelectedEngineerId, reportData } = useReportContext();
   const { toast } = useToast();
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
@@ -28,16 +27,6 @@ export default function EngineerPerformancePage() {
 
   const engineers = reportData.users.filter(u => u.role === 'Engineer');
 
-  useEffect(() => {
-    // In a real app, you'd fetch this data. For now, we use mocks.
-    const reportData = {
-      users: mockUsers,
-      projects: mockProjects,
-      claims: mockClaims,
-    };
-    setReportData(reportData);
-  }, [setReportData]);
-  
   useEffect(() => {
     setDateRange(date);
     setSelectedEngineerId(selectedEngineer === 'all' ? undefined : selectedEngineer);
@@ -57,11 +46,11 @@ export default function EngineerPerformancePage() {
                 An overview of task completions, overdue tasks, and on-time rates.
                 </p>
             </div>
-            <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="grid gap-2 flex-1">
+            <div className="flex flex-col gap-4">
+                <div className="grid gap-2">
                     <span className="text-sm font-medium">Engineer</span>
                     <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
-                        <SelectTrigger>
+                        <SelectTrigger className="sm:w-[300px]">
                         <User className="mr-2 h-4 w-4" />
                         <SelectValue placeholder="Select Engineer" />
                         </SelectTrigger>
@@ -75,7 +64,7 @@ export default function EngineerPerformancePage() {
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="grid gap-2 flex-1">
+                 <div className="grid gap-2">
                     <span className="text-sm font-medium">Date range</span>
                     <div className="flex items-center gap-2">
                         <Popover>
@@ -84,7 +73,7 @@ export default function EngineerPerformancePage() {
                                 id="date"
                                 variant={'outline'}
                                 className={cn(
-                                'w-full justify-start text-left font-normal',
+                                'w-full justify-start text-left font-normal sm:w-[300px]',
                                 !date && 'text-muted-foreground'
                                 )}
                             >
