@@ -39,6 +39,9 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   }
 
   const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
+  
+  // Only show the "Assigned To" column if there are multiple assignees in the list
+  const showAssignedToColumn = new Set(tasks.map(t => t.assignedTo)).size > 1;
 
   return (
     <Table>
@@ -46,7 +49,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
         <TableRow>
           <TableHead>Task</TableHead>
           {showProjectColumn && <TableHead>Project</TableHead>}
-          <TableHead>Assigned To</TableHead>
+          {showAssignedToColumn && <TableHead>Assigned To</TableHead>}
           <TableHead>Due Date</TableHead>
           <TableHead className="text-right">Status</TableHead>
         </TableRow>
@@ -66,7 +69,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 )}
               </TableCell>
             )}
-            <TableCell>{getUserName(task.assignedTo)}</TableCell>
+            {showAssignedToColumn && <TableCell>{getUserName(task.assignedTo)}</TableCell>}
             <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">
               {canEdit ? (
