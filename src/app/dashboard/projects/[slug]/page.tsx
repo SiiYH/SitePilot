@@ -46,13 +46,18 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (slug) {
+    if (slug && user) {
       const fetchData = async () => {
         setLoading(true);
         const projectData = await getProject(slug);
         if (projectData) {
           setProject(projectData);
-          const claimsData = await getClaimsForProject(projectData.id);
+          let claimsData = await getClaimsForProject(projectData.id);
+
+          if (user.role === 'Engineer') {
+            claimsData = claimsData.filter(claim => claim.submittedBy === user.id);
+          }
+
           setClaims(claimsData);
           const engineersData = await getAssignedEngineers(projectData.assignedEngineers);
           setAssignedEngineers(engineersData);
@@ -61,7 +66,7 @@ export default function ProjectDetailsPage() {
       };
       fetchData();
     }
-  }, [slug]);
+  }, [slug, user]);
 
   if (loading || authLoading) {
      return (
