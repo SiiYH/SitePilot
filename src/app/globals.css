@@ -133,5 +133,21 @@
     #print-footer .total-pages::after {
         content: counter(pages);
     }
+
+    /* Ensure only the active report prints */
+    .printable-content {
+      display: none;
+    }
+    
+    /* When printing, show the active one. This is a bit of a hack for SPAs.
+       We assume only one .printable-content will be in the DOM at a time that's not hidden. */
+    body > * .printable-content {
+       display: block !important;
+    }
+
+    /* But hide any nested ones that might be part of other routes */
+     main > div > div:not(:has(> .printable-content)) .printable-content {
+        display: none !important;
+    }
   }
 }

@@ -113,7 +113,9 @@ export default function EngineerPerformancePage() {
                  <div className="flex-auto min-w-48"></div>
             </div>
           </div>
-          <EngineerPerformanceReport />
+          <div className="printable-content">
+            <EngineerPerformanceReport />
+          </div>
         </div>
       </ReportsPageLayout>
   );

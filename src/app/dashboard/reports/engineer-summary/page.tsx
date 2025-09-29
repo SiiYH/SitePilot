@@ -92,7 +92,9 @@ export default function EngineerSummaryPage() {
               <div className="flex-auto min-w-48"></div>
             </div>
           </div>
-          <EngineerSummaryReport />
+          <div className="printable-content">
+            <EngineerSummaryReport />
+          </div>
         </div>
       </ReportsPageLayout>
   );

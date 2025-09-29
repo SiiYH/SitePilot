@@ -131,7 +131,9 @@ export default function DetailedClaimsPage() {
               </div>
             </div>
           </div>
-          <DetailedClaimsReport />
+          <div className="printable-content">
+            <DetailedClaimsReport />
+          </div>
         </div>
       </ReportsPageLayout>
   );
