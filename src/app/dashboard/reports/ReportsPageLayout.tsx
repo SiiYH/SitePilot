@@ -67,13 +67,6 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         )}
         
         <div className='flex gap-2'>
-            {!isReportDetailsPage && (
-                 <Button onClick={handleExportAll} className="w-full sm:w-auto">
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    Export All to Excel
-                </Button>
-            )}
-            {isReportDetailsPage && (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                 <Button className="w-full sm:w-auto">
@@ -82,17 +75,31 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
                 </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                <DropdownMenuItem onClick={handlePrint}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    <span>Print to PDF</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExcelExport}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    <span>Export to Excel</span>
-                </DropdownMenuItem>
+                {isReportDetailsPage ? (
+                    <>
+                        <DropdownMenuItem onClick={handlePrint}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            <span>Print to PDF</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExcelExport}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            <span>Export to Excel</span>
+                        </DropdownMenuItem>
+                    </>
+                ) : (
+                    <>
+                        <DropdownMenuItem onClick={handlePrint}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            <span>Print All to PDF</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportAll}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            <span>Export All to Excel</span>
+                        </DropdownMenuItem>
+                    </>
+                )}
                 </DropdownMenuContent>
             </DropdownMenu>
-            )}
         </div>
       </div>
       

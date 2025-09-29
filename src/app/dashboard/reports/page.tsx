@@ -3,12 +3,11 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ArrowRight, LineChart, FileText, Printer } from 'lucide-react';
+import { BarChart, ArrowRight, LineChart, FileText } from 'lucide-react';
 import ReportsPageLayout from './ReportsPageLayout';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import EngineerPerformanceReport from '@/components/dashboard/views/admin/EngineerPerformanceReport';
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
-import { Button } from '@/components/ui/button';
 
 const reports = [
   {
@@ -32,9 +31,6 @@ const reports = [
 ];
 
 export default function ReportsPage() {
-  const handlePrintAll = () => {
-    window.print();
-  }
 
   return (
     <ReportsPageLayout>
@@ -43,14 +39,8 @@ export default function ReportsPage() {
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Reports Hub</h2>
               <p className="text-muted-foreground">
-                Select a report to view, or export all reports.
+                Select a report to view, or use the export options.
               </p>
-            </div>
-            <div className="flex gap-2">
-               <Button onClick={handlePrintAll} variant="outline">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Print All Reports
-                </Button>
             </div>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-hidden">
