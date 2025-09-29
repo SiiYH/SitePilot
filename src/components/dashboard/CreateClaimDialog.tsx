@@ -159,19 +159,6 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
             />
             <div className="flex gap-2">
                 <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                    <FormItem className="flex-grow">
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                        <Input type="number" placeholder="e.g., 1500.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                 <FormField
                     control={form.control}
                     name="currency"
                     render={({ field }) => (
@@ -190,6 +177,19 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                         <FormMessage />
                         </FormItem>
                     )}
+                />
+                <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                    <FormItem className="flex-grow">
+                    <FormLabel>Amount</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 1500.00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
                 />
             </div>
              <FormField
