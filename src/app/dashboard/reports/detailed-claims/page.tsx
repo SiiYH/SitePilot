@@ -18,10 +18,7 @@ import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedCla
 export default function DetailedClaimsPage() {
   const { setDateRange, setSelectedEngineerId, setSelectedProjectId, reportData } = useReportContext();
   const { toast } = useToast();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -90),
-    to: new Date(),
-  });
+  const [date, setDate] = useState<DateRange | undefined>();
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
 

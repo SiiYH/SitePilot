@@ -19,10 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function EngineerPerformancePage() {
   const { setDateRange, setSelectedEngineerId, reportData } = useReportContext();
   const { toast } = useToast();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
+  const [date, setDate] = useState<DateRange | undefined>();
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
 
   const engineers = reportData.users.filter(u => u.role === 'Engineer');

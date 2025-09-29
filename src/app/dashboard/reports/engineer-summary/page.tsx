@@ -18,10 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function EngineerSummaryPage() {
   const { setDateRange } = useReportContext();
   const { toast } = useToast();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
+  const [date, setDate] = useState<DateRange | undefined>();
 
   useEffect(() => {
     setDateRange(date);

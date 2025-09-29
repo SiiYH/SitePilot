@@ -18,10 +18,7 @@ import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatu
 export default function ProjectStatusPage() {
   const { setDateRange, setSelectedProjectStatus, setSelectedProjectId, reportData, setSelectedEngineerId } = useReportContext();
   const { toast } = useToast();
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -365),
-    to: new Date(),
-  });
+  const [date, setDate] = useState<DateRange | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
