@@ -26,7 +26,17 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   };
 
   const handleExcelExport = () => {
-    context.exportToExcel();
+    if (pathname.includes('/engineer-summary')) {
+        context.exportSummaryToExcel();
+    } else if (pathname.includes('/engineer-performance')) {
+        context.exportPerformanceToExcel();
+    } else if (pathname.includes('/detailed-claims')) {
+        context.exportDetailedClaimsToExcel();
+    }
+  }
+
+  const handleExportAll = () => {
+    context.exportAllToExcel();
   }
   
   const getReportTitle = () => {
@@ -56,26 +66,34 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
           <div /> 
         )}
         
-        {isReportDetailsPage && (
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <FileDown className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                <span>Print to PDF</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExcelExport}>
-                 <FileSpreadsheet className="mr-2 h-4 w-4" />
-                <span>Export to Excel</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className='flex gap-2'>
+            {!isReportDetailsPage && (
+                 <Button onClick={handleExportAll} className="w-full sm:w-auto">
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Export All to Excel
+                </Button>
+            )}
+            {isReportDetailsPage && (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Export
+                </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                <DropdownMenuItem onClick={handlePrint}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    <span>Print to PDF</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExcelExport}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    <span>Export to Excel</span>
+                </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            )}
+        </div>
       </div>
       
       <div id="print-header" className="print-only hidden">

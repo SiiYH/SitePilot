@@ -48,7 +48,10 @@ interface ReportContextType {
   summaryData: SummaryData[];
   performanceData: PerformanceData[];
   detailedClaimsData: DetailedClaimData[];
-  exportToExcel: () => void;
+  exportAllToExcel: () => void;
+  exportSummaryToExcel: () => void;
+  exportPerformanceToExcel: () => void;
+  exportDetailedClaimsToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
@@ -227,7 +230,28 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     });
   }, [filteredClaims, reportData.users, reportData.projects]);
 
-  const exportToExcel = () => {
+  const exportToExcel = (worksheet: XLSX.WorkSheet, sheetName: string, fileName: string) => {
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    XLSX.writeFile(workbook, fileName);
+  };
+  
+  const exportSummaryToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(summaryData);
+    exportToExcel(worksheet, 'Engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
+  };
+  
+  const exportPerformanceToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(performanceData);
+    exportToExcel(worksheet, 'Engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
+  };
+  
+  const exportDetailedClaimsToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
+    exportToExcel(worksheet, 'Detailed Claims', 'SitePilot_Detailed_Claims.xlsx');
+  };
+  
+  const exportAllToExcel = () => {
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
     const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
@@ -238,8 +262,9 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
     
-    XLSX.writeFile(workbook, 'SitePilot_Reports.xlsx');
+    XLSX.writeFile(workbook, 'SitePilot_All_Reports.xlsx');
   };
+
 
   const value = {
     reportData,
@@ -247,7 +272,10 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     summaryData,
     performanceData,
     detailedClaimsData,
-    exportToExcel,
+    exportAllToExcel,
+    exportSummaryToExcel,
+    exportPerformanceToExcel,
+    exportDetailedClaimsToExcel,
     dateRange,
     setDateRange,
     selectedEngineerId,

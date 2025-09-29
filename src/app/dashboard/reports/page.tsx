@@ -1,4 +1,6 @@
 
+'use client';
+
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, ArrowRight, LineChart, FileText } from 'lucide-react';
@@ -32,7 +34,7 @@ export default function ReportsPage() {
         <div className="print-hidden">
           <h2 className="text-2xl font-bold tracking-tight">Reports Hub</h2>
           <p className="text-muted-foreground">
-            Select a report to view and print.
+            Select a report to view and print, or export all reports to Excel.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
