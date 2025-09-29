@@ -1,6 +1,7 @@
 
 
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
+export type UserStatus = 'Active' | 'Inactive';
 
 export interface User {
   id: string;
@@ -9,6 +10,7 @@ export interface User {
   phone?: string;
   role: UserRole;
   avatarUrl: string;
+  status: UserStatus;
 }
 
 export interface Task {

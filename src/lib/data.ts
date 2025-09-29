@@ -1,4 +1,5 @@
 
+
 import type { User, Project, Claim, AttendanceRecord } from '@/types';
 
 export const mockUsers: User[] = [
@@ -8,6 +9,7 @@ export const mockUsers: User[] = [
     email: 'admin@sitepilot.com',
     role: 'Admin',
     avatarUrl: 'https://picsum.photos/seed/user2/200/200',
+    status: 'Active',
   },
   {
     id: 'user-director',
@@ -15,6 +17,7 @@ export const mockUsers: User[] = [
     email: 'director@sitepilot.com',
     role: 'Director',
     avatarUrl: 'https://picsum.photos/seed/user3/200/200',
+    status: 'Active',
   },
   {
     id: 'user-engineer-1',
@@ -22,6 +25,7 @@ export const mockUsers: User[] = [
     email: 'engineer@sitepilot.com',
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user1/200/200',
+    status: 'Active',
   },
   {
     id: 'user-engineer-2',
@@ -29,6 +33,7 @@ export const mockUsers: User[] = [
     phone: '+15551234567',
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user4/200/200',
+    status: 'Active',
   },
   {
     id: 'user-engineer-3',
@@ -36,6 +41,7 @@ export const mockUsers: User[] = [
     email: 'engineer01@gmail.com',
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user5/200/200',
+    status: 'Active',
   },
 ];
 

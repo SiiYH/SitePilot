@@ -1,4 +1,5 @@
 
+
 import { mockUsers } from '@/lib/data';
 import type { User, UserRole } from '@/types';
 
@@ -64,6 +65,7 @@ async function createUser(data: SignUpData | CreateUserData): Promise<User | nul
         phone: data.phone,
         role: data.role,
         avatarUrl: `https://picsum.photos/seed/user${mockUsers.length + 1}/200/200`,
+        status: 'Active',
     };
     
     mockUsers.push(newUser);
@@ -77,6 +79,7 @@ export async function loginWithEmail(credentials: EmailCredentials): Promise<Use
   console.log('Attempting login with email:', credentials.email);
   // In a real app, you would also verify the password.
   const user = await findUser(credentials);
+  if (user && user.status === 'Inactive') return null; // Prevent inactive user login
   return user || null;
 }
 
@@ -84,6 +87,7 @@ export async function loginWithPhone(credentials: PhoneCredentials): Promise<Use
   console.log('Attempting login with phone:', credentials.phone);
   // In a real app, you would also verify the password.
   const user = await findUser(credentials);
+  if (user && user.status === 'Inactive') return null; // Prevent inactive user login
   return user || null;
 }
 

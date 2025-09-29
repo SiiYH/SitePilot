@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { Project, User, UserRole } from '@/types';
+import { Project, User, UserRole, UserStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { mockUsers } from '@/lib/data'; // To update mock data
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -41,7 +45,7 @@ const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
-  const canChangeRole = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
+  const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
 
   const getTasksForEngineer = (engineerId: string) => {
     return projects.flatMap(p => 
@@ -64,6 +68,25 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     }
   };
 
+  const handleStatusChange = (userId: string, newStatus: boolean) => {
+    const status: UserStatus = newStatus ? 'Active' : 'Inactive';
+    const userIndex = mockUsers.findIndex(u => u.id === userId);
+    if(userIndex !== -1) {
+        const updatedUser = { ...mockUsers[userIndex], status };
+        mockUsers[userIndex] = updatedUser;
+        onUserUpdated(updatedUser);
+        toast({
+            title: "Status Updated",
+            description: `${updatedUser.name} has been set to ${status}.`
+        });
+    }
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
+    if (a.status === b.status) return a.name.localeCompare(b.name);
+    return a.status === 'Active' ? -1 : 1;
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -73,10 +96,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       <CardContent>
         {users.length > 0 ? (
           <Accordion type="single" collapsible className="w-full">
-            {users.map(user => {
+            {sortedUsers.map(user => {
               const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
               return (
-                <AccordionItem value={user.id} key={user.id}>
+                <AccordionItem value={user.id} key={user.id} className={cn(user.status === 'Inactive' && 'opacity-60')}>
                   <div className="flex items-center">
                     <AccordionTrigger className="flex-1 py-4 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -85,29 +108,43 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                           </Avatar>
                           <div className="text-left">
-                              <p className="font-medium">{user.name}</p>
+                              <p className="font-medium flex items-center gap-2">
+                                {user.name}
+                                {user.status === 'Inactive' && <Badge variant="destructive">Inactive</Badge>}
+                              </p>
                               <p className="text-sm text-muted-foreground">
                                   {user.role === 'Engineer' ? `${tasks.length} task(s) assigned` : user.role}
                               </p>
                           </div>
                       </div>
                     </AccordionTrigger>
-                    <div className="pl-4 pr-2">
-                        {canChangeRole ? (
-                            <div className="w-32">
-                                <Select value={user.role} onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Set role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        ) : (
-                            <Badge variant="secondary" className="mr-4">{user.role}</Badge>
-                        )}
-                    </div>
+                    {canManageUsers && (
+                      <div className="flex items-center gap-4 pl-4 pr-2">
+                          <div className="w-32">
+                              <Select 
+                                value={user.role} 
+                                onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
+                                disabled={user.id === currentUser?.id}
+                              >
+                                  <SelectTrigger>
+                                      <SelectValue placeholder="Set role" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                  </SelectContent>
+                              </Select>
+                          </div>
+                           <div className="flex items-center space-x-2">
+                            <Switch
+                                id={`status-switch-${user.id}`}
+                                checked={user.status === 'Active'}
+                                onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
+                                disabled={user.id === currentUser?.id}
+                            />
+                            <Label htmlFor={`status-switch-${user.id}`}>{user.status}</Label>
+                           </div>
+                      </div>
+                    )}
                   </div>
                   <AccordionContent>
                     {user.role === 'Engineer' ? (
