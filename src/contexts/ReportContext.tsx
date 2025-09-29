@@ -53,6 +53,8 @@ interface ReportContextType {
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
   setSelectedEngineerId: (id: string | undefined) => void;
+  selectedProjectId: string | undefined;
+  setSelectedProjectId: (id: string | undefined) => void;
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -61,6 +63,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedEngineerId, setSelectedEngineerId] = useState<string | undefined>();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   
   const allEngineers = useMemo(() => {
     return reportData.users.filter(u => u.role === 'Engineer');
@@ -84,11 +87,14 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
      if (selectedEngineerId) {
         claimsToFilter = claimsToFilter.filter(c => c.submittedBy === selectedEngineerId);
      }
+     if (selectedProjectId) {
+      claimsToFilter = claimsToFilter.filter(c => c.projectId === selectedProjectId);
+    }
      if (interval) {
         claimsToFilter = claimsToFilter.filter(c => isWithinInterval(parseISO(c.date), interval));
      }
      return claimsToFilter;
-  }, [reportData.claims, interval, selectedEngineerId]);
+  }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
     const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
@@ -198,6 +204,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     setDateRange,
     selectedEngineerId,
     setSelectedEngineerId,
+    selectedProjectId,
+    setSelectedProjectId,
   };
 
   return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;

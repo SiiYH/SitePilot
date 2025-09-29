@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
-import { Calendar as CalendarIcon, User, X } from 'lucide-react';
+import { Calendar as CalendarIcon, User, X, FolderKanban } from 'lucide-react';
 import { mockUsers, mockProjects, mockClaims } from '@/lib/data';
 import ReportsPageLayout from '../ReportsPageLayout';
 import { useReportContext } from '@/contexts/ReportContext';
@@ -17,15 +17,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
 
 export default function DetailedClaimsPage() {
-  const { setReportData, setDateRange, setSelectedEngineerId, reportData } = useReportContext();
+  const { setReportData, setDateRange, setSelectedEngineerId, setSelectedProjectId, reportData } = useReportContext();
   const { toast } = useToast();
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -90),
     to: new Date(),
   });
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
+  const [selectedProject, setSelectedProject] = useState<string>('all');
 
   const engineers = reportData.users.filter(u => u.role === 'Engineer');
+  const projects = reportData.projects;
 
   useEffect(() => {
     const reportData = {
@@ -39,11 +41,12 @@ export default function DetailedClaimsPage() {
   useEffect(() => {
     setDateRange(date);
     setSelectedEngineerId(selectedEngineer === 'all' ? undefined : selectedEngineer);
+    setSelectedProjectId(selectedProject === 'all' ? undefined : selectedProject);
     toast({
         title: 'Report Loaded',
         description: 'The detailed claims report has been updated for the selected filters.',
       });
-  }, [date, selectedEngineer, setSelectedEngineerId, setDateRange, toast]);
+  }, [date, selectedEngineer, selectedProject, setSelectedEngineerId, setSelectedProjectId, setDateRange, toast]);
 
   return (
       <ReportsPageLayout>
@@ -59,7 +62,7 @@ export default function DetailedClaimsPage() {
                <div className="grid gap-2">
                   <span className="text-sm font-medium">Engineer</span>
                   <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                       <User className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Select Engineer" />
                     </SelectTrigger>
@@ -68,6 +71,23 @@ export default function DetailedClaimsPage() {
                       {engineers.map(engineer => (
                         <SelectItem key={engineer.id} value={engineer.id}>
                           {engineer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+               </div>
+                <div className="grid gap-2">
+                  <span className="text-sm font-medium">Project</span>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <FolderKanban className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select Project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Projects</SelectItem>
+                      {projects.map(project => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -82,7 +102,7 @@ export default function DetailedClaimsPage() {
                             id="date"
                             variant={'outline'}
                             className={cn(
-                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                            'w-full justify-start text-left font-normal sm:w-[260px]',
                             !date && 'text-muted-foreground'
                             )}
                         >
@@ -126,5 +146,3 @@ export default function DetailedClaimsPage() {
       </ReportsPageLayout>
   );
 }
-
-
