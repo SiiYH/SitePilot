@@ -30,6 +30,13 @@ export const mockUsers: User[] = [
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user4/200/200',
   },
+  {
+    id: 'user-5',
+    name: 'Alex Ray',
+    email: 'engineer01@gmail.com',
+    role: 'Engineer',
+    avatarUrl: 'https://picsum.photos/seed/user5/200/200',
+  },
 ];
 
 export const mockProjects: Project[] = [
@@ -43,7 +50,7 @@ export const mockProjects: Project[] = [
     endDate: '2024-12-31',
     imageUrl: 'https://picsum.photos/seed/proj1/600/400',
     imageHint: 'modern architecture',
-    assignedEngineers: ['user-1', 'user-4'],
+    assignedEngineers: ['user-1', 'user-4', 'user-5'],
     jobNo: 'JB-001',
     orderNo: 'ORD-2024-001',
     siteName: 'Apex Tower Site',
@@ -114,7 +121,7 @@ export const mockProjects: Project[] = [
     endDate: '2024-08-30',
     imageUrl: 'https://picsum.photos/seed/proj3/600/400',
     imageHint: 'residential building',
-    assignedEngineers: ['user-4'],
+    assignedEngineers: ['user-4', 'user-5'],
     jobNo: 'JB-003',
     orderNo: 'ORD-2024-003',
     siteName: 'Maple Creek Community',
