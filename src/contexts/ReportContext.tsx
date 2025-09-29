@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
-import { User, Project, Claim } from '@/types';
+import { User, Project, Claim, Task } from '@/types';
 import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO } from 'date-fns';
@@ -23,10 +23,19 @@ interface SummaryData {
   "Due Sites": number;
 }
 
+interface PerformanceData {
+  "Engineer Name": string;
+  "Total Tasks": number;
+  "Completed Tasks": number;
+  "Overdue Tasks": number;
+  "On-Time Rate": number;
+}
+
 interface ReportContextType {
   reportData: ReportDataContext;
   setReportData: (data: ReportDataContext) => void;
   summaryData: SummaryData[];
+  performanceData: PerformanceData[];
   exportToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange) => void;
@@ -38,16 +47,30 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
+  const engineers = useMemo(() => {
+    return reportData.users.filter(u => u.role === 'Engineer');
+  }, [reportData.users]);
+  
+  const interval = useMemo(() => {
+    return dateRange?.from && dateRange?.to ? { start: dateRange.from, end: dateRange.to } : null;
+  }, [dateRange]);
+
+  const filteredProjects = useMemo(() => {
+    return interval ? reportData.projects.filter(p => isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)) : reportData.projects;
+  }, [reportData.projects, interval]);
+  
+  const filteredClaims = useMemo(() => {
+     return interval ? reportData.claims.filter(c => isWithinInterval(parseISO(c.date), interval)) : reportData.claims;
+  }, [reportData.claims, interval]);
+  
+  const filteredTasks = useMemo(() => {
+    const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
+    return interval ? allTasks.filter(t => isWithinInterval(parseISO(t.dueDate), interval)) : allTasks;
+  }, [reportData.projects, interval]);
+
+
   const summaryData: SummaryData[] = useMemo(() => {
-    const { users, projects, claims } = reportData;
-    if (!users.length || !projects.length) return [];
-    
-    const engineers = users.filter(u => u.role === 'Engineer');
-
-    const interval = dateRange?.from && dateRange?.to ? { start: dateRange.from, end: dateRange.to } : null;
-
-    const filteredProjects = interval ? projects.filter(p => isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)) : projects;
-    const filteredClaims = interval ? claims.filter(c => isWithinInterval(parseISO(c.date), interval)) : claims;
+    if (!engineers.length || !filteredProjects.length) return [];
 
     return engineers.map(engineer => {
       const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
@@ -74,19 +97,47 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         "Due Sites": dueSites,
       };
     });
-  }, [reportData, dateRange]);
+  }, [engineers, filteredProjects, filteredClaims]);
+
+  const performanceData: PerformanceData[] = useMemo(() => {
+    if (!engineers.length) return [];
+    
+    return engineers.map(engineer => {
+      const assignedTasks = filteredTasks.filter(t => t.assignedTo === engineer.id);
+      const totalTasks = assignedTasks.length;
+      const completedTasks = assignedTasks.filter(t => t.status === 'Completed').length;
+      const overdueTasks = assignedTasks.filter(t => t.status === 'Overdue').length;
+      
+      const onTimeTasks = assignedTasks.filter(t => 
+        t.status === 'Completed' && new Date(t.dueDate) >= new Date() // Simplified logic
+      ).length;
+
+      const onTimeRate = completedTasks > 0 ? (onTimeTasks / completedTasks) * 100 : 0;
+
+      return {
+        "Engineer Name": engineer.name,
+        "Total Tasks": totalTasks,
+        "Completed Tasks": completedTasks,
+        "Overdue Tasks": overdueTasks,
+        "On-Time Rate": Math.round(onTimeRate),
+      };
+    });
+  }, [engineers, filteredTasks]);
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(summaryData);
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Engineer Summary');
-    XLSX.writeFile(workbook, 'Engineer_Summary_Report.xlsx');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
+    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
+    XLSX.writeFile(workbook, 'Engineer_Reports.xlsx');
   };
 
   const value = {
     reportData,
     setReportData,
     summaryData,
+    performanceData,
     exportToExcel,
     dateRange,
     setDateRange,

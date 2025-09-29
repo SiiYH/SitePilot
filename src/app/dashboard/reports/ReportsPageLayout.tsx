@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function ReportsPageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isReportDetailsPage = pathname.includes('/engineer-summary');
+  const isReportDetailsPage = pathname.includes('/engineer-summary') || pathname.includes('/engineer-performance');
   
   const context = useReportContext();
   const { user } = useAuth();
@@ -27,6 +27,16 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
 
   const handleExcelExport = () => {
     context.exportToExcel();
+  }
+  
+  const getReportTitle = () => {
+    if (pathname.includes('/engineer-summary')) {
+      return "SitePilot - Engineer Summary Report";
+    }
+    if (pathname.includes('/engineer-performance')) {
+      return "SitePilot - Engineer Performance Report";
+    }
+    return "SitePilot Report";
   }
 
   return (
@@ -68,7 +78,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
       <div id="print-header" className="print-only hidden">
           <div className="flex justify-between items-end">
               <div>
-                  <h1 className="text-2xl font-bold">SitePilot - Engineer Summary Report</h1>
+                  <h1 className="text-2xl font-bold">{getReportTitle()}</h1>
                   <p className="text-muted-foreground">Generated on: {new Date().toLocaleDateString()}</p>
               </div>
               <p className="text-sm text-muted-foreground">

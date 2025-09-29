@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ArrowRight } from 'lucide-react';
+import { BarChart, ArrowRight, LineChart } from 'lucide-react';
 import ReportsPageLayout from './ReportsPageLayout';
 
 const reports = [
@@ -11,7 +11,12 @@ const reports = [
     href: '/dashboard/reports/engineer-summary',
     icon: BarChart,
   },
-  // Add more reports here in the future
+  {
+    title: "Engineer's Performance Report",
+    description: 'An overview of task completions, overdue tasks, and on-time rates.',
+    href: '/dashboard/reports/engineer-performance',
+    icon: LineChart,
+  },
 ];
 
 export default function ReportsPage() {
