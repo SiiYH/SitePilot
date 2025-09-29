@@ -50,15 +50,15 @@ export default function EngineerPerformancePage() {
   return (
       <ReportsPageLayout>
         <div className="space-y-6">
-          <div className="print-hidden flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="print-hidden flex flex-col gap-4">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Engineer Performance Report</h2>
                 <p className="text-muted-foreground">
                 An overview of task completions, overdue tasks, and on-time rates.
                 </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:max-w-lg">
-                <div className="grid gap-2">
+            <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="grid gap-2 flex-1">
                     <span className="text-sm font-medium">Engineer</span>
                     <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
                         <SelectTrigger>
@@ -75,7 +75,7 @@ export default function EngineerPerformancePage() {
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="grid gap-2">
+                 <div className="grid gap-2 flex-1">
                     <span className="text-sm font-medium">Date range</span>
                     <div className="flex items-center gap-2">
                         <Popover>

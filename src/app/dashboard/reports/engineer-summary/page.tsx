@@ -45,14 +45,14 @@ export default function EngineerSummaryPage() {
   return (
       <ReportsPageLayout>
         <div className="space-y-6">
-          <div className="print-hidden flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="print-hidden flex flex-col gap-4">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Engineer Summary Report</h2>
                 <p className="text-muted-foreground">
                 A summary of performance and financial metrics for each engineer.
                 </p>
             </div>
-             <div className="grid gap-2 md:max-w-sm w-full">
+             <div className="grid gap-2 sm:max-w-xs">
                 <span className="text-sm font-medium">Date range</span>
                 <Popover>
                     <PopoverTrigger asChild>
