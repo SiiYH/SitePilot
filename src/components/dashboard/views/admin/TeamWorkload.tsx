@@ -1,5 +1,7 @@
 
-import { Project, User } from '@/types';
+'use client';
+
+import { Project, User, UserRole } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,10 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { mockUsers } from '@/lib/data'; // To update mock data
 
 interface TeamWorkloadProps {
   users: User[];
   projects: Project[];
+  onUserUpdated: (updatedUser: User) => void;
 }
 
 const getInitials = (name: string) => {
@@ -29,8 +36,12 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Overdue': 'destructive',
 };
 
-export default function TeamWorkload({ users, projects }: TeamWorkloadProps) {
-  const engineers = users.filter(u => u.role === 'Engineer');
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'Reports'];
+
+export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+  const canChangeRole = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
 
   const getTasksForEngineer = (engineerId: string) => {
     return projects.flatMap(p => 
@@ -39,64 +50,101 @@ export default function TeamWorkload({ users, projects }: TeamWorkloadProps) {
         .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
     );
   };
+  
+  const handleRoleChange = (userId: string, newRole: UserRole) => {
+    const userIndex = mockUsers.findIndex(u => u.id === userId);
+    if(userIndex !== -1) {
+        const updatedUser = { ...mockUsers[userIndex], role: newRole };
+        mockUsers[userIndex] = updatedUser;
+        onUserUpdated(updatedUser);
+        toast({
+            title: "Role Updated",
+            description: `${updatedUser.name}'s role has been changed to ${newRole}.`
+        });
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Team Workload</CardTitle>
-        <CardDescription>Overview of tasks assigned to each engineer.</CardDescription>
+        <CardTitle>Team Overview</CardTitle>
+        <CardDescription>Overview of all team members, their roles, and assigned tasks.</CardDescription>
       </CardHeader>
       <CardContent>
-        {engineers.length > 0 ? (
+        {users.length > 0 ? (
           <Accordion type="single" collapsible className="w-full">
-            {engineers.map(engineer => {
-              const tasks = getTasksForEngineer(engineer.id);
+            {users.map(user => {
+              const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
               return (
-                <AccordionItem value={engineer.id} key={engineer.id}>
+                <AccordionItem value={user.id} key={user.id}>
                   <AccordionTrigger>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
-                        <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="text-left">
-                        <p className="font-medium">{engineer.name}</p>
-                        <p className="text-sm text-muted-foreground">{tasks.length} task(s) assigned</p>
-                      </div>
+                    <div className="flex flex-1 items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="text-left">
+                                <p className="font-medium">{user.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {user.role === 'Engineer' ? `${tasks.length} task(s) assigned` : user.role}
+                                </p>
+                            </div>
+                        </div>
+                        {canChangeRole ? (
+                            <div className="w-32 pr-4" onClick={(e) => e.stopPropagation()}>
+                                <Select value={user.role} onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Set role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : (
+                            <Badge variant="secondary" className="mr-4">{user.role}</Badge>
+                        )}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    {tasks.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Task</TableHead>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead className="text-right">Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {tasks.map(task => (
-                            <TableRow key={task.id}>
-                              <TableCell className="font-medium">{task.title}</TableCell>
-                              <TableCell>
-                                <Link href={`/dashboard/projects/${task.projectSlug}`} className="hover:underline text-primary">
-                                  {task.projectName}
-                                </Link>
-                              </TableCell>
-                              <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
-                              <TableCell className="text-right">
-                                <Badge variant={statusVariant[task.status] || 'secondary'}>{task.status}</Badge>
-                              </TableCell>
+                    {user.role === 'Engineer' ? (
+                        tasks.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                            <TableRow>
+                                <TableHead>Task</TableHead>
+                                <TableHead>Project</TableHead>
+                                <TableHead>Due Date</TableHead>
+                                <TableHead className="text-right">Status</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                            </TableHeader>
+                            <TableBody>
+                            {tasks.map(task => (
+                                <TableRow key={task.id}>
+                                <TableCell className="font-medium">{task.title}</TableCell>
+                                <TableCell>
+                                    <Link href={`/dashboard/projects/${task.projectSlug}`} className="hover:underline text-primary">
+                                    {task.projectName}
+                                    </Link>
+                                </TableCell>
+                                <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
+                                <TableCell className="text-right">
+                                    <Badge variant={statusVariant[task.status] || 'secondary'}>{task.status}</Badge>
+                                </TableCell>
+                                </TableRow>
+                            ))}
+                            </TableBody>
+                        </Table>
+                        ) : (
+                        <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                            No tasks assigned to {user.name}.
+                        </div>
+                        )
                     ) : (
-                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                        No tasks assigned to {engineer.name}.
-                      </div>
+                        <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                            Task overview is only available for Engineers.
+                        </div>
                     )}
                   </AccordionContent>
                 </AccordionItem>
@@ -105,7 +153,7 @@ export default function TeamWorkload({ users, projects }: TeamWorkloadProps) {
           </Accordion>
         ) : (
           <div className="text-center text-muted-foreground">
-            No engineers found in the team.
+            No users found in the team.
           </div>
         )}
       </CardContent>

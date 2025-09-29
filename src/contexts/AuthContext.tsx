@@ -4,7 +4,7 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User } from '@/types';
-import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData } from '@/lib/auth';
+import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData, createNewUser, CreateUserData } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +14,7 @@ interface AuthContextType {
   signUp: (data: SignUpData) => Promise<User | null>;
   logout: () => void;
   updateUser: (data: User) => void;
+  createUser: (data: CreateUserData) => Promise<User | null>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
     return newUser;
   }
+  
+  const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
+    setLoading(true);
+    const newUser = await createNewUser(data);
+    setLoading(false);
+    return newUser;
+  };
 
   const handleLogout = () => {
     setUser(null);
@@ -82,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp: handleSignUp,
     logout: handleLogout,
     updateUser: handleUpdateUser,
+    createUser: handleCreateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

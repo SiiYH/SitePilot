@@ -25,6 +25,15 @@ export type SignUpData = {
     role: UserRole;
 };
 
+export type CreateUserData = {
+    name: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    role: UserRole;
+};
+
+
 // --- Mock Database Operations ---
 
 // In a real app, these would be database calls. For now, we'll just use the mockUsers array.
@@ -39,10 +48,10 @@ async function findUser(credentials: UserCredentials): Promise<User | undefined>
   return undefined;
 }
 
-async function createUser(data: SignUpData): Promise<User | null> {
-    const existingUser = 'email' in data && data.email 
+async function createUser(data: SignUpData | CreateUserData): Promise<User | null> {
+    const existingUser = data.email 
         ? mockUsers.find(u => u.email === data.email) 
-        : ('phone' in data && data.phone ? mockUsers.find(u => u.phone === data.phone) : undefined);
+        : (data.phone ? mockUsers.find(u => u.phone === data.phone) : undefined);
     
     if (existingUser) {
         return null; // User already exists
@@ -80,5 +89,10 @@ export async function loginWithPhone(credentials: PhoneCredentials): Promise<Use
 
 export async function signup(data: SignUpData): Promise<User | null> {
     console.log('Attempting signup for:', data.name);
+    return await createUser(data);
+}
+
+export async function createNewUser(data: CreateUserData): Promise<User | null> {
+    console.log('Admin/Director creating user:', data.name);
     return await createUser(data);
 }
