@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
-import { Calendar as CalendarIcon, X, Activity, FolderKanban } from 'lucide-react';
+import { Calendar as CalendarIcon, X, Activity, FolderKanban, User } from 'lucide-react';
 import ReportsPageLayout from '../ReportsPageLayout';
 import { useReportContext } from '@/contexts/ReportContext';
 import { Button } from '@/components/ui/button';
@@ -24,20 +24,22 @@ export default function ProjectStatusPage() {
   });
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
 
   const projects = reportData.projects;
+  const engineers = reportData.users.filter(u => u.role === 'Engineer');
 
   useEffect(() => {
     setDateRange(date);
     setSelectedProjectStatus(selectedStatus === 'all' ? undefined : selectedStatus);
     setSelectedProjectId(selectedProject === 'all' ? undefined : selectedProject);
-    setSelectedEngineerId(undefined); // Clear engineer filter for this report
+    setSelectedEngineerId(selectedEngineer === 'all' ? undefined : selectedEngineer);
 
     toast({
         title: 'Report Loaded',
         description: 'The project status report has been updated for the selected filters.',
       });
-  }, [date, selectedStatus, selectedProject, setDateRange, setSelectedProjectStatus, setSelectedProjectId, setSelectedEngineerId, toast]);
+  }, [date, selectedStatus, selectedProject, selectedEngineer, setDateRange, setSelectedProjectStatus, setSelectedProjectId, setSelectedEngineerId, toast]);
 
   return (
       <ReportsPageLayout>
@@ -62,6 +64,23 @@ export default function ProjectStatusPage() {
                       {projects.map(project => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+               </div>
+               <div className="grid flex-auto gap-2 min-w-48">
+                  <span className="text-sm font-medium">Engineer</span>
+                  <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
+                    <SelectTrigger>
+                      <User className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Select Engineer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Engineers</SelectItem>
+                      {engineers.map(engineer => (
+                        <SelectItem key={engineer.id} value={engineer.id}>
+                          {engineer.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
