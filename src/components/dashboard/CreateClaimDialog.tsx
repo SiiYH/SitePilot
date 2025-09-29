@@ -57,15 +57,33 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const selectedProjectId = form.watch('projectId');
 
   useEffect(() => {
+    if (open) {
+        form.reset({
+            projectId: defaultProjectId || '',
+            title: '',
+            description: '',
+            amount: undefined,
+            currency: 'MYR',
+        });
+        const projectCurrency = projects.find(p => p.id === defaultProjectId)?.currency;
+        if (projectCurrency) {
+            form.setValue('currency', projectCurrency);
+        }
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
+  }, [open, defaultProjectId, form, projects]);
+
+  useEffect(() => {
     if (selectedProjectId) {
       const projectCurrency = projects.find(p => p.id === selectedProjectId)?.currency;
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
       }
-    } else if (!defaultProjectId) { // Only reset if not in a specific project context
-        form.setValue('currency', 'MYR');
     }
-  }, [selectedProjectId, projects, form, defaultProjectId]);
+  }, [selectedProjectId, projects, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -90,11 +108,6 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       onClaimCreated(newClaim);
       setIsLoading(false);
       setOpen(false);
-      form.reset({ projectId: defaultProjectId || '', title: '', description: '', amount: undefined, currency: 'MYR' });
-      setImagePreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
       toast({
         title: 'Claim Created',
         description: `Your claim "${newClaim.title}" has been submitted for review.`,
@@ -267,7 +280,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                               if(fileInputRef.current) fileInputRef.current.value = '';
                           }}
                       >
-                          <X className="h-4 w-4 text-white" />
+                          <X className="h-4 w-4" />
                       </Button>
                   </div>
               )}
