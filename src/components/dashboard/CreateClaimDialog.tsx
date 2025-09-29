@@ -127,133 +127,135 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
           <DialogDescription>Fill in the details below to submit a new payment claim.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="projectId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Project</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a project" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {projects.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Claim Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Materials for Q2" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter a brief description of the claim..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex gap-2">
-                 <FormField
-                    control={form.control}
-                    name="currency"
-                    render={({ field }) => (
-                        <FormItem className="w-24">
-                        <FormLabel>Currency</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="CUR" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+              <FormField
                 control={form.control}
-                name="amount"
+                name="projectId"
                 render={({ field }) => (
-                    <FormItem className="flex-grow">
-                    <FormLabel>Amount</FormLabel>
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projects.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Claim Title</FormLabel>
                     <FormControl>
-                        <Input type="number" placeholder="e.g., 1500.00" {...field} />
+                      <Input placeholder="e.g., Materials for Q2" {...field} />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter a brief description of the claim..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex gap-2">
+                   <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                          <FormItem className="w-24">
+                          <FormLabel>Currency</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                              <SelectTrigger>
+                                  <SelectValue placeholder="CUR" />
+                              </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                  <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                      <FormItem className="flex-grow">
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                          <Input type="number" placeholder="e.g., 1500.00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+                  />
+              </div>
+               <FormField
+                  control={form.control}
+                  name="receiptImage"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Receipt (Optional)</FormLabel>
+                      <FormControl>
+                      <div>
+                          <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                          accept="image/*"
+                          />
+                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Image
+                          </Button>
+                      </div>
+                      </FormControl>
+                      <FormMessage />
+                  </FormItem>
+                  )}
+              />
+              {imagePreview && (
+                  <div className="relative mt-2 w-full h-48">
+                      <Image src={imagePreview} alt="Receipt preview" fill className="rounded-md border object-contain"/>
+                      <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                          onClick={() => {
+                              setImagePreview(null);
+                              if(fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                      >
+                          <X className="h-4 w-4" />
+                      </Button>
+                  </div>
+              )}
             </div>
-             <FormField
-                control={form.control}
-                name="receiptImage"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Receipt (Optional)</FormLabel>
-                    <FormControl>
-                    <div>
-                        <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
-                        accept="image/*"
-                        />
-                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Image
-                        </Button>
-                    </div>
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            {imagePreview && (
-                <div className="relative mt-2 w-full h-48">
-                    <Image src={imagePreview} alt="Receipt preview" fill className="rounded-md border object-contain"/>
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                        onClick={() => {
-                            setImagePreview(null);
-                            if(fileInputRef.current) fileInputRef.current.value = '';
-                        }}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-            )}
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
