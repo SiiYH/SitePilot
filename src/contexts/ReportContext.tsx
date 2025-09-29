@@ -50,7 +50,7 @@ interface ReportContextType {
   detailedClaimsData: DetailedClaimData[];
   exportToExcel: () => void;
   dateRange: DateRange | undefined;
-  setDateRange: (dateRange: DateRange) => void;
+  setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
   setSelectedEngineerId: (id: string | undefined) => void;
 }
