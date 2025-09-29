@@ -27,7 +27,10 @@ async function getProject(slug: string): Promise<Project | undefined> {
 // This function would typically get the current user from context/session
 async function getCurrentUser(): Promise<User> {
     // Forcing a user for this server component. In a real app, you'd get this from your auth system (e.g. cookies).
-    return mockUsers.find(u => u.role === 'Admin')!;
+    // Let's pretend the logged in user is the Admin for this page, but it could be any user.
+    // In a real app, you would fetch the user from your authentication system, e.g. from cookies or a session.
+    // The logic inside the components will then correctly show/hide elements based on the user's role.
+    return mockUsers.find(u => u.role === 'Admin')!; 
 }
 
 async function getClaimsForProject(projectId: string): Promise<Claim[]> {
