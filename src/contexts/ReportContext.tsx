@@ -31,11 +31,23 @@ interface PerformanceData {
   "On-Time Rate": number;
 }
 
+interface DetailedClaimData {
+    "Engineer Name": string;
+    "Site Name": string;
+    "e-Invoice No.": string;
+    "Claim Title": string;
+    "Amount": number;
+    "Currency": string;
+    "Date": string;
+    "Status": string;
+}
+
 interface ReportContextType {
   reportData: ReportDataContext;
   setReportData: (data: ReportDataContext) => void;
   summaryData: SummaryData[];
   performanceData: PerformanceData[];
+  detailedClaimsData: DetailedClaimData[];
   exportToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange) => void;
@@ -68,8 +80,15 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData.projects, interval]);
   
   const filteredClaims = useMemo(() => {
-     return interval ? reportData.claims.filter(c => isWithinInterval(parseISO(c.date), interval)) : reportData.claims;
-  }, [reportData.claims, interval]);
+     let claimsToFilter = reportData.claims;
+     if (selectedEngineerId) {
+        claimsToFilter = claimsToFilter.filter(c => c.submittedBy === selectedEngineerId);
+     }
+     if (interval) {
+        claimsToFilter = claimsToFilter.filter(c => isWithinInterval(parseISO(c.date), interval));
+     }
+     return claimsToFilter;
+  }, [reportData.claims, interval, selectedEngineerId]);
   
   const filteredTasks = useMemo(() => {
     const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
@@ -132,13 +151,32 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     });
   }, [engineers, filteredTasks]);
 
+  const detailedClaimsData: DetailedClaimData[] = useMemo(() => {
+    return filteredClaims.map(claim => {
+        const engineer = reportData.users.find(u => u.id === claim.submittedBy);
+        const project = reportData.projects.find(p => p.id === claim.projectId);
+        return {
+            "Engineer Name": engineer?.name || 'N/A',
+            "Site Name": project?.name || 'N/A',
+            "e-Invoice No.": claim.eInvoiceNo || 'N/A',
+            "Claim Title": claim.title,
+            "Amount": claim.amount,
+            "Currency": claim.currency,
+            "Date": claim.date,
+            "Status": claim.status,
+        };
+    });
+  }, [filteredClaims, reportData.users, reportData.projects]);
+
   const exportToExcel = () => {
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
+    const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
-    XLSX.writeFile(workbook, 'Engineer_Reports.xlsx');
+    XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
+    XLSX.writeFile(workbook, 'SitePilot_Reports.xlsx');
   };
 
   const value = {
@@ -146,6 +184,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     setReportData,
     summaryData,
     performanceData,
+    detailedClaimsData,
     exportToExcel,
     dateRange,
     setDateRange,
