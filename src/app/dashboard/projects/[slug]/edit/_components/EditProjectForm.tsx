@@ -70,12 +70,12 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       orderNo: project.orderNo || '',
       siteName: project.siteName || '',
       jobLocation: project.jobLocation || '',
-      distance: project.distance || undefined,
+      distance: project.distance || ('' as any),
       performanceBondNo: project.performanceBondNo || '',
-      performanceBondAmount: project.performanceBondAmount || undefined,
-      grossProfit: project.grossProfit || undefined,
-      marginProfit: project.marginProfit || undefined,
-      insuranceAmount: project.insuranceAmount || undefined,
+      performanceBondAmount: project.performanceBondAmount || ('' as any),
+      grossProfit: project.grossProfit || ('' as any),
+      marginProfit: project.marginProfit || ('' as any),
+      insuranceAmount: project.insuranceAmount || ('' as any),
       currency: project.currency || 'MYR',
     },
   });
@@ -433,7 +433,3 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     </Card>
   );
 }
-
-    
-
-    

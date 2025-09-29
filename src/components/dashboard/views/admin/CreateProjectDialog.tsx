@@ -81,12 +81,12 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       orderNo: '',
       siteName: '',
       jobLocation: '',
-      distance: undefined,
+      distance: '' as any,
       performanceBondNo: '',
-      performanceBondAmount: undefined,
-      grossProfit: undefined,
-      marginProfit: undefined,
-      insuranceAmount: undefined,
+      performanceBondAmount: '' as any,
+      grossProfit: '' as any,
+      marginProfit: '' as any,
+      insuranceAmount: '' as any,
       currency: 'MYR',
     },
   });
@@ -461,7 +461,3 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
     </Dialog>
   );
 }
-
-    
-
-    
