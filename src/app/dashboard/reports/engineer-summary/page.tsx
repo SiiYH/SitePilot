@@ -41,8 +41,8 @@ export default function EngineerSummaryPage() {
                 A summary of performance and financial metrics for each engineer.
                 </p>
             </div>
-             <div className="flex flex-col gap-4">
-              <div className="grid gap-2">
+             <div className="flex flex-wrap items-end gap-4">
+              <div className="grid flex-1 gap-2 min-w-48">
                 <span className="text-sm font-medium">Date range</span>
                 <div className="flex items-center gap-2">
                     <Popover>
@@ -51,7 +51,7 @@ export default function EngineerSummaryPage() {
                             id="date"
                             variant={'outline'}
                             className={cn(
-                            'w-full justify-start text-left font-normal sm:w-[300px]',
+                            'w-full justify-start text-left font-normal',
                             !date && 'text-muted-foreground'
                             )}
                         >
@@ -88,6 +88,8 @@ export default function EngineerSummaryPage() {
                     )}
                 </div>
               </div>
+              <div className="flex-1 min-w-48"></div>
+              <div className="flex-1 min-w-48"></div>
             </div>
           </div>
           <EngineerSummaryReport />
