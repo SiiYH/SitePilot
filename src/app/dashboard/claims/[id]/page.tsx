@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -153,6 +153,9 @@ export default function ClaimDetailsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {claim.description && (
+                         <InfoField icon={FileText} label="Description" value={claim.description} />
+                    )}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <InfoField icon={DollarSign} label="Amount">
                            <p className="text-2xl font-bold"><span className="text-sm text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</p>
@@ -305,5 +308,3 @@ export default function ClaimDetailsPage() {
     </div>
   );
 }
-
-    

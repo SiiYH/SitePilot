@@ -23,12 +23,14 @@ import { Claim, CreateClaimDialogProps } from '@/types';
 import { mockClaims } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Textarea } from '@/components/ui/textarea';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
   title: z.string().min(3, 'Claim title must be at least 3 characters.'),
+  description: z.string().optional(),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than 0.'),
   currency: z.string().min(3, 'Currency is required.'),
   receiptImage: z.any().optional(),
@@ -46,6 +48,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     defaultValues: {
       projectId: defaultProjectId || '',
       title: '',
+      description: '',
       amount: undefined,
       currency: defaultProjectId ? projects.find(p => p.id === defaultProjectId)?.currency || 'MYR' : 'MYR',
     },
@@ -59,10 +62,10 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
       }
-    } else {
+    } else if (!defaultProjectId) { // Only reset if not in a specific project context
         form.setValue('currency', 'MYR');
     }
-  }, [selectedProjectId, projects, form]);
+  }, [selectedProjectId, projects, form, defaultProjectId]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -71,6 +74,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       id: `claim-${Date.now()}`,
       projectId: values.projectId,
       title: values.title,
+      description: values.description,
       amount: values.amount,
       currency: values.currency,
       status: 'Pending',
@@ -86,7 +90,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       onClaimCreated(newClaim);
       setIsLoading(false);
       setOpen(false);
-      form.reset({ projectId: defaultProjectId || '', title: '', amount: undefined, currency: 'MYR' });
+      form.reset({ projectId: defaultProjectId || '', title: '', description: '', amount: undefined, currency: 'MYR' });
       setImagePreview(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -159,8 +163,21 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter a brief description of the claim..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="flex gap-2">
-                <FormField
+                 <FormField
                     control={form.control}
                     name="currency"
                     render={({ field }) => (
