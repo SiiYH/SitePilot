@@ -6,6 +6,7 @@ import { Calendar, CheckCircle, Clock, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 
 const getInitials = (name: string) => {
@@ -46,7 +47,7 @@ const InfoField = ({ label, value, unit, currency }: { label: string; value?: st
 };
 
 
-function AssignedTeam({ engineers }: { engineers: User[] }) {
+function AssignedTeam({ engineers, currentUser }: { engineers: User[], currentUser: User }) {
     if (engineers.length === 0) return null;
 
     return (
@@ -60,15 +61,20 @@ function AssignedTeam({ engineers }: { engineers: User[] }) {
             <CardContent>
                 <div className="space-y-4">
                     {engineers.map(engineer => (
-                        <div key={engineer.id} className="flex items-center gap-3">
-                            <Avatar>
-                                <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
-                                <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-medium">{engineer.name}</p>
-                                <p className="text-sm text-muted-foreground">{engineer.role}</p>
+                        <div key={engineer.id} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Avatar>
+                                    <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
+                                    <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-medium">{engineer.name}</p>
+                                    <p className="text-sm text-muted-foreground">{engineer.role}</p>
+                                </div>
                             </div>
+                            {engineer.id === currentUser.id && (
+                                <Badge variant="secondary">me</Badge>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -138,7 +144,7 @@ export default function OverviewTab({ project, engineers, user }: { project: Pro
                 </CardContent>
             </Card>
             <div className="space-y-6">
-                <AssignedTeam engineers={engineers} />
+                <AssignedTeam engineers={engineers} currentUser={user} />
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
