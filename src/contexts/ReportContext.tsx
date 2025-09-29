@@ -39,6 +39,8 @@ interface ReportContextType {
   exportToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange) => void;
+  selectedEngineerId: string | undefined;
+  setSelectedEngineerId: (id: string | undefined) => void;
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -46,10 +48,16 @@ const ReportContext = createContext<ReportContextType | undefined>(undefined);
 export function ReportProvider({ children, reportData: initialReportData }: { children: ReactNode; reportData: ReportDataContext }) {
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedEngineerId, setSelectedEngineerId] = useState<string | undefined>();
   
-  const engineers = useMemo(() => {
+  const allEngineers = useMemo(() => {
     return reportData.users.filter(u => u.role === 'Engineer');
   }, [reportData.users]);
+
+  const engineers = useMemo(() => {
+    if (!selectedEngineerId) return allEngineers;
+    return allEngineers.filter(e => e.id === selectedEngineerId);
+  }, [allEngineers, selectedEngineerId]);
   
   const interval = useMemo(() => {
     return dateRange?.from && dateRange?.to ? { start: dateRange.from, end: dateRange.to } : null;
@@ -141,6 +149,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     exportToExcel,
     dateRange,
     setDateRange,
+    selectedEngineerId,
+    setSelectedEngineerId,
   };
 
   return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;
