@@ -50,18 +50,18 @@ export default function EngineerPerformancePage() {
   return (
       <ReportsPageLayout>
         <div className="space-y-6">
-          <div className="print-hidden flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="print-hidden flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Engineer Performance Report</h2>
                 <p className="text-muted-foreground">
                 An overview of task completions, overdue tasks, and on-time rates.
                 </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:max-w-lg">
                 <div className="grid gap-2">
                     <span className="text-sm font-medium">Engineer</span>
                     <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
-                        <SelectTrigger className="w-full sm:w-[200px]">
+                        <SelectTrigger>
                         <User className="mr-2 h-4 w-4" />
                         <SelectValue placeholder="Select Engineer" />
                         </SelectTrigger>
@@ -84,7 +84,7 @@ export default function EngineerPerformancePage() {
                                 id="date"
                                 variant={'outline'}
                                 className={cn(
-                                'w-full justify-start text-left font-normal sm:w-[300px]',
+                                'w-full justify-start text-left font-normal',
                                 !date && 'text-muted-foreground'
                                 )}
                             >

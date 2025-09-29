@@ -51,18 +51,18 @@ export default function DetailedClaimsPage() {
   return (
       <ReportsPageLayout>
         <div className="space-y-6">
-          <div className="print-hidden flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="print-hidden flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Detailed Claims Report</h2>
                 <p className="text-muted-foreground">
                 A detailed breakdown of all claims.
                 </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:max-w-xl">
                <div className="grid gap-2">
                   <span className="text-sm font-medium">Engineer</span>
                   <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger>
                       <User className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Select Engineer" />
                     </SelectTrigger>
@@ -79,7 +79,7 @@ export default function DetailedClaimsPage() {
                 <div className="grid gap-2">
                   <span className="text-sm font-medium">Project</span>
                   <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger>
                       <FolderKanban className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Select Project" />
                     </SelectTrigger>
@@ -93,7 +93,7 @@ export default function DetailedClaimsPage() {
                     </SelectContent>
                   </Select>
                </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
                 <span className="text-sm font-medium">Date range</span>
                 <div className="flex items-center gap-2">
                     <Popover>
@@ -102,7 +102,7 @@ export default function DetailedClaimsPage() {
                             id="date"
                             variant={'outline'}
                             className={cn(
-                            'w-full justify-start text-left font-normal sm:w-[260px]',
+                            'w-full justify-start text-left font-normal',
                             !date && 'text-muted-foreground'
                             )}
                         >

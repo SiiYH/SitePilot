@@ -45,48 +45,51 @@ export default function EngineerSummaryPage() {
   return (
       <ReportsPageLayout>
         <div className="space-y-6">
-          <div className="print-hidden flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="print-hidden flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Engineer Summary Report</h2>
                 <p className="text-muted-foreground">
                 A summary of performance and financial metrics for each engineer.
                 </p>
             </div>
-            <Popover>
-                <PopoverTrigger asChild>
-                <Button
-                    id="date"
-                    variant={'outline'}
-                    className={cn(
-                    'w-[300px] justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                    )}
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date?.from ? (
-                    date.to ? (
-                        <>
-                        {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
-                        </>
-                    ) : (
-                        format(date.from, 'LLL dd, y')
-                    )
-                    ) : (
-                    <span>Pick a date</span>
-                    )}
-                </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={date?.from}
-                    selected={date}
-                    onSelect={setDate}
-                    numberOfMonths={2}
-                />
-                </PopoverContent>
-            </Popover>
+             <div className="grid gap-2 md:max-w-sm w-full">
+                <span className="text-sm font-medium">Date range</span>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        id="date"
+                        variant={'outline'}
+                        className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date?.from ? (
+                        date.to ? (
+                            <>
+                            {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                            </>
+                        ) : (
+                            format(date.from, 'LLL dd, y')
+                        )
+                        ) : (
+                        <span>Pick a date</span>
+                        )}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={date?.from}
+                        selected={date}
+                        onSelect={setDate}
+                        numberOfMonths={2}
+                    />
+                    </PopoverContent>
+                </Popover>
+            </div>
           </div>
           <EngineerSummaryReport />
         </div>
