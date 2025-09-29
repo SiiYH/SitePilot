@@ -14,10 +14,10 @@ import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'lucide-react';
+import { Edit, Upload } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
 import { useAuth } from '@/hooks/use-auth';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
 
@@ -39,6 +39,7 @@ export default function ProjectDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
   const { user, loading: authLoading } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [project, setProject] = useState<Project | undefined>(undefined);
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -71,6 +72,29 @@ export default function ProjectDetailsPage() {
   const handleClaimCreated = (newClaim: Claim) => {
     setClaims(prevClaims => [newClaim, ...prevClaims]);
   };
+  
+  const handleImageUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && project) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newImageUrl = e.target?.result as string;
+        // In a real app, you'd call an API to update the project image.
+        // For this mock, we update the local state.
+        setProject(prevProject => prevProject ? { ...prevProject, imageUrl: newImageUrl } : undefined);
+        
+        const projectIndex = mockProjects.findIndex(p => p.id === project.id);
+        if (projectIndex !== -1) {
+          mockProjects[projectIndex].imageUrl = newImageUrl;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (loading || authLoading) {
      return (
@@ -85,11 +109,12 @@ export default function ProjectDetailsPage() {
   }
   
   const canEditProject = user.role === 'Admin' || user.role === 'Director';
+  const canUploadImage = user.role === 'Director';
 
 
   return (
     <div className="space-y-6">
-      <div className="relative -mx-4 -mt-4 h-60 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)] md:h-80">
+      <div className="group relative -mx-4 -mt-4 h-60 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)] md:h-80">
         <Image
           src={project.imageUrl}
           alt={project.name}
@@ -98,6 +123,23 @@ export default function ProjectDetailsPage() {
           data-ai-hint={project.imageHint}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+         {canUploadImage && (
+          <>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/*"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <Button onClick={handleImageUploadClick} variant="secondary">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Image
+              </Button>
+            </div>
+          </>
+        )}
       </div>
       
       <div className="space-y-2">
