@@ -50,7 +50,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       title: '',
       description: '',
       amount: undefined,
-      currency: defaultProjectId ? projects.find(p => p.id === defaultProjectId)?.currency || 'MYR' : 'MYR',
+      currency: 'MYR',
     },
   });
 
@@ -267,7 +267,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                               if(fileInputRef.current) fileInputRef.current.value = '';
                           }}
                       >
-                          <X className="h-4 w-4" />
+                          <X className="h-4 w-4 text-white" />
                       </Button>
                   </div>
               )}
