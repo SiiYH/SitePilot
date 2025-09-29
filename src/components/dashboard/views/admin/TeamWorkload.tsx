@@ -36,7 +36,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Overdue': 'destructive',
 };
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'Reports'];
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
 
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser } = useAuth();
@@ -78,7 +78,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               return (
                 <AccordionItem value={user.id} key={user.id}>
                   <div className="flex items-center">
-                    <AccordionTrigger className="flex-1">
+                    <AccordionTrigger className="flex-1 py-4 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
                               <AvatarImage src={user.avatarUrl} alt={user.name} />
