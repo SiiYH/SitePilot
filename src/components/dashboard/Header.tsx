@@ -25,13 +25,13 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 print-hidden">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         <div className="md:hidden">
             <SidebarTrigger />
         </div>
-        <div className="hidden md:block">
-            <h1 className="text-lg font-semibold">Welcome, {user.name.split(' ')[0]}!</h1>
-            <p className="text-sm text-muted-foreground">You are logged in as a {user.role}.</p>
+        <div className="hidden md:block min-w-0">
+            <h1 className="text-lg font-semibold truncate">Welcome, {user.name.split(' ')[0]}!</h1>
+            <p className="text-sm text-muted-foreground truncate">You are logged in as a {user.role}.</p>
         </div>
       </div>
       
