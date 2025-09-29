@@ -85,8 +85,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                 <CardContent className="space-y-3 text-sm">
                                     <div className="flex items-center gap-2">
                                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-semibold">{claim.amount.toLocaleString()}</span>
-                                        <span className="text-xs text-muted-foreground">{claim.currency}</span>
+                                        <span className="font-semibold"><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <FolderKanban className="h-4 w-4 text-muted-foreground" />
@@ -134,7 +133,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                         <TableCell className="font-medium">{claim.title}</TableCell>
                                         <TableCell>{getProjectName(claim.projectId)}</TableCell>
                                         <TableCell>{getUserName(claim.submittedBy)}</TableCell>
-                                        <TableCell>{claim.amount.toLocaleString()} <span className="text-xs text-muted-foreground">{claim.currency}</span></TableCell>
+                                        <TableCell><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</TableCell>
                                         <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
                                         <TableCell className="text-right">
                                             <Badge variant={statusVariant[claim.status] || 'outline'}>

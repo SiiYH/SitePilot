@@ -27,8 +27,8 @@ const InfoField = ({ label, value, unit, currency }: { label: string; value?: st
         if (currency) {
             displayValue = (
                 <>
+                    <span className="mr-1 text-xs text-muted-foreground">{currency}</span>
                     {value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    <span className="ml-1 text-xs text-muted-foreground">{currency}</span>
                 </>
             );
         } else {
