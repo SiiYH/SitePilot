@@ -78,6 +78,13 @@ export interface Claim {
   approvedAt?: string; // ISO date string
 }
 
+export interface CreateClaimDialogProps {
+  projects: Project[];
+  onClaimCreated: (claim: Claim) => void;
+  userId: string;
+  defaultProjectId?: string;
+}
+
 export interface AttendanceRecord {
   userId: string;
   status: 'Clocked In' | 'Clocked Out';

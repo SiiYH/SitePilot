@@ -68,6 +68,10 @@ export default function ProjectDetailsPage() {
     }
   }, [slug, user]);
 
+  const handleClaimCreated = (newClaim: Claim) => {
+    setClaims(prevClaims => [newClaim, ...prevClaims]);
+  };
+
   if (loading || authLoading) {
      return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -125,7 +129,7 @@ export default function ProjectDetailsPage() {
           <OverviewTab project={project} engineers={assignedEngineers} user={user} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
-          <ClaimsTab claims={claims} />
+          <ClaimsTab claims={claims} project={project} onClaimCreated={handleClaimCreated} />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>

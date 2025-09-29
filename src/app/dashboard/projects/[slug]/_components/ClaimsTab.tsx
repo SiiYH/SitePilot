@@ -2,20 +2,25 @@
 'use client';
 
 import { useRouter } from "next/navigation";
-import { Claim, User } from "@/types";
+import { Claim, User, Project } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { mockUsers } from "@/lib/data";
 import { DollarSign, User as UserIcon, Calendar } from 'lucide-react';
+import CreateClaimDialog from "@/components/dashboard/CreateClaimDialog";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ClaimsTabProps {
   claims: Claim[];
+  project: Project;
+  onClaimCreated: (newClaim: Claim) => void;
 }
 
-export default function ClaimsTab({ claims }: ClaimsTabProps) {
+export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTabProps) {
     const router = useRouter();
+    const { user } = useAuth();
 
     const handleRowClick = (claimId: string) => {
         router.push(`/dashboard/claims/${claimId}`);
@@ -33,9 +38,19 @@ export default function ClaimsTab({ claims }: ClaimsTabProps) {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Claims</CardTitle>
-                <CardDescription>All payment claims associated with this project. Click a claim to view details.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>Claims</CardTitle>
+                    <CardDescription>All payment claims associated with this project. Click a claim to view details.</CardDescription>
+                </div>
+                {user?.role === 'Engineer' && (
+                    <CreateClaimDialog
+                        projects={[project]}
+                        onClaimCreated={onClaimCreated}
+                        userId={user.id}
+                        defaultProjectId={project.id}
+                    />
+                )}
             </CardHeader>
             <CardContent>
                 {claims.length > 0 ? (

@@ -7,6 +7,7 @@ import { Project, Claim, User } from '@/types';
 import ClaimsOverview from '@/components/dashboard/views/admin/ClaimsOverview';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 
 export default function ClaimsPage() {
   const { user } = useAuth();
@@ -34,7 +35,11 @@ export default function ClaimsPage() {
     }
   }, [user]);
 
-  if (loading) {
+  const handleClaimCreated = (newClaim: Claim) => {
+    setClaims(prevClaims => [newClaim, ...prevClaims]);
+  };
+
+  if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -43,16 +48,26 @@ export default function ClaimsPage() {
   }
 
   const isEngineer = user?.role === 'Engineer';
+  const engineerProjects = isEngineer ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          {isEngineer ? 'My Claims' : 'Claims Management'}
-        </h2>
-        <p className="text-muted-foreground">
-          {isEngineer ? 'View the status of all your submitted payment claims.' : 'View and manage all payment claims.'}
-        </p>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+            {isEngineer ? 'My Claims' : 'Claims Management'}
+            </h2>
+            <p className="text-muted-foreground">
+            {isEngineer ? 'View the status of all your submitted payment claims.' : 'View and manage all payment claims.'}
+            </p>
+        </div>
+        {isEngineer && (
+            <CreateClaimDialog
+                projects={engineerProjects}
+                onClaimCreated={handleClaimCreated}
+                userId={user.id}
+            />
+        )}
       </div>
       <ClaimsOverview claims={claims} projects={projects} users={users} />
     </div>
