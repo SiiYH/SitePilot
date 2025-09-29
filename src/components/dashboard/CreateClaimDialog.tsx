@@ -49,7 +49,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       projectId: defaultProjectId || '',
       title: '',
       description: '',
-      amount: undefined,
+      amount: '' as any, // Use empty string for controlled input
       currency: 'MYR',
     },
   });
@@ -62,7 +62,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
             projectId: defaultProjectId || '',
             title: '',
             description: '',
-            amount: undefined,
+            amount: '' as any, // Use empty string for controlled input
             currency: 'MYR',
         });
         const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
