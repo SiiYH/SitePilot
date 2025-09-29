@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function ReportsPageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isReportDetailsPage = pathname.includes('/engineer-summary') || pathname.includes('/engineer-performance') || pathname.includes('/detailed-claims');
+  const isReportDetailsPage = pathname.includes('/engineer-summary') || pathname.includes('/engineer-performance') || pathname.includes('/detailed-claims') || pathname.includes('/project-status');
   
   const context = useReportContext();
   const { user } = useAuth();
@@ -32,6 +32,8 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         context.exportPerformanceToExcel();
     } else if (pathname.includes('/detailed-claims')) {
         context.exportDetailedClaimsToExcel();
+    } else if (pathname.includes('/project-status')) {
+        context.exportProjectStatusToExcel();
     }
   }
 
@@ -48,6 +50,9 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
     }
     if (pathname.includes('/detailed-claims')) {
         return "SitePilot - Detailed Claims Report";
+    }
+     if (pathname.includes('/project-status')) {
+        return "SitePilot - Project Status Report";
     }
     return "SitePilot - All Reports";
   }

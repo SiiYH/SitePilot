@@ -3,13 +3,20 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ArrowRight, LineChart, FileText } from 'lucide-react';
+import { BarChart, ArrowRight, LineChart, FileText, FolderKanban } from 'lucide-react';
 import ReportsPageLayout from './ReportsPageLayout';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import EngineerPerformanceReport from '@/components/dashboard/views/admin/EngineerPerformanceReport';
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
+import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
 
 const reports = [
+  {
+    title: 'Project Status Report',
+    description: 'An overview of all projects, their progress, and key metrics.',
+    href: '/dashboard/reports/project-status',
+    icon: FolderKanban,
+  },
   {
     title: 'Engineer Summary Report',
     description: 'A summary of performance and financial metrics for each engineer.',
@@ -43,7 +50,7 @@ export default function ReportsPage() {
               </p>
             </div>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-hidden">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 print-hidden">
           {reports.map((report) => (
             <Link href={report.href} key={report.href}>
               <Card className="flex h-full flex-col justify-between transition-all hover:shadow-lg">
@@ -63,7 +70,11 @@ export default function ReportsPage() {
         </div>
 
         {/* Hidden content for printing all reports */}
-        <div className="print-only hidden space-y-8">
+        <div className="print-only-container hidden space-y-8">
+            <div className="printable-content print-break-after">
+                <h2 className="text-xl font-bold mb-4">Project Status Report</h2>
+                <ProjectStatusReport />
+            </div>
             <div className="printable-content print-break-after">
                 <h2 className="text-xl font-bold mb-4">Engineer Summary Report</h2>
                 <EngineerSummaryReport />

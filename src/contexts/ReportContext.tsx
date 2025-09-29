@@ -42,22 +42,39 @@ interface DetailedClaimData {
     "Status": string;
 }
 
+interface ProjectStatusData {
+    "Project Name": string;
+    "Progress": number;
+    "Status": string;
+    "Start Date": string;
+    "End Date": string;
+    "Assigned Engineers": string;
+    "Gross Profit": number;
+    "Margin Profit (%)": number;
+    "Currency": string;
+}
+
+
 interface ReportContextType {
   reportData: ReportDataContext;
   setReportData: (data: ReportDataContext) => void;
   summaryData: SummaryData[];
   performanceData: PerformanceData[];
   detailedClaimsData: DetailedClaimData[];
+  projectStatusData: ProjectStatusData[];
   exportAllToExcel: () => void;
   exportSummaryToExcel: () => void;
   exportPerformanceToExcel: () => void;
   exportDetailedClaimsToExcel: () => void;
+  exportProjectStatusToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
   setSelectedEngineerId: (id: string | undefined) => void;
   selectedProjectId: string | undefined;
   setSelectedProjectId: (id: string | undefined) => void;
+  selectedProjectStatus: string | undefined;
+  setSelectedProjectStatus: (status: string | undefined) => void;
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
@@ -67,6 +84,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedEngineerId, setSelectedEngineerId] = useState<string | undefined>();
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
+  const [selectedProjectStatus, setSelectedProjectStatus] = useState<string | undefined>();
   
   const allEngineers = useMemo(() => {
     return reportData.users.filter(u => u.role === 'Engineer');
@@ -99,9 +117,18 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
           }
         });
     }
+     if (selectedProjectStatus && selectedProjectStatus !== 'all') {
+      if (selectedProjectStatus === 'Completed') {
+        projectsToFilter = projectsToFilter.filter(p => p.progress === 100);
+      } else if (selectedProjectStatus === 'In Progress') {
+        projectsToFilter = projectsToFilter.filter(p => p.progress > 0 && p.progress < 100);
+      } else if (selectedProjectStatus === 'Overdue') {
+        projectsToFilter = projectsToFilter.filter(p => new Date(p.endDate) < new Date() && p.progress < 100);
+      }
+    }
 
     return projectsToFilter;
-  }, [reportData.projects, interval, selectedEngineerId, selectedProjectId]);
+  }, [reportData.projects, interval, selectedEngineerId, selectedProjectId, selectedProjectStatus]);
   
   const filteredClaims = useMemo(() => {
      let claimsToFilter = reportData.claims;
@@ -230,6 +257,31 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     });
   }, [filteredClaims, reportData.users, reportData.projects]);
 
+  const projectStatusData: ProjectStatusData[] = useMemo(() => {
+    return filteredProjects.map(project => {
+        const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
+        let status = 'In Progress';
+        if (project.progress === 100) {
+            status = 'Completed';
+        } else if (new Date(project.endDate) < new Date()) {
+            status = 'Overdue';
+        }
+
+        return {
+            "Project Name": project.name,
+            "Progress": project.progress,
+            "Status": status,
+            "Start Date": project.startDate,
+            "End Date": project.endDate,
+            "Assigned Engineers": assignedEngineers,
+            "Gross Profit": project.grossProfit || 0,
+            "Margin Profit (%)": project.marginProfit || 0,
+            "Currency": project.currency || 'N/A',
+        }
+    });
+  }, [filteredProjects, reportData.users]);
+
+
   const exportToExcel = (worksheet: XLSX.WorkSheet, sheetName: string, fileName: string) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
@@ -250,14 +302,21 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     const worksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
     exportToExcel(worksheet, 'Detailed Claims', 'SitePilot_Detailed_Claims.xlsx');
   };
+
+  const exportProjectStatusToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(projectStatusData);
+    exportToExcel(worksheet, 'Project Status', 'SitePilot_Project_Status.xlsx');
+  };
   
   const exportAllToExcel = () => {
+    const projectStatusWorksheet = XLSX.utils.json_to_sheet(projectStatusData);
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
     const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
     
     const workbook = XLSX.utils.book_new();
     
+    XLSX.utils.book_append_sheet(workbook, projectStatusWorksheet, 'Project Status');
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
@@ -272,16 +331,20 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     summaryData,
     performanceData,
     detailedClaimsData,
+    projectStatusData,
     exportAllToExcel,
     exportSummaryToExcel,
     exportPerformanceToExcel,
     exportDetailedClaimsToExcel,
+    exportProjectStatusToExcel,
     dateRange,
     setDateRange,
     selectedEngineerId,
     setSelectedEngineerId,
     selectedProjectId,
     setSelectedProjectId,
+    selectedProjectStatus,
+    setSelectedProjectStatus,
   };
 
   return <ReportContext.Provider value={value}>{children}</ReportContext.Provider>;

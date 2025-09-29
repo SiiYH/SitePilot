@@ -15,11 +15,11 @@ const mainMenuItems = [
   { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['Engineer'] },
   { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['Admin', 'Director'] },
   { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director'] },
+  { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director', 'Reports'] },
 ];
 
 const settingsMenuItems = [
-  { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['Admin', 'Director', 'Engineer'] },
+  { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['Admin', 'Director', 'Engineer', 'Reports'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['Admin', 'Director'] },
 ]
 
@@ -29,6 +29,9 @@ export default function AppSidebar() {
 
   const isActive = (href: string) => {
     if (href === '/dashboard' && pathname !== '/dashboard') return false;
+    if (href === '/dashboard/reports' && (pathname.startsWith('/dashboard/reports/'))) {
+        return true;
+    }
     return pathname.startsWith(href);
   };
   
