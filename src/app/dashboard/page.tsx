@@ -21,30 +21,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      const getProjectsForUser = (user: User): Project[] => {
-        if (user.role === 'Admin' || user.role === 'Director') {
-          return mockProjects;
-        }
-        if (user.role === 'Engineer') {
-          return mockProjects.filter(p => p.assignedEngineers.includes(user.id));
-        }
-        return [];
-      };
-
-      const getTasksForUser = (user: User): Project['tasks'] => {
-        if (user.role === 'Engineer') {
-          return mockProjects.flatMap(p => p.tasks.filter(t => t.assignedTo === user.id));
-        }
-        return [];
-      };
-
-      setProjects(getProjectsForUser(user));
-      setTasks(getTasksForUser(user));
-
-      if (user.role === 'Admin' || user.role === 'Director') {
+      if (user.role === 'Engineer') {
+        const engineerProjects = mockProjects.filter(p => p.assignedEngineers.includes(user.id));
+        setProjects(engineerProjects);
+        
+        const engineerTasks = engineerProjects.flatMap(p => p.tasks.filter(t => t.assignedTo === user.id));
+        setTasks(engineerTasks);
+        
+      } else if (user.role === 'Admin' || user.role === 'Director') {
+        setProjects(mockProjects);
         setClaims(mockClaims);
         setAttendance(mockAttendance);
         setUsers(mockUsers);
+        setTasks(mockProjects.flatMap(p => p.tasks));
       }
       setLoading(false);
     }
@@ -85,5 +74,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
