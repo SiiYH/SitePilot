@@ -68,6 +68,7 @@ export interface Claim {
   projectId: string;
   title: string;
   amount: number;
+  currency: string;
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;
   submittedBy: string; // User ID

@@ -155,7 +155,7 @@ export default function ClaimDetailsPage() {
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <InfoField icon={DollarSign} label="Amount">
-                            <p className="text-2xl font-bold">${claim.amount.toLocaleString()}</p>
+                           <p className="text-2xl font-bold">{claim.amount.toLocaleString()} <span className="text-sm text-muted-foreground">{claim.currency}</span></p>
                         </InfoField>
 
                         {project && (
