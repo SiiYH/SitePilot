@@ -19,6 +19,7 @@ import OverviewTab from './_components/OverviewTab';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 
 async function getProject(slug: string): Promise<Project | undefined> {
@@ -114,14 +115,20 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="group relative -mx-4 -mt-4 h-60 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)] md:h-80">
-        <Image
-          src={project.imageUrl}
-          alt={project.name}
-          fill
-          className="object-cover"
-          data-ai-hint={project.imageHint}
-        />
+      <Dialog>
+      <div className="group relative -mx-4 -mt-4 h-60 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)]">
+        <DialogTrigger asChild>
+          <div className="absolute inset-0 cursor-pointer">
+              <Image
+                src={project.imageUrl}
+                alt={project.name}
+                fill
+                className="object-cover"
+                data-ai-hint={project.imageHint}
+              />
+          </div>
+        </DialogTrigger>
+
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
          {canUploadImage && (
           <>
@@ -141,6 +148,18 @@ export default function ProjectDetailsPage() {
           </>
         )}
       </div>
+      <DialogContent className="p-0 sm:max-w-4xl border-0 bg-transparent shadow-none">
+          <DialogTitle className="sr-only">{project.name} - Site Image</DialogTitle>
+          <div className="relative aspect-video w-full">
+              <Image
+                  src={project.imageUrl}
+                  alt={project.name}
+                  fill
+                  className="object-contain"
+              />
+          </div>
+      </DialogContent>
+      </Dialog>
       
       <div className="space-y-2">
           <Badge>In Progress</Badge>
