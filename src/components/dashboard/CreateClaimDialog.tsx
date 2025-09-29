@@ -238,8 +238,25 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                   )}
               />
               {imagePreview && (
-                  <div className="relative mt-2 w-full h-48">
-                      <Image src={imagePreview} alt="Receipt preview" fill className="rounded-md border object-contain"/>
+                  <div className="relative mt-2">
+                     <Dialog>
+                        <DialogTrigger asChild>
+                           <div className="relative aspect-video w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                              <Image src={imagePreview} alt="Receipt preview" fill className="object-contain"/>
+                           </div>
+                        </DialogTrigger>
+                        <DialogContent className="p-0 sm:max-w-2xl border-0 bg-transparent shadow-none">
+                            <DialogTitle className="sr-only">Enlarged Receipt Preview</DialogTitle>
+                            <div className="relative aspect-video w-full">
+                                <Image
+                                    src={imagePreview}
+                                    alt="Receipt preview"
+                                    fill
+                                    className="object-contain"
+                                />
+                            </div>
+                        </DialogContent>
+                      </Dialog>
                       <Button
                           type="button"
                           variant="destructive"
