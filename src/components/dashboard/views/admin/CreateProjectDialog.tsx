@@ -77,6 +77,16 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       name: '',
       description: '',
       assignedEngineers: [],
+      jobNo: '',
+      orderNo: '',
+      siteName: '',
+      jobLocation: '',
+      distance: undefined,
+      performanceBondNo: '',
+      performanceBondAmount: undefined,
+      grossProfit: undefined,
+      marginProfit: undefined,
+      insuranceAmount: undefined,
       currency: 'MYR',
     },
   });
@@ -451,5 +461,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
     </Dialog>
   );
 }
+
+    
 
     
