@@ -77,22 +77,24 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
               return (
                 <AccordionItem value={user.id} key={user.id}>
-                  <AccordionTrigger>
-                    <div className="flex flex-1 items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                            </Avatar>
-                            <div className="text-left">
-                                <p className="font-medium">{user.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {user.role === 'Engineer' ? `${tasks.length} task(s) assigned` : user.role}
-                                </p>
-                            </div>
-                        </div>
+                  <div className="flex items-center">
+                    <AccordionTrigger className="flex-1">
+                      <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.avatarUrl} alt={user.name} />
+                              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-left">
+                              <p className="font-medium">{user.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                  {user.role === 'Engineer' ? `${tasks.length} task(s) assigned` : user.role}
+                              </p>
+                          </div>
+                      </div>
+                    </AccordionTrigger>
+                    <div className="pl-4 pr-2">
                         {canChangeRole ? (
-                            <div className="w-32 pr-4" onClick={(e) => e.stopPropagation()}>
+                            <div className="w-32">
                                 <Select value={user.role} onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Set role" />
@@ -106,7 +108,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             <Badge variant="secondary" className="mr-4">{user.role}</Badge>
                         )}
                     </div>
-                  </AccordionTrigger>
+                  </div>
                   <AccordionContent>
                     {user.role === 'Engineer' ? (
                         tasks.length > 0 ? (
