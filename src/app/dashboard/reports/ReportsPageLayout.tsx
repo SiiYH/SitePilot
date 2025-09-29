@@ -49,7 +49,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
     if (pathname.includes('/detailed-claims')) {
         return "SitePilot - Detailed Claims Report";
     }
-    return "SitePilot Report";
+    return "SitePilot - All Reports";
   }
 
   return (

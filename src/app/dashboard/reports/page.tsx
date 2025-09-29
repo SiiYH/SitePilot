@@ -3,8 +3,12 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ArrowRight, LineChart, FileText } from 'lucide-react';
+import { BarChart, ArrowRight, LineChart, FileText, Printer } from 'lucide-react';
 import ReportsPageLayout from './ReportsPageLayout';
+import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
+import EngineerPerformanceReport from '@/components/dashboard/views/admin/EngineerPerformanceReport';
+import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
+import { Button } from '@/components/ui/button';
 
 const reports = [
   {
@@ -28,18 +32,30 @@ const reports = [
 ];
 
 export default function ReportsPage() {
+  const handlePrintAll = () => {
+    window.print();
+  }
+
   return (
     <ReportsPageLayout>
       <div className="space-y-6">
-        <div className="print-hidden">
-          <h2 className="text-2xl font-bold tracking-tight">Reports Hub</h2>
-          <p className="text-muted-foreground">
-            Select a report to view and print, or export all reports to Excel.
-          </p>
+        <div className="print-hidden flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Reports Hub</h2>
+              <p className="text-muted-foreground">
+                Select a report to view, or export all reports.
+              </p>
+            </div>
+            <div className="flex gap-2">
+               <Button onClick={handlePrintAll} variant="outline">
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print All Reports
+                </Button>
+            </div>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-hidden">
           {reports.map((report) => (
-            <Link href={report.href} key={report.href} className="print-hidden">
+            <Link href={report.href} key={report.href}>
               <Card className="flex h-full flex-col justify-between transition-all hover:shadow-lg">
                 <CardHeader>
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -54,6 +70,22 @@ export default function ReportsPage() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        {/* Hidden content for printing all reports */}
+        <div className="print-only hidden space-y-8">
+            <div className="printable-content print-break-after">
+                <h2 className="text-xl font-bold mb-4">Engineer Summary Report</h2>
+                <EngineerSummaryReport />
+            </div>
+             <div className="printable-content print-break-after">
+                <h2 className="text-xl font-bold mb-4">Engineer Performance Report</h2>
+                <EngineerPerformanceReport />
+            </div>
+             <div className="printable-content">
+                <h2 className="text-xl font-bold mb-4">Detailed Claims Report</h2>
+                <DetailedClaimsReport />
+            </div>
         </div>
       </div>
     </ReportsPageLayout>
