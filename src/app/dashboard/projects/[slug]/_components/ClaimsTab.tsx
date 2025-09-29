@@ -89,7 +89,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTab
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Claim</TableHead>
-                                    <TableHead>E-Inv No.</TableHead>
+                                    <TableHead>e-Inv No.</TableHead>
                                     <TableHead>Submitted By</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Date</TableHead>

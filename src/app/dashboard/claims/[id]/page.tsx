@@ -158,7 +158,7 @@ export default function ClaimDetailsPage() {
                          <InfoField icon={FileText} label="Description" value={claim.description} />
                     )}
                      {claim.eInvoiceNo && (
-                         <InfoField icon={Hash} label="E-Invoice No." value={claim.eInvoiceNo} />
+                         <InfoField icon={Hash} label="e-Invoice No." value={claim.eInvoiceNo} />
                     )}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <InfoField icon={DollarSign} label="Amount">

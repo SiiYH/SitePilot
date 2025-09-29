@@ -115,7 +115,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Claim</TableHead>
-                                <TableHead>E-Inv No.</TableHead>
+                                <TableHead>e-Inv No.</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Submitted By</TableHead>
                                 <TableHead>Amount</TableHead>

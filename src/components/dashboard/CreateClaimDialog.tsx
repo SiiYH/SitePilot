@@ -206,7 +206,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                 name="eInvoiceNo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-Invoice No. (Optional)</FormLabel>
+                    <FormLabel>e-Invoice No. (Optional)</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., INV-2024-12345" {...field} />
                     </FormControl>
