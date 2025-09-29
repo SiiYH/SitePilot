@@ -1,36 +1,29 @@
 
-import { notFound } from 'next/navigation';
+'use client';
+
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
 import { Project, User, Claim } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Calendar, CheckCircle, Clock, Edit, Users } from 'lucide-react';
-import { format } from 'date-fns';
-import { Separator } from '@/components/ui/separator';
+import { Edit } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
+import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
 
 async function getProject(slug: string): Promise<Project | undefined> {
   // In a real app, this would be a database query.
   return mockProjects.find(p => p.slug === slug);
-}
-
-// This function would typically get the current user from context/session
-async function getCurrentUser(): Promise<User> {
-    // Forcing a user for this server component. In a real app, you'd get this from your auth system (e.g. cookies).
-    // Let's pretend the logged in user is the Admin for this page, but it could be any user.
-    // In a real app, you would fetch the user from your authentication system, e.g. from cookies or a session.
-    // The logic inside the components will then correctly show/hide elements based on the user's role.
-    return mockUsers.find(u => u.role === 'Admin')!; 
 }
 
 async function getClaimsForProject(projectId: string): Promise<Claim[]> {
@@ -41,57 +34,47 @@ async function getAssignedEngineers(engineerIds: string[]): Promise<User[]> {
     return mockUsers.filter(user => engineerIds.includes(user.id));
 }
 
-const getInitials = (name: string) => {
-  if (!name) return '';
-  const names = name.split(' ');
-  if (names.length > 1) {
-    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
-};
 
+export default function ProjectDetailsPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const { user, loading: authLoading } = useAuth();
+  
+  const [project, setProject] = useState<Project | undefined>(undefined);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [assignedEngineers, setAssignedEngineers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-function AssignedTeam({ engineers }: { engineers: User[] }) {
-    if (engineers.length === 0) return null;
+  useEffect(() => {
+    if (slug) {
+      const fetchData = async () => {
+        setLoading(true);
+        const projectData = await getProject(slug);
+        if (projectData) {
+          setProject(projectData);
+          const claimsData = await getClaimsForProject(projectData.id);
+          setClaims(claimsData);
+          const engineersData = await getAssignedEngineers(projectData.assignedEngineers);
+          setAssignedEngineers(engineersData);
+        }
+        setLoading(false);
+      };
+      fetchData();
+    }
+  }, [slug]);
 
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <span>Assigned Team</span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {engineers.map(engineer => (
-                        <div key={engineer.id} className="flex items-center gap-3">
-                            <Avatar>
-                                <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
-                                <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-medium">{engineer.name}</p>
-                                <p className="text-sm text-muted-foreground">{engineer.role}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
+  if (loading || authLoading) {
+     return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
-}
+  }
 
-export default async function ProjectDetailsPage({ params }: { params: { slug: string } }) {
-  const project = await getProject(params.slug);
-  const user = await getCurrentUser();
-
-  if (!project) {
+  if (!project || !user) {
     notFound();
   }
   
-  const claims = await getClaimsForProject(project.id);
-  const assignedEngineers = await getAssignedEngineers(project.assignedEngineers);
   const canEditProject = user.role === 'Admin' || user.role === 'Director';
 
 
