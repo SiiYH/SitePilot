@@ -109,7 +109,7 @@ export default function ProjectDetailsPage() {
   }
   
   const canEditProject = user.role === 'Admin' || user.role === 'Director';
-  const canUploadImage = user.role === 'Director';
+  const canUploadImage = user.role === 'Director' || user.role === 'Admin';
 
 
   return (
