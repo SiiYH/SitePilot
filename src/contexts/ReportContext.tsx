@@ -186,10 +186,13 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
     const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
+    
     const workbook = XLSX.utils.book_new();
+    
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
+    
     XLSX.writeFile(workbook, 'SitePilot_Reports.xlsx');
   };
 
