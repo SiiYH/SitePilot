@@ -304,7 +304,51 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                   </div>
                   
                   <AccordionContent className="px-5 pb-5 pt-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-4">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-primary/5">
+                                    <div className="flex items-center gap-3 py-2">
+                                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                                        <FileClock className="h-5 w-5 text-primary" />
+                                      </div>
+                                      <span className="font-semibold text-sm">View Change History</span>
+                                    </div>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl">Change Log for {user.name}</DialogTitle>
+                                    <DialogDescription className="text-base">
+                                        A complete record of this user's status changes.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                                    <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-sm">
+                                            <UserPlus className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-base">User Created</p>
+                                            <p className="text-sm text-muted-foreground font-medium">{format(parseISO(user.createdAt), "PPP p")}</p>
+                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })}</p>
+                                        </div>
+                                    </div>
+                                    {user.history.map((item, index) => (
+                                         <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-muted-foreground/20">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted shadow-sm">
+                                                <Clock className="h-6 w-6 text-muted-foreground" />
+                                            </div>
+                                             <div>
+                                                <p className="font-semibold">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>{item.status}</span></p>
+                                                <p className="text-sm text-muted-foreground font-medium">{format(parseISO(item.date), "PPP p")}</p>
+                                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(item.date), { addSuffix: true })}</p>
+                                             </div>
+                                         </div>
+                                    ))}
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                         {user.role === 'Engineer' ? (
                         tasks.length > 0 ? (
                             <div className="rounded-xl border-0 overflow-hidden shadow-md bg-gradient-to-br from-background to-muted/30">
@@ -384,50 +428,6 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             </p>
                         </div>
                         )}
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="md:col-start-2 h-auto md:h-full md:min-h-[200px] hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-primary/5">
-                                    <div className="flex md:flex-col items-center gap-2 md:gap-3 py-2 md:py-0">
-                                      <div className="h-8 w-8 md:h-12 md:w-12 rounded-lg md:rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                                        <FileClock className="h-4 w-4 md:h-6 md:w-6 text-primary" />
-                                      </div>
-                                      <span className="font-semibold text-sm md:text-base">View Change History</span>
-                                    </div>
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl">Change Log for {user.name}</DialogTitle>
-                                    <DialogDescription className="text-base">
-                                        A complete record of this user's status changes.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-                                    <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-sm">
-                                            <UserPlus className="h-6 w-6 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-base">User Created</p>
-                                            <p className="text-sm text-muted-foreground font-medium">{format(parseISO(user.createdAt), "PPP p")}</p>
-                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })}</p>
-                                        </div>
-                                    </div>
-                                    {user.history.map((item, index) => (
-                                         <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-muted-foreground/20">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted shadow-sm">
-                                                <Clock className="h-6 w-6 text-muted-foreground" />
-                                            </div>
-                                             <div>
-                                                <p className="font-semibold">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>{item.status}</span></p>
-                                                <p className="text-sm text-muted-foreground font-medium">{format(parseISO(item.date), "PPP p")}</p>
-                                                <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(item.date), { addSuffix: true })}</p>
-                                             </div>
-                                         </div>
-                                    ))}
-                                </div>
-                            </DialogContent>
-                        </Dialog>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -453,5 +453,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
+
+    
 
     
