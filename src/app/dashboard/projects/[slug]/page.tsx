@@ -14,8 +14,9 @@ import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
-import { Edit, Upload } from 'lucide-react';
+import { Edit, Upload, Settings } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
+import SettingsTab from './_components/SettingsTab';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -46,6 +47,16 @@ export default function ProjectDetailsPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [assignedEngineers, setAssignedEngineers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
+
+  const updateProjectState = (updatedProject: Project) => {
+    setProject(updatedProject);
+    const projectIndex = mockProjects.findIndex(p => p.id === updatedProject.id);
+    if (projectIndex !== -1) {
+      mockProjects[projectIndex] = updatedProject;
+    }
+  };
 
   useEffect(() => {
     if (slug && user) {
@@ -84,14 +95,7 @@ export default function ProjectDetailsPage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const newImageUrl = e.target?.result as string;
-        // In a real app, you'd call an API to update the project image.
-        // For this mock, we update the local state.
-        setProject(prevProject => prevProject ? { ...prevProject, imageUrl: newImageUrl } : undefined);
-        
-        const projectIndex = mockProjects.findIndex(p => p.id === project.id);
-        if (projectIndex !== -1) {
-          mockProjects[projectIndex].imageUrl = newImageUrl;
-        }
+        updateProjectState({ ...project, imageUrl: newImageUrl });
       };
       reader.readAsDataURL(file);
     }
@@ -180,14 +184,15 @@ export default function ProjectDetailsPage() {
       </div>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 h-auto sm:grid-cols-4 sm:h-10">
+        <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10 sm:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="claims">Claims</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          {canManageSettings && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab project={project} engineers={assignedEngineers} user={user} />
+          <OverviewTab project={project} engineers={assignedEngineers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
           <ClaimsTab claims={claims} project={project} onClaimCreated={handleClaimCreated} />
@@ -214,6 +219,11 @@ export default function ProjectDetailsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+         {canManageSettings && (
+            <TabsContent value="settings" className="mt-6">
+                <SettingsTab project={project} onProjectUpdate={updateProjectState} />
+            </TabsContent>
+        )}
       </Tabs>
     </div>
   );
