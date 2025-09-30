@@ -100,7 +100,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
               return (
                 <AccordionItem value={user.id} key={user.id} className={cn(user.status === 'Inactive' && 'opacity-60')}>
-                  <div className="flex items-center">
+                  <div className="flex flex-col sm:flex-row sm:items-center">
                     <AccordionTrigger className="flex-1 py-4 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -119,7 +119,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       </div>
                     </AccordionTrigger>
                     {canManageUsers && (
-                      <div className="flex items-center gap-4 pl-4 pr-2">
+                      <div className="flex items-center gap-4 py-2 pl-4 pr-2 sm:py-0">
                           <div className="w-32">
                               <Select 
                                 value={user.role} 
