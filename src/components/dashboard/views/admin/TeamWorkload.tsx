@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Project, User, UserRole, UserStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -17,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { licenseLimits } from '@/lib/license';
+import { Users } from 'lucide-react';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -52,6 +54,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const { user: currentUser, licenseUsage } = useAuth();
   const { toast } = useToast();
   const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
 
   const getTasksForEngineer = (engineerId: string) => {
     return projects.flatMap(p => 
@@ -71,7 +74,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   };
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
-    if (licenseUsage[newRole] >= licenseLimits[newRole]) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    if (newRole !== user.role && licenseUsage[newRole] >= licenseLimits[newRole]) {
       toast({
         variant: 'destructive',
         title: 'License Limit Reached',
@@ -104,8 +110,13 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
         });
     }
   };
+  
+  const filteredUsers = users.filter(user => {
+      if (roleFilter === 'All') return true;
+      return user.role === roleFilter;
+  });
 
-  const sortedUsers = [...users].sort((a, b) => {
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (a.status === b.status) return a.name.localeCompare(b.name);
     return a.status === 'Active' ? -1 : 1;
   });
@@ -120,18 +131,34 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               Manage team members, roles, and track workload distribution
             </CardDescription>
           </div>
-          <div className="flex gap-2 sm:gap-3 text-xs text-muted-foreground">
-             {roles.map(role => (
-              <div key={role} className="flex flex-col items-center px-3 py-2 bg-background rounded-lg border shadow-sm">
-                <span className="text-lg font-bold text-primary">{licenseUsage[role]}/{licenseLimits[role]}</span>
-                <span className="font-medium">{role}s</span>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="w-full sm:w-48">
+              <Select value={roleFilter} onValueChange={(value: UserRole | 'All') => setRoleFilter(value)}>
+                  <SelectTrigger>
+                      <Users className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="All">All Roles</SelectItem>
+                      {roles.map(r => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 sm:gap-3 text-xs text-muted-foreground">
+              {roles.map(role => (
+                <div key={role} className="flex flex-col items-center px-3 py-2 bg-background rounded-lg border shadow-sm flex-1 sm:flex-initial">
+                  <span className="text-lg font-bold text-primary">{licenseUsage[role]}/{licenseLimits[role]}</span>
+                  <span className="font-medium">{role}s</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        {users.length > 0 ? (
+        {sortedUsers.length > 0 ? (
           <Accordion type="single" collapsible className="w-full space-y-2">
             {sortedUsers.map(user => {
               const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
@@ -148,7 +175,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2">
                     <AccordionTrigger className="flex-1 py-4 hover:no-underline group">
-                      <div className="flex flex-1 items-center gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="relative">
                           <Avatar className="h-11 w-11 ring-2 ring-background group-hover:ring-primary/20 transition-all">
                             <AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -164,10 +191,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         <div className="flex-1 text-left min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-base truncate">{user.name}</span>
-                            <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
+                             <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
                               {user.role}
                             </Badge>
-                            {user.status === 'Inactive' && (
+                             {user.status === 'Inactive' && (
                                <Badge variant="outline" className="text-xs border-destructive/50 text-destructive">
                                 Inactive
                               </Badge>
@@ -205,7 +232,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     </AccordionTrigger>
                     
                     {canManageUsers && (
-                      <div className="flex flex-wrap items-center justify-end gap-3 pb-2 pl-[60px] lg:py-0 lg:pl-0 lg:ml-auto">
+                      <div className="flex flex-wrap items-center justify-start gap-3 pb-2 pl-[60px] lg:justify-end lg:py-0 lg:pl-0 lg:ml-auto">
                         <div className="w-36">
                           <Select 
                             value={user.role} 
@@ -309,14 +336,14 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       <div className="flex flex-col items-center justify-center px-4 py-10 text-center bg-muted/20 rounded-lg border">
                         <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                           <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                         </div>
                         <p className="text-sm font-medium text-muted-foreground">
-                          Task overview only available for Engineers
+                          {user.name} does not have tasks
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {user.role} roles manage teams and projects
+                          Only users with the 'Engineer' role can be assigned tasks.
                         </p>
                       </div>
                     )}
@@ -344,3 +371,5 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
+
+    
