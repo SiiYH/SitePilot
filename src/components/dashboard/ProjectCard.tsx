@@ -8,12 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';
+import { getProjectProgress } from '@/lib/projects';
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
+  const calculatedProgress = getProjectProgress(project);
+
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
       <Link href={`/dashboard/projects/${project.slug}`} className="block">
@@ -39,9 +42,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div>
           <div className="mb-1 flex justify-between text-sm font-medium">
             <span>Progress</span>
-            <span className="text-muted-foreground">{project.progress}%</span>
+            <span className="text-muted-foreground">{calculatedProgress}%</span>
           </div>
-          <Progress value={project.progress} aria-label={`${project.progress}% complete`} />
+          <Progress value={calculatedProgress} aria-label={`${calculatedProgress}% complete`} />
         </div>
         <div className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">

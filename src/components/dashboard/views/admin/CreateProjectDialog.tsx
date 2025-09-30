@@ -23,11 +23,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Check, ChevronsUpDown, PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { User, Project } from '@/types';
+import { User, Project, ProgressTrackingMode } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 
 interface CreateProjectDialogProps {
@@ -41,6 +42,8 @@ const formSchema = z.object({
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
+  progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual']),
+  progress: z.number().min(0).max(100).optional(),
   jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
@@ -77,6 +80,8 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       name: '',
       description: '',
       assignedEngineers: [],
+      progressTrackingMode: 'task-driven',
+      progress: 0,
       jobNo: '',
       orderNo: '',
       siteName: '',
@@ -91,6 +96,8 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
     },
   });
 
+  const progressTrackingMode = form.watch('progressTrackingMode');
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
@@ -103,7 +110,8 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
       assignedEngineers: values.assignedEngineers,
-      progress: 0,
+      progress: values.progress || 0,
+      progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
       imageUrl: `https://picsum.photos/seed/proj${Date.now()}/600/400`,
       imageHint: 'construction site',
       tasks: [],
@@ -316,7 +324,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
 
 
               <Separator className="my-4"/>
-              <h4 className="text-sm font-semibold">Schedule & Team</h4>
+              <h4 className="text-sm font-semibold">Schedule, Team & Progress</h4>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
@@ -445,6 +453,59 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="progressTrackingMode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Progress Tracking</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select tracking mode" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="task-driven">Task-Driven</SelectItem>
+                          <SelectItem value="milestone-driven">Milestone-Driven</SelectItem>
+                          <SelectItem value="manual">Manual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {progressTrackingMode === 'manual' && (
+                   <FormField
+                    control={form.control}
+                    name="progress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Initial Progress (%)</FormLabel>
+                        <FormControl>
+                          <div className='flex items-center gap-4'>
+                            <Slider
+                              value={[field.value || 0]}
+                              onValueChange={(value) => field.onChange(value[0])}
+                              max={100}
+                              step={1}
+                              className='flex-1'
+                            />
+                            <Input
+                              type="number"
+                              value={field.value || 0}
+                              onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                              className="w-20"
+                              min="0"
+                              max="100"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

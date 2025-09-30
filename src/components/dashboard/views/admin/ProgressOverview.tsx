@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Project } from "@/types";
 import { DollarSign, GanttChartSquare, CheckCircle } from "lucide-react";
+import { getProjectProgress } from "@/lib/projects";
 
 interface ProgressOverviewProps {
     projects: Project[];
@@ -10,8 +11,16 @@ interface ProgressOverviewProps {
 
 export default function ProgressOverview({ projects }: ProgressOverviewProps) {
     const totalProjects = projects.length;
-    const completedProjects = projects.filter(p => p.progress === 100).length;
-    const overallProgress = totalProjects > 0 ? projects.reduce((acc, p) => acc + p.progress, 0) / totalProjects : 0;
+
+    const completedProjects = projects.filter(p => {
+        const progress = getProjectProgress(p);
+        return progress === 100;
+    }).length;
+
+    const overallProgress = totalProjects > 0 
+        ? projects.reduce((acc, p) => acc + getProjectProgress(p), 0) / totalProjects 
+        : 0;
+
     const completionRate = totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0;
 
     return (

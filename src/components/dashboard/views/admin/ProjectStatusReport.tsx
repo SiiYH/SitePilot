@@ -8,9 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { Progress } from '@/components/ui/progress';
+import { getProjectProgress } from '@/lib/projects';
 
 export default function ProjectStatusReport() {
-  const { projectStatusData } = useReportContext();
+  const { projectStatusData, reportData } = useReportContext();
   const { user } = useAuth();
   const canViewFinancials = user?.role === 'Admin' || user?.role === 'Director';
 
@@ -43,32 +44,36 @@ export default function ProjectStatusReport() {
             </TableHeader>
             <TableBody>
               {projectStatusData.length > 0 ? (
-                projectStatusData.map((data, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{data['Project Name']}</TableCell>
-                    <TableCell>
-                        <div className='flex flex-col items-start gap-1 w-24'>
-                             <span className='text-xs font-medium text-muted-foreground'>{data.Progress}%</span>
-                             <Progress value={data.Progress} className="h-2 w-full" />
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                        <Badge variant={statusVariant[data.Status as keyof typeof statusVariant] || 'outline'}>
-                            {data.Status}
-                        </Badge>
-                    </TableCell>
-                    <TableCell>{format(parseISO(data['Start Date']), 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>{format(parseISO(data['End Date']), 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>{data['Assigned Engineers']}</TableCell>
-                    {canViewFinancials && (
-                        <TableCell className="text-right">
-                           <span className='text-xs text-muted-foreground'>{data.Currency} </span>
-                           {data['Gross Profit'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </TableCell>
-                    )}
-                    {canViewFinancials && <TableCell className="text-right">{data['Margin Profit (%)']}%</TableCell>}
-                  </TableRow>
-                ))
+                projectStatusData.map((data, index) => {
+                  const project = reportData.projects.find(p => p.name === data['Project Name']);
+                  const calculatedProgress = project ? getProjectProgress(project) : data.Progress;
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{data['Project Name']}</TableCell>
+                      <TableCell>
+                          <div className='flex flex-col items-start gap-1 w-24'>
+                              <span className='text-xs font-medium text-muted-foreground'>{calculatedProgress}%</span>
+                              <Progress value={calculatedProgress} className="h-2 w-full" />
+                          </div>
+                      </TableCell>
+                      <TableCell>
+                          <Badge variant={statusVariant[data.Status as keyof typeof statusVariant] || 'outline'}>
+                              {data.Status}
+                          </Badge>
+                      </TableCell>
+                      <TableCell>{format(parseISO(data['Start Date']), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{format(parseISO(data['End Date']), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell>{data['Assigned Engineers']}</TableCell>
+                      {canViewFinancials && (
+                          <TableCell className="text-right">
+                            <span className='text-xs text-muted-foreground'>{data.Currency} </span>
+                            {data['Gross Profit'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </TableCell>
+                      )}
+                      {canViewFinancials && <TableCell className="text-right">{data['Margin Profit (%)']}%</TableCell>}
+                    </TableRow>
+                  )
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={canViewFinancials ? 8 : 6} className="h-24 text-center">

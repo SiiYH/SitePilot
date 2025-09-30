@@ -6,6 +6,7 @@ import { User, Project, Claim, Task } from '@/types';
 import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO } from 'date-fns';
+import { getProjectProgress } from '@/lib/projects';
 
 
 interface ReportDataContext {
@@ -119,11 +120,14 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     }
      if (selectedProjectStatus && selectedProjectStatus !== 'all') {
       if (selectedProjectStatus === 'Completed') {
-        projectsToFilter = projectsToFilter.filter(p => p.progress === 100);
+        projectsToFilter = projectsToFilter.filter(p => getProjectProgress(p) === 100);
       } else if (selectedProjectStatus === 'In Progress') {
-        projectsToFilter = projectsToFilter.filter(p => p.progress > 0 && p.progress < 100);
+        projectsToFilter = projectsToFilter.filter(p => {
+          const progress = getProjectProgress(p);
+          return progress > 0 && progress < 100;
+        });
       } else if (selectedProjectStatus === 'Overdue') {
-        projectsToFilter = projectsToFilter.filter(p => new Date(p.endDate) < new Date() && p.progress < 100);
+        projectsToFilter = projectsToFilter.filter(p => new Date(p.endDate) < new Date() && getProjectProgress(p) < 100);
       }
     }
 
@@ -183,15 +187,15 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
       const engineerClaims = filteredClaims.filter(c => c.submittedBy === engineer.id);
 
-      const completedSites = assignedProjects.filter(p => p.progress === 100).length;
-      const ongoingSites = assignedProjects.filter(p => p.progress < 100).length;
+      const completedSites = assignedProjects.filter(p => getProjectProgress(p) === 100).length;
+      const ongoingSites = assignedProjects.filter(p => getProjectProgress(p) < 100).length;
       
       const totalAmount = assignedProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
       const claimAmount = engineerClaims.reduce((acc, c) => acc + c.amount, 0);
 
       const dueSites = assignedProjects.filter(p => {
         try {
-            const isOverdue = new Date(p.endDate) < new Date() && p.progress < 100;
+            const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
             const hasOverdueTasks = p.tasks.some(t => t.assignedTo === engineer.id && t.status === 'Overdue');
             return isOverdue || hasOverdueTasks;
         } catch {
@@ -261,7 +265,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     return filteredProjects.map(project => {
         const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
         let status = 'In Progress';
-        if (project.progress === 100) {
+        const progress = getProjectProgress(project);
+        if (progress === 100) {
             status = 'Completed';
         } else if (new Date(project.endDate) < new Date()) {
             status = 'Overdue';
@@ -269,7 +274,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
 
         return {
             "Project Name": project.name,
-            "Progress": project.progress,
+            "Progress": progress,
             "Status": status,
             "Start Date": project.startDate,
             "End Date": project.endDate,

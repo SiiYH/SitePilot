@@ -45,12 +45,15 @@ export interface Milestone {
   date: string;
 }
 
+export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual';
+
 export interface Project {
   id: string;
   slug: string;
   name: string;
   description: string;
   progress: number;
+  progressTrackingMode: ProgressTrackingMode;
   startDate: string;
   endDate: string;
   imageUrl: string;
