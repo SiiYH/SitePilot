@@ -19,7 +19,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { licenseLimits } from '@/lib/license';
-import { Users, Clock, History, UserPlus } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -197,14 +199,16 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         <div className="flex-1 text-left min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-base truncate">{user.name}</span>
-                             <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
-                              {user.role}
-                            </Badge>
-                             {user.status === 'Inactive' && (
-                               <Badge variant="outline" className="text-xs border-destructive/50 text-destructive">
-                                Inactive
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                                <Badge className={cn("text-xs font-medium", roleColors[user.role])}>
+                                {user.role}
+                                </Badge>
+                                {user.status === 'Inactive' && (
+                                <Badge variant="outline" className="text-xs border-destructive/50 text-destructive">
+                                    Inactive
+                                </Badge>
+                                )}
+                            </div>
                           </div>
                           
                           {user.role === 'Engineer' && (
@@ -354,34 +358,44 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             </p>
                         </div>
                         )}
-                         <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <History className="h-5 w-5" />
-                                    <span>User History</span>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="text-sm">
-                                <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <UserPlus className="h-4 w-4 text-muted-foreground" />
-                                    <div>
-                                        <p className="font-medium">User Created</p>
-                                        <p className="text-xs text-muted-foreground">{format(parseISO(user.createdAt), "PPP p")} ({formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })})</p>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className='md:col-start-2'>
+                                    <FileClock className="mr-2 h-4 w-4" />
+                                    View History
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Change Log for {user.name}</DialogTitle>
+                                    <DialogDescription>
+                                        A record of this user's status changes.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                                            <UserPlus className="h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">User Created</p>
+                                            <p className="text-sm text-muted-foreground">{format(parseISO(user.createdAt), "PPP p")} ({formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })})</p>
+                                        </div>
                                     </div>
-                                </div>
-                                {user.history.map((item, index) => (
-                                     <div key={index} className="flex items-center gap-3">
-                                         <Clock className="h-4 w-4 text-muted-foreground" />
-                                         <div>
-                                            <p className="font-medium">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600' : 'text-red-600')}>{item.status}</span></p>
-                                            <p className="text-xs text-muted-foreground">{format(parseISO(item.date), "PPP p")} ({formatDistanceToNow(parseISO(item.date), { addSuffix: true })})</p>
+                                    {user.history.map((item, index) => (
+                                         <div key={index} className="flex items-center gap-4">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                                                <Clock className="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                             <div>
+                                                <p className="font-medium">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600' : 'text-red-600')}>{item.status}</span></p>
+                                                <p className="text-sm text-muted-foreground">{format(parseISO(item.date), "PPP p")} ({formatDistanceToNow(parseISO(item.date), { addSuffix: true })})</p>
+                                             </div>
                                          </div>
-                                     </div>
-                                ))}
+                                    ))}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -407,5 +421,3 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
-
-    
