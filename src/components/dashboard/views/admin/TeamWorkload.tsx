@@ -108,10 +108,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                           </Avatar>
                           <div className="text-left">
-                              <p className="font-medium flex items-center gap-2">
+                              <div className="font-medium flex items-center gap-2">
                                 {user.name}
                                 {user.status === 'Inactive' && <Badge variant="destructive">Inactive</Badge>}
-                              </p>
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                   {user.role === 'Engineer' ? `${tasks.length} task(s) assigned` : user.role}
                               </p>
@@ -119,7 +119,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       </div>
                     </AccordionTrigger>
                     {canManageUsers && (
-                      <div className="flex items-center gap-4 py-2 pl-4 pr-2 sm:py-0">
+                      <div className="flex flex-wrap items-center gap-4 py-2 pl-4 pr-2 sm:py-0 sm:pl-0 sm:ml-auto">
                           <div className="w-32">
                               <Select 
                                 value={user.role} 
