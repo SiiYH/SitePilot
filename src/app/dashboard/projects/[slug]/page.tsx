@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
-import { Project, User, Claim } from '@/types';
+import { Project, User, Claim, Task } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
 
 
 async function getProject(slug: string): Promise<Project | undefined> {
@@ -49,6 +50,7 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
+  const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
 
   const updateProjectState = (updatedProject: Project) => {
     setProject(updatedProject);
@@ -85,6 +87,16 @@ export default function ProjectDetailsPage() {
     setClaims(prevClaims => [newClaim, ...prevClaims]);
   };
   
+  const handleWorkItemCreated = (newTask: Task) => {
+    if (project) {
+        const updatedProject = {
+            ...project,
+            tasks: [...project.tasks, newTask]
+        };
+        updateProjectState(updatedProject);
+    }
+  };
+
   const handleImageUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -199,9 +211,18 @@ export default function ProjectDetailsPage() {
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Task Management</CardTitle>
-              <CardDescription>All tasks associated with this project.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Work Item Management</CardTitle>
+                <CardDescription>All work items associated with this project.</CardDescription>
+              </div>
+              {canManageWorkItems && (
+                <CreateWorkItemDialog 
+                  projectId={project.id}
+                  engineers={assignedEngineers} 
+                  onWorkItemCreated={handleWorkItemCreated} 
+                />
+              )}
             </CardHeader>
             <CardContent>
               <TasksTable tasks={project.tasks} user={user} />

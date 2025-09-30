@@ -105,3 +105,9 @@ export interface AttendanceRecord {
   status: 'Clocked In' | 'Clocked Out';
   location: string | null;
 }
+
+export interface CreateWorkItemDialogProps {
+    projectId: string;
+    engineers: User[];
+    onWorkItemCreated: (task: Task) => void;
+}
