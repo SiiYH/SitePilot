@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { licenseLimits } from '@/lib/license';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -37,7 +39,7 @@ export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, licenseUsage } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -53,9 +55,21 @@ export default function SignUpForm() {
   });
 
   const contactMethod = form.watch('contactMethod');
+  const engineerLimitReached = licenseUsage.Engineer >= licenseLimits.Engineer;
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    if (engineerLimitReached) {
+       toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description: 'The license limit for new engineers has been reached.',
+      });
+      setIsLoading(false);
+      return;
+    }
+
     // Role is defaulted to 'Engineer' on signup now.
     const user = await signUp({ ...values, role: 'Engineer' });
     if (!user) {
@@ -71,6 +85,14 @@ export default function SignUpForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {engineerLimitReached && (
+           <Alert variant="destructive" className="text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              The license limit for new <strong>Engineer</strong> sign-ups has been reached. Please contact an administrator.
+            </AlertDescription>
+          </Alert>
+        )}
         <FormField
           control={form.control}
           name="name"
@@ -198,7 +220,7 @@ export default function SignUpForm() {
           )}
         />
         
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading || engineerLimitReached}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Account
         </Button>

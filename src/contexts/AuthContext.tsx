@@ -5,6 +5,8 @@ import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction
 import { useRouter } from 'next/navigation';
 import type { User } from '@/types';
 import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData, createNewUser, CreateUserData } from '@/lib/auth';
+import { licenseLimits } from '@/lib/license';
+import { mockUsers } from '@/lib/data';
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +17,11 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (data: User) => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
+  licenseUsage: {
+    Admin: number;
+    Director: number;
+    Engineer: number;
+  }
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
+  
+  const licenseUsage = {
+    Admin: mockUsers.filter(u => u.role === 'Admin').length,
+    Director: mockUsers.filter(u => u.role === 'Director').length,
+    Engineer: mockUsers.filter(u => u.role === 'Engineer').length,
+  };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
     setLoading(true);
@@ -52,6 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignUp = async (data: SignUpData): Promise<User | null> => {
     setLoading(true);
+    if (licenseUsage.Engineer >= licenseLimits.Engineer) {
+      setLoading(false);
+      return null;
+    }
     const newUser = await signup(data);
     if (newUser) {
       setUser(newUser);
@@ -64,6 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
     setLoading(true);
+    if (licenseUsage[data.role] >= licenseLimits[data.role]) {
+       setLoading(false);
+       return null;
+    }
     const newUser = await createNewUser(data);
     setLoading(false);
     return newUser;
@@ -91,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout: handleLogout,
     updateUser: handleUpdateUser,
     createUser: handleCreateUser,
+    licenseUsage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

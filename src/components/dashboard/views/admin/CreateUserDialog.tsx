@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff, PlusCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff, PlusCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
+import { licenseLimits } from '@/lib/license';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -41,7 +43,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { createUser } = useAuth();
+  const { createUser, licenseUsage } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,9 +59,21 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
   });
 
   const contactMethod = form.watch('contactMethod');
+  const selectedRole = form.watch('role');
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    
+    if (licenseUsage[values.role] >= licenseLimits[values.role]) {
+      toast({
+        variant: 'destructive',
+        title: 'License Limit Reached',
+        description: `You cannot add another ${values.role}. Please upgrade your plan.`,
+      });
+      setIsLoading(false);
+      return;
+    }
+
     const newUser = await createUser(values);
     
     if (newUser) {
@@ -79,6 +93,8 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
     }
     setIsLoading(false);
   };
+  
+  const roleLimitReached = licenseUsage[selectedRole] >= licenseLimits[selectedRole];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -183,13 +199,26 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                    {roles.map(r => (
+                                        <SelectItem key={r} value={r} disabled={licenseUsage[r] >= licenseLimits[r]}>
+                                            {r} ({licenseUsage[r]}/{licenseLimits[r]} used)
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
+
+                {roleLimitReached && (
+                    <Alert variant="destructive" className="text-xs">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>
+                            The license limit for the <strong>{selectedRole}</strong> role has been reached.
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 <FormField
                 control={form.control}
@@ -221,7 +250,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
                     <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" disabled={isLoading || roleLimitReached}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Create User
                     </Button>
