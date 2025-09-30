@@ -187,7 +187,7 @@ export default function ProjectDetailsPage() {
         <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10 sm:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="claims">Claims</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="tasks">Work Items</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           {canManageSettings && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
