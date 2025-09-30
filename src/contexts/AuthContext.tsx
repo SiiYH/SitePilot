@@ -46,9 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const licenseUsage = {
-    Admin: mockUsers.filter(u => u.role === 'Admin').length,
-    Director: mockUsers.filter(u => u.role === 'Director').length,
-    Engineer: mockUsers.filter(u => u.role === 'Engineer').length,
+    Admin: mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active').length,
+    Director: mockUsers.filter(u => u.role === 'Director' && u.status === 'Active').length,
+    Engineer: mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active').length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
