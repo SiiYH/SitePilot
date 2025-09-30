@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
+  type: z.enum(['Task', 'Milestone']),
   assignedTo: z.string().min(1, 'You must assign this to an engineer.'),
   dueDate: z.date({ required_error: 'A due date is required.' }),
   status: z.enum(['Not Started', 'In Progress', 'Completed']),
@@ -42,6 +43,7 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
+      type: 'Task',
       assignedTo: '',
       status: 'Not Started',
     },
@@ -50,9 +52,10 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    const newTask: Task = {
+    const newWorkItem: Task = {
       id: `task-${Date.now()}`,
       title: values.title,
+      type: values.type,
       assignedTo: values.assignedTo,
       dueDate: values.dueDate.toISOString(),
       status: values.status,
@@ -60,7 +63,7 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
     
     // In a real app, this would be an API call
     // For now, we just pass it up to the parent
-    onWorkItemCreated(newTask);
+    onWorkItemCreated(newWorkItem);
 
     setTimeout(() => {
       setIsLoading(false);
@@ -68,7 +71,7 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
       form.reset();
       toast({
         title: 'Work Item Created',
-        description: `"${newTask.title}" has been added to the project.`,
+        description: `"${newWorkItem.title}" has been added to the project.`,
       });
     }, 1000);
   };
@@ -97,6 +100,27 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
                   <FormControl>
                     <Input placeholder="e.g., Install HVAC system" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Task">Task</SelectItem>
+                      <SelectItem value="Milestone">Milestone</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

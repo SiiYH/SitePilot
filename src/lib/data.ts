@@ -80,10 +80,10 @@ export const mockProjects: Project[] = [
     insuranceAmount: 100000,
     currency: 'USD',
     tasks: [
-      { id: 't1-1', title: 'Foundation Pouring', assignedTo: 'user-engineer-1', status: 'Completed', dueDate: '2023-08-15' },
-      { id: 't1-2', title: 'Structural Steel Erection (Floors 1-25)', assignedTo: 'user-engineer-2', status: 'Completed', dueDate: '2024-02-28' },
-      { id: 't1-3', title: 'Curtain Wall Installation', assignedTo: 'user-engineer-1', status: 'In Progress', dueDate: '2024-09-30' },
-      { id: 't1-4', title: 'MEP Systems Installation', assignedTo: 'user-engineer-2', status: 'Not Started', dueDate: '2024-10-31' },
+      { id: 't1-1', title: 'Foundation Pouring', type: 'Task', assignedTo: 'user-engineer-1', status: 'Completed', dueDate: '2023-08-15' },
+      { id: 't1-2', title: 'Structural Steel Erection (Floors 1-25)', type: 'Task', assignedTo: 'user-engineer-2', status: 'Completed', dueDate: '2024-02-28' },
+      { id: 't1-3', title: 'Curtain Wall Installation', type: 'Milestone', assignedTo: 'user-engineer-1', status: 'In Progress', dueDate: '2024-09-30' },
+      { id: 't1-4', title: 'MEP Systems Installation', type: 'Task', assignedTo: 'user-engineer-2', status: 'Not Started', dueDate: '2024-10-31' },
     ],
     documents: [
       { id: 'd1-1', name: 'Architectural_Plans_Rev3.pdf', url: '#', type: 'Blueprint', uploadedAt: '2023-05-20' },
@@ -115,9 +115,9 @@ export const mockProjects: Project[] = [
     distance: 50,
     currency: 'USD',
     tasks: [
-      { id: 't2-1', title: 'Lead Paint Removal', assignedTo: 'user-engineer-1', status: 'Completed', dueDate: '2024-01-31' },
-      { id: 't2-2', title: 'Install new seismic dampers', assignedTo: 'user-engineer-1', status: 'In Progress', dueDate: '2024-11-30' },
-      { id: 't2-3', title: 'Repave roadway', assignedTo: 'user-engineer-1', status: 'Overdue', dueDate: '2024-05-30' },
+      { id: 't2-1', title: 'Lead Paint Removal', type: 'Task', assignedTo: 'user-engineer-1', status: 'Completed', dueDate: '2024-01-31' },
+      { id: 't2-2', title: 'Install new seismic dampers', type: 'Milestone', assignedTo: 'user-engineer-1', status: 'In Progress', dueDate: '2024-11-30' },
+      { id: 't2-3', title: 'Repave roadway', type: 'Task', assignedTo: 'user-engineer-1', status: 'Overdue', dueDate: '2024-05-30' },
     ],
     documents: [
       { id: 'd2-1', name: 'Seismic_Analysis_Report.pdf', url: '#', type: 'Report', uploadedAt: '2023-09-01' },
@@ -148,8 +148,8 @@ export const mockProjects: Project[] = [
     distance: 25,
     currency: 'CAD',
     tasks: [
-        { id: 't3-1', title: 'Landscaping and Irrigation', assignedTo: 'user-engineer-2', status: 'In Progress', dueDate: '2024-07-31' },
-        { id: 't3-2', title: 'Final Home Inspections', assignedTo: 'user-engineer-2', status: 'In Progress', dueDate: '2024-08-15' },
+        { id: 't3-1', title: 'Landscaping and Irrigation', type: 'Task', assignedTo: 'user-engineer-2', status: 'In Progress', dueDate: '2024-07-31' },
+        { id: 't3-2', title: 'Final Home Inspections', type: 'Task', assignedTo: 'user-engineer-2', status: 'In Progress', dueDate: '2024-08-15' },
     ],
     documents: [
       { id: 'd3-1', name: 'Master_Plan.pdf', url: '#', type: 'Blueprint', uploadedAt: '2022-01-15' },

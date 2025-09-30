@@ -23,6 +23,7 @@ export interface User {
 export interface Task {
   id: string;
   title: string;
+  type: 'Task' | 'Milestone';
   assignedTo: string; // User ID
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
   dueDate: string;
