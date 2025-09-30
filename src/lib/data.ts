@@ -10,6 +10,8 @@ export const mockUsers: User[] = [
     role: 'Admin',
     avatarUrl: 'https://picsum.photos/seed/user2/200/200',
     status: 'Active',
+    createdAt: '2023-01-10T10:00:00Z',
+    history: [{ status: 'Active', date: '2023-01-10T10:00:00Z' }],
   },
   {
     id: 'user-director',
@@ -18,6 +20,8 @@ export const mockUsers: User[] = [
     role: 'Director',
     avatarUrl: 'https://picsum.photos/seed/user3/200/200',
     status: 'Active',
+    createdAt: '2023-01-10T10:00:00Z',
+    history: [{ status: 'Active', date: '2023-01-10T10:00:00Z' }],
   },
   {
     id: 'user-engineer-1',
@@ -26,6 +30,8 @@ export const mockUsers: User[] = [
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user1/200/200',
     status: 'Active',
+    createdAt: '2023-01-15T11:30:00Z',
+    history: [{ status: 'Active', date: '2023-01-15T11:30:00Z' }],
   },
   {
     id: 'user-engineer-2',
@@ -34,6 +40,8 @@ export const mockUsers: User[] = [
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user4/200/200',
     status: 'Active',
+    createdAt: '2023-02-01T09:00:00Z',
+    history: [{ status: 'Active', date: '2023-02-01T09:00:00Z' }],
   },
   {
     id: 'user-engineer-3',
@@ -42,6 +50,8 @@ export const mockUsers: User[] = [
     role: 'Engineer',
     avatarUrl: 'https://picsum.photos/seed/user5/200/200',
     status: 'Active',
+    createdAt: '2023-03-20T14:00:00Z',
+    history: [{ status: 'Active', date: '2023-03-20T14:00:00Z' }],
   },
 ];
 

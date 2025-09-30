@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
@@ -18,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { licenseLimits } from '@/lib/license';
-import { Users } from 'lucide-react';
+import { Users, Clock, History, UserPlus } from 'lucide-react';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -101,7 +102,12 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     const status: UserStatus = newStatus ? 'Active' : 'Inactive';
     const userIndex = mockUsers.findIndex(u => u.id === userId);
     if(userIndex !== -1) {
-        const updatedUser = { ...mockUsers[userIndex], status };
+        const now = new Date().toISOString();
+        const updatedUser = { 
+            ...mockUsers[userIndex], 
+            status,
+            history: [...(mockUsers[userIndex].history || []), { status, date: now }]
+        };
         mockUsers[userIndex] = updatedUser;
         onUserUpdated(updatedUser);
         toast({
@@ -271,82 +277,112 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                   </div>
                   
                   <AccordionContent className="pb-4 pt-2">
-                    {user.role === 'Engineer' ? (
-                      tasks.length > 0 ? (
-                        <div className="rounded-md border bg-muted/30">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="hover:bg-transparent border-b">
-                                <TableHead className="font-semibold">Task</TableHead>
-                                <TableHead className="font-semibold">Project</TableHead>
-                                <TableHead className="font-semibold">Due Date</TableHead>
-                                <TableHead className="text-right font-semibold">Status</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {tasks.map((task, idx) => (
-                                <TableRow 
-                                  key={task.id}
-                                  className={cn(
-                                    "transition-colors",
-                                    idx === tasks.length - 1 && "border-b-0"
-                                  )}
-                                >
-                                  <TableCell className="font-medium">{task.title}</TableCell>
-                                  <TableCell>
-                                    <Link 
-                                      href={`/dashboard/projects/${task.projectSlug}`} 
-                                      className="text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1 font-medium"
-                                    >
-                                      {task.projectName}
-                                    </Link>
-                                  </TableCell>
-                                  <TableCell className="text-muted-foreground">
-                                    {format(new Date(task.dueDate), 'MMM dd, yyyy')}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <Badge 
-                                      variant={statusVariant[task.status] || 'secondary'}
-                                      className="font-medium"
-                                    >
-                                      {task.status}
-                                    </Badge>
-                                  </TableCell>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {user.role === 'Engineer' ? (
+                        tasks.length > 0 ? (
+                            <div className="rounded-md border bg-muted/30">
+                            <Table>
+                                <TableHeader>
+                                <TableRow className="hover:bg-transparent border-b">
+                                    <TableHead className="font-semibold">Task</TableHead>
+                                    <TableHead className="font-semibold">Project</TableHead>
+                                    <TableHead className="font-semibold">Due Date</TableHead>
+                                    <TableHead className="text-right font-semibold">Status</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center px-4 py-10 text-center bg-muted/20 rounded-lg border-2 border-dashed">
-                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                </TableHeader>
+                                <TableBody>
+                                {tasks.map((task, idx) => (
+                                    <TableRow 
+                                    key={task.id}
+                                    className={cn(
+                                        "transition-colors",
+                                        idx === tasks.length - 1 && "border-b-0"
+                                    )}
+                                    >
+                                    <TableCell className="font-medium">{task.title}</TableCell>
+                                    <TableCell>
+                                        <Link 
+                                        href={`/dashboard/projects/${task.projectSlug}`} 
+                                        className="text-primary hover:underline hover:text-primary/80 transition-colors inline-flex items-center gap-1 font-medium"
+                                        >
+                                        {task.projectName}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {format(new Date(task.dueDate), 'MMM dd, yyyy')}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Badge 
+                                        variant={statusVariant[task.status] || 'secondary'}
+                                        className="font-medium"
+                                        >
+                                        {task.status}
+                                        </Badge>
+                                    </TableCell>
+                                    </TableRow>
+                                ))}
+                                </TableBody>
+                            </Table>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center px-4 py-10 text-center bg-muted/20 rounded-lg border-2 border-dashed">
+                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                                No tasks assigned to {user.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Tasks will appear here when assigned
+                            </p>
+                            </div>
+                        )
+                        ) : (
+                        <div className="flex flex-col items-center justify-center px-4 py-10 text-center bg-muted/20 rounded-lg border">
+                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                             <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
-                          </div>
-                          <p className="text-sm font-medium text-muted-foreground">
-                            No tasks assigned to {user.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Tasks will appear here when assigned
-                          </p>
+                            </div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                            {user.name} does not have tasks
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                            Only users with the 'Engineer' role can be assigned tasks.
+                            </p>
                         </div>
-                      )
-                    ) : (
-                      <div className="flex flex-col items-center justify-center px-4 py-10 text-center bg-muted/20 rounded-lg border">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          {user.name} does not have tasks
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Only users with the 'Engineer' role can be assigned tasks.
-                        </p>
-                      </div>
-                    )}
+                        )}
+                         <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <History className="h-5 w-5" />
+                                    <span>User History</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-sm">
+                                <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <UserPlus className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium">User Created</p>
+                                        <p className="text-xs text-muted-foreground">{format(parseISO(user.createdAt), "PPP p")} ({formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })})</p>
+                                    </div>
+                                </div>
+                                {user.history.map((item, index) => (
+                                     <div key={index} className="flex items-center gap-3">
+                                         <Clock className="h-4 w-4 text-muted-foreground" />
+                                         <div>
+                                            <p className="font-medium">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600' : 'text-red-600')}>{item.status}</span></p>
+                                            <p className="text-xs text-muted-foreground">{format(parseISO(item.date), "PPP p")} ({formatDistanceToNow(parseISO(item.date), { addSuffix: true })})</p>
+                                         </div>
+                                     </div>
+                                ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               );

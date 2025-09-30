@@ -1,7 +1,7 @@
 
 
 import { mockUsers } from '@/lib/data';
-import type { User, UserRole } from '@/types';
+import type { User, UserRole, UserStatus } from '@/types';
 
 // This is a simplified mock authentication system.
 // In a real application, you would replace this with a secure authentication provider.
@@ -57,6 +57,8 @@ async function createUser(data: SignUpData | CreateUserData): Promise<User | nul
     if (existingUser) {
         return null; // User already exists
     }
+    
+    const now = new Date().toISOString();
 
     const newUser: User = {
         id: `user-${mockUsers.length + 1}`,
@@ -66,6 +68,8 @@ async function createUser(data: SignUpData | CreateUserData): Promise<User | nul
         role: data.role,
         avatarUrl: `https://picsum.photos/seed/user${mockUsers.length + 1}/200/200`,
         status: 'Active',
+        createdAt: now,
+        history: [{ status: 'Active', date: now }],
     };
     
     mockUsers.push(newUser);

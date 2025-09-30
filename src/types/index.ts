@@ -3,6 +3,11 @@
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 export type UserStatus = 'Active' | 'Inactive';
 
+export type UserStatusChange = {
+  status: UserStatus;
+  date: string;
+};
+
 export interface User {
   id: string;
   name: string;
@@ -11,6 +16,8 @@ export interface User {
   role: UserRole;
   avatarUrl: string;
   status: UserStatus;
+  createdAt: string;
+  history: UserStatusChange[];
 }
 
 export interface Task {
