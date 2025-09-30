@@ -46,6 +46,7 @@ export default function SettingsTab({ project, onProjectUpdate }: SettingsTabPro
               <SelectItem value="task-driven">Task-Driven</SelectItem>
               <SelectItem value="milestone-driven">Milestone-Driven</SelectItem>
               <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value="mixed-mode">Mixed Mode</SelectItem>
             </SelectContent>
           </Select>
            <p className="text-xs text-muted-foreground">

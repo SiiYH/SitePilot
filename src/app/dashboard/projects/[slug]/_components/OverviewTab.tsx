@@ -95,6 +95,7 @@ export default function OverviewTab({ project, engineers, user, onProjectUpdate 
       'manual': 'Manual',
       'task-driven': 'Task-Driven',
       'milestone-driven': 'Milestone-Driven',
+      'mixed-mode': 'Mixed Mode',
     };
 
     const handleManualProgressChange = (value: number) => {
