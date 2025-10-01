@@ -186,4 +186,3 @@ export const defaultProjectStatuses: ProjectStatus[] = [
     { id: 'completed', name: 'Completed', category: 'Completed' },
     { id: 'cancelled', name: 'Cancelled', category: 'Cancelled' },
 ];
-    
