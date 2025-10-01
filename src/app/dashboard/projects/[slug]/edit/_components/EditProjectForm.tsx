@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,7 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockProjects } from '@/lib/data'; // to update mock data
+import { mockProjects, defaultProjectStatuses } from '@/lib/data'; // to update mock data
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,12 +30,10 @@ interface EditProjectFormProps {
   engineers: User[];
 }
 
-const projectStatuses: ProjectStatus[] = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
-
 const formSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
-  status: z.enum(['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled']),
+  status: z.string().min(1, "Status is required"),
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
@@ -60,7 +58,16 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
+  useEffect(() => {
+    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+    if (storedStatuses) {
+      setProjectStatuses(JSON.parse(storedStatuses));
+    } else {
+      setProjectStatuses(defaultProjectStatuses);
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -162,7 +169,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                         </FormControl>
                         <SelectContent>
                           {projectStatuses.map(status => (
-                             <SelectItem key={status} value={status}>{status}</SelectItem>
+                             <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

@@ -10,20 +10,36 @@ import { format, parseISO } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { Progress } from '@/components/ui/progress';
 import { getProjectProgress } from '@/lib/projects';
-import { ProjectStatus } from '@/types';
+import { ProjectStatus, ProjectStatusCategory } from '@/types';
+import { useEffect, useState } from 'react';
+import { defaultProjectStatuses } from '@/lib/data';
 
 export default function ProjectStatusReport() {
   const { projectStatusData, reportData } = useReportContext();
   const { user } = useAuth();
   const canViewFinancials = user?.role === 'Admin' || user?.role === 'Director';
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
-  const statusVariant: { [key in ProjectStatus]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+  useEffect(() => {
+    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+    if (storedStatuses) {
+      setProjectStatuses(JSON.parse(storedStatuses));
+    } else {
+      setProjectStatuses(defaultProjectStatuses);
+    }
+  }, []);
+
+  const statusVariant: { [key in ProjectStatusCategory]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
       'Completed': 'default',
       'In Progress': 'secondary',
       'On Hold': 'outline',
       'Cancelled': 'destructive',
       'Not Started': 'outline',
   };
+  
+  const getStatusDetails = (statusId: string) => {
+    return projectStatuses.find(s => s.id === statusId);
+  }
 
   return (
     <Card className="print-card">
@@ -51,6 +67,8 @@ export default function ProjectStatusReport() {
                 projectStatusData.map((data, index) => {
                   const project = reportData.projects.find(p => p.name === data['Project Name']);
                   const calculatedProgress = project ? getProjectProgress(project) : data.Progress;
+                  const statusDetails = getStatusDetails(data.Status);
+
                   return (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{data['Project Name']}</TableCell>
@@ -61,9 +79,11 @@ export default function ProjectStatusReport() {
                           </div>
                       </TableCell>
                       <TableCell>
-                          <Badge variant={statusVariant[data.Status as ProjectStatus] || 'outline'}>
-                              {data.Status}
-                          </Badge>
+                          {statusDetails && 
+                            <Badge variant={statusVariant[statusDetails.category] || 'outline'}>
+                                {statusDetails.name}
+                            </Badge>
+                          }
                       </TableCell>
                       <TableCell>{format(parseISO(data['Start Date']), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{format(parseISO(data['End Date']), 'MMM dd, yyyy')}</TableCell>

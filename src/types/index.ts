@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -54,14 +55,20 @@ export type ProgressTrackingModeChange = {
   changedBy: string; // User ID
 };
 
-export type ProjectStatus = 'Not Started' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled';
+export type ProjectStatusCategory = 'Not Started' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled';
+
+export interface ProjectStatus {
+  id: string;
+  name: string;
+  category: ProjectStatusCategory;
+}
 
 export interface Project {
   id: string;
   slug: string;
   name: string;
   description: string;
-  status: ProjectStatus;
+  status: string; // Now refers to the ID of a ProjectStatus
   progress: number;
   progressTrackingMode: ProgressTrackingMode;
   progressTrackingModeHistory?: ProgressTrackingModeChange[];

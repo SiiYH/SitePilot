@@ -16,8 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
 import { ProjectStatus } from '@/types';
-
-const projectStatuses: ProjectStatus[] = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+import { defaultProjectStatuses } from '@/lib/data';
 
 export default function ProjectStatusPage() {
   const { setDateRange, setSelectedProjectStatus, setSelectedProjectId, reportData, setSelectedEngineerId } = useReportContext();
@@ -26,9 +25,19 @@ export default function ProjectStatusPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   const projects = reportData.projects;
   const engineers = reportData.users.filter(u => u.role === 'Engineer');
+
+  useEffect(() => {
+    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+    if (storedStatuses) {
+      setProjectStatuses(JSON.parse(storedStatuses));
+    } else {
+      setProjectStatuses(defaultProjectStatuses);
+    }
+  }, []);
 
   useEffect(() => {
     setDateRange(date);
@@ -97,7 +106,7 @@ export default function ProjectStatusPage() {
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                        {projectStatuses.map(status => (
-                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                          <SelectItem key={status.id} value={status.id}>{status.name}</SelectItem>
                        ))}
                     </SelectContent>
                   </Select>

@@ -5,8 +5,8 @@
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
-import { Project, User, Claim, Task } from '@/types';
+import { mockProjects, mockClaims, mockUsers, defaultProjectStatuses } from '@/lib/data';
+import { Project, User, Claim, Task, ProjectStatus } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,9 +49,19 @@ export default function ProjectDetailsPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [assignedEngineers, setAssignedEngineers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
   const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
+
+  useEffect(() => {
+    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+    if (storedStatuses) {
+      setProjectStatuses(JSON.parse(storedStatuses));
+    } else {
+      setProjectStatuses(defaultProjectStatuses);
+    }
+  }, []);
 
   const updateProjectState = (updatedProject: Project) => {
     setProject(updatedProject);
@@ -128,6 +138,7 @@ export default function ProjectDetailsPage() {
   
   const canEditProject = user.role === 'Admin' || user.role === 'Director';
   const canUploadImage = user.role === 'Director' || user.role === 'Admin';
+  const currentStatus = projectStatuses.find(s => s.id === project.status);
 
 
   return (
@@ -179,7 +190,7 @@ export default function ProjectDetailsPage() {
       </Dialog>
       
       <div className="space-y-2">
-          <Badge>{project.status}</Badge>
+          {currentStatus && <Badge>{currentStatus.name}</Badge>}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
              <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
              <div className="flex flex-col gap-2 sm:flex-row">

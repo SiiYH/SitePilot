@@ -1,6 +1,6 @@
 
 
-import type { User, Project, Claim, AttendanceRecord } from '@/types';
+import type { User, Project, Claim, AttendanceRecord, ProjectStatus } from '@/types';
 
 export const mockUsers: User[] = [
   {
@@ -61,7 +61,7 @@ export const mockProjects: Project[] = [
     slug: 'apex-tower',
     name: 'Apex Tower',
     description: 'A 50-story commercial skyscraper in the city center. Features state-of-the-art facilities and sustainable design.',
-    status: 'In Progress',
+    status: 'in-progress',
     progress: 0,
     progressTrackingMode: 'task-driven',
     startDate: '2023-07-01',
@@ -102,7 +102,7 @@ export const mockProjects: Project[] = [
     slug: 'golden-gate-bridge-retrofit',
     name: 'Golden Gate Bridge Retrofit',
     description: 'Seismic retrofitting and maintenance project for the iconic Golden Gate Bridge to ensure long-term structural integrity.',
-    status: 'In Progress',
+    status: 'in-progress',
     progress: 75,
     progressTrackingMode: 'manual',
     startDate: '2023-11-01',
@@ -136,7 +136,7 @@ export const mockProjects: Project[] = [
     slug: 'maple-creek-residences',
     name: 'Maple Creek Residences',
     description: 'Development of a new suburban community with 200 single-family homes, parks, and recreational facilities.',
-    status: 'Completed',
+    status: 'completed',
     progress: 0,
     progressTrackingMode: 'milestone-driven',
     startDate: '2022-04-01',
@@ -179,4 +179,11 @@ export const mockAttendance: AttendanceRecord[] = [
     { userId: 'user-engineer-2', status: 'Clocked In', location: '3.141, 101.686' },
 ];
 
+export const defaultProjectStatuses: ProjectStatus[] = [
+    { id: 'not-started', name: 'Not Started', category: 'Not Started' },
+    { id: 'in-progress', name: 'In Progress', category: 'In Progress' },
+    { id: 'on-hold', name: 'On Hold', category: 'On Hold' },
+    { id: 'completed', name: 'Completed', category: 'Completed' },
+    { id: 'cancelled', name: 'Cancelled', category: 'Cancelled' },
+];
     
