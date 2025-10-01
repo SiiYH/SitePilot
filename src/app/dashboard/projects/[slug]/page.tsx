@@ -242,7 +242,7 @@ export default function ProjectDetailsPage() {
         </TabsContent>
          {canManageSettings && (
             <TabsContent value="settings" className="mt-6">
-                <SettingsTab project={project} onProjectUpdate={updateProjectState} />
+                <SettingsTab project={project} onProjectUpdate={updateProjectState} user={user} />
             </TabsContent>
         )}
       </Tabs>

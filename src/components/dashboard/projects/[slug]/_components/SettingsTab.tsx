@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Project, ProgressTrackingMode } from '@/types';
+import { Project, ProgressTrackingMode, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -12,16 +12,32 @@ import { Input } from '@/components/ui/input';
 interface SettingsTabProps {
   project: Project;
   onProjectUpdate: (updatedProject: Project) => void;
+  user: User;
 }
 
-export default function SettingsTab({ project, onProjectUpdate }: SettingsTabProps) {
+export default function SettingsTab({ project, onProjectUpdate, user }: SettingsTabProps) {
   const { toast } = useToast();
 
   const handleModeChange = (newMode: ProgressTrackingMode) => {
-    onProjectUpdate({ ...project, progressTrackingMode: newMode });
+    const newHistoryEntry = {
+      mode: newMode,
+      date: new Date().toISOString(),
+      changedBy: user.id,
+    };
+    
+    const updatedHistory = project.progressTrackingModeHistory 
+      ? [...project.progressTrackingModeHistory, newHistoryEntry] 
+      : [newHistoryEntry];
+
+    onProjectUpdate({ 
+      ...project, 
+      progressTrackingMode: newMode,
+      progressTrackingModeHistory: updatedHistory,
+    });
+    
     toast({
       title: 'Settings Updated',
-      description: `Progress tracking mode changed to "${newMode.replace('-', ' ')}".`,
+      description: `Progress tracking mode changed to "${newMode.replace(/-/g, ' ')}".`,
     });
   };
 

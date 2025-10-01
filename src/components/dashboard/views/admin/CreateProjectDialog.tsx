@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface CreateProjectDialogProps {
@@ -73,6 +74,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -101,6 +103,16 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'You must be logged in to create a project.',
+        });
+        setIsLoading(false);
+        return;
+    }
+
     // Mock project creation
     const newProject: Project = {
       id: `proj-${Date.now()}`,
@@ -112,6 +124,11 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       assignedEngineers: values.assignedEngineers,
       progress: values.progress || 0,
       progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
+      progressTrackingModeHistory: [{
+        mode: values.progressTrackingMode as ProgressTrackingMode,
+        date: new Date().toISOString(),
+        changedBy: user.id,
+      }],
       imageUrl: `https://picsum.photos/seed/proj${Date.now()}/600/400`,
       imageHint: 'construction site',
       tasks: [],

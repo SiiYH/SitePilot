@@ -1,5 +1,4 @@
 
-
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -49,6 +48,12 @@ export interface Milestone {
 
 export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'task-milestone-driven';
 
+export type ProgressTrackingModeChange = {
+  mode: ProgressTrackingMode;
+  date: string;
+  changedBy: string; // User ID
+};
+
 export interface Project {
   id: string;
   slug: string;
@@ -56,6 +61,7 @@ export interface Project {
   description: string;
   progress: number;
   progressTrackingMode: ProgressTrackingMode;
+  progressTrackingModeHistory?: ProgressTrackingModeChange[];
   startDate: string;
   endDate: string;
   imageUrl: string;
