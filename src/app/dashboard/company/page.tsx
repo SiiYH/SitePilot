@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import StatusManager from './_components/StatusManager';
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -192,14 +191,6 @@ export default function CompanyPage() {
           )}
         </CardContent>
       </Card>
-      
-      {canEdit && (
-        <>
-            <Separator />
-            <StatusManager />
-        </>
-      )}
-
     </div>
   );
 }

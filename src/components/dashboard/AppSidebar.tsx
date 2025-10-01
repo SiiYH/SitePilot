@@ -21,6 +21,7 @@ const mainMenuItems = [
 const settingsMenuItems = [
   { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['Admin', 'Director', 'Engineer'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['Admin', 'Director'] },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['Admin', 'Director'] },
 ]
 
 export default function AppSidebar() {
@@ -87,5 +88,3 @@ export default function AppSidebar() {
     </>
   );
 }
-
-    

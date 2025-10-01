@@ -7,13 +7,17 @@ import { Project, User } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const engineers = mockUsers.filter(u => u.role === 'Engineer');
+  const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
+
 
   useEffect(() => {
     if (user) {
@@ -57,9 +61,19 @@ export default function ProjectsPage() {
                 View, manage, and create new projects.
             </p>
         </div>
-        {user?.role !== 'Engineer' && (
-            <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
-        )}
+        <div className='flex gap-2'>
+            {user?.role !== 'Engineer' && (
+                <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
+            )}
+            {canManageSettings && (
+                <Button variant="outline" asChild>
+                    <Link href="/dashboard/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                    </Link>
+                </Button>
+            )}
+        </div>
       </div>
 
       {projects.length > 0 ? (
@@ -79,5 +93,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-
-    
