@@ -125,11 +125,11 @@ export default function StatusManager() {
       <CardContent className="space-y-6">
         <ul className="space-y-2">
             {statuses.map(status => (
-                <li key={status.id} className="flex items-center gap-2 rounded-md border bg-muted/20 p-2">
-                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                <li key={status.id} className="flex items-center gap-2 rounded-md border bg-muted/20 p-2 flex-wrap">
+                    <GripVertical className="h-5 w-5 text-muted-foreground hidden sm:block" />
                     {editingStatus?.id === status.id ? (
                         <Form {...form}>
-                          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 items-center gap-2">
+                          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2">
                              <FormField
                                 control={form.control}
                                 name="name"
@@ -146,7 +146,7 @@ export default function StatusManager() {
                                 render={({ field }) => (
                                 <FormItem>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="w-40" /></FormControl>
+                                    <FormControl><SelectTrigger className="w-full sm:w-40" /></FormControl>
                                     <SelectContent>
                                         {statusCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                     </SelectContent>
@@ -154,38 +154,42 @@ export default function StatusManager() {
                                 </FormItem>
                                 )}
                             />
-                             <Button type="submit" size="icon" variant="ghost" className="text-green-600 hover:text-green-700"><Check className="h-4 w-4" /></Button>
-                             <Button type="button" size="icon" variant="ghost" onClick={handleCancelEdit} className="text-red-600 hover:text-red-700"><X className="h-4 w-4" /></Button>
+                            <div className="flex justify-end gap-2">
+                                <Button type="submit" size="icon" variant="ghost" className="text-green-600 hover:text-green-700"><Check className="h-4 w-4" /></Button>
+                                <Button type="button" size="icon" variant="ghost" onClick={handleCancelEdit} className="text-red-600 hover:text-red-700"><X className="h-4 w-4" /></Button>
+                            </div>
                           </form>
                         </Form>
                     ) : (
                         <>
-                            <div className="flex-1">
+                            <div className="flex-1 min-w-0">
                                 <span className="font-medium">{status.name}</span>
                                 <span className="ml-2 text-xs text-muted-foreground">({status.category})</span>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(status)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" disabled={defaultProjectStatuses.some(ds => ds.id === status.id)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently delete the "{status.name}" status. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(status.id)}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(status)}>
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" disabled={defaultProjectStatuses.some(ds => ds.id === status.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete the "{status.name}" status. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(status.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </>
                     )}
                 </li>
@@ -194,7 +198,7 @@ export default function StatusManager() {
 
          {!editingStatus && (
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2 rounded-md border p-2">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2 rounded-md border p-2">
                 <FormField
                     control={form.control}
                     name="name"
@@ -210,11 +214,11 @@ export default function StatusManager() {
                     control={form.control}
                     name="category"
                     render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="w-full sm:w-auto">
                         <FormLabel className="sr-only">Status Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <SelectTrigger className="w-40">
+                            <SelectTrigger className="w-full sm:w-40">
                                 <SelectValue placeholder="Select category..." />
                             </SelectTrigger>
                         </FormControl>
@@ -225,7 +229,7 @@ export default function StatusManager() {
                     </FormItem>
                     )}
                 />
-                <Button type="submit">
+                <Button type="submit" className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Status
                 </Button>
             </form>
