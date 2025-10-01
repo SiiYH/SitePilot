@@ -19,7 +19,7 @@ export function getProjectProgress(project: Project): number {
     return Math.round((achievedMilestones / project.milestones.length) * 100);
   }
 
-  if (project.progressTrackingMode === 'mixed-mode') {
+  if (project.progressTrackingMode === 'task-milestone-driven') {
     const totalTasks = project.tasks.length;
     const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
     const totalMilestones = project.milestones.length;

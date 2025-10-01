@@ -47,7 +47,7 @@ export interface Milestone {
   date: string;
 }
 
-export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'mixed-mode';
+export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'task-milestone-driven';
 
 export interface Project {
   id: string;

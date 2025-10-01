@@ -14,7 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Check, ChevronsUpDown, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { User, Project, ProgressTrackingMode } from '@/types';
+import { User, Project } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -23,7 +23,6 @@ import { mockProjects } from '@/lib/data'; // to update mock data
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
-import { Slider } from '@/components/ui/slider';
 
 interface EditProjectFormProps {
   project: Project;
@@ -36,8 +35,6 @@ const formSchema = z.object({
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
-  progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual', 'mixed-mode']),
-  progress: z.number().min(0).max(100).optional(),
   jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
@@ -69,8 +66,6 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       startDate: parseISO(project.startDate),
       endDate: parseISO(project.endDate),
       assignedEngineers: project.assignedEngineers,
-      progressTrackingMode: project.progressTrackingMode || 'manual',
-      progress: project.progress || 0,
       jobNo: project.jobNo || '',
       orderNo: project.orderNo || '',
       siteName: project.siteName || '',
@@ -84,8 +79,6 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       currency: project.currency || 'MYR',
     },
   });
-  
-  const progressTrackingMode = form.watch('progressTrackingMode');
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -99,8 +92,6 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
         ...values,
         startDate: values.startDate.toISOString(),
         endDate: values.endDate.toISOString(),
-        progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
-        progress: values.progress || 0,
       };
     }
     
@@ -304,7 +295,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
 
 
               <Separator className="my-4"/>
-              <h4 className="text-sm font-semibold">Schedule, Team & Progress</h4>
+              <h4 className="text-sm font-semibold">Schedule & Team</h4>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
@@ -427,49 +418,6 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                 </FormItem>
                 )}
             />
-            <FormField
-              control={form.control}
-              name="progressTrackingMode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Progress Tracking</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select tracking mode" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="task-driven">Task-Driven</SelectItem>
-                      <SelectItem value="milestone-driven">Milestone-Driven</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="mixed-mode">Mixed Mode</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {progressTrackingMode === 'manual' && (
-              <FormField
-                control={form.control}
-                name="progress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Manual Progress ({field.value || 0}%)</FormLabel>
-                    <FormControl>
-                      <Slider
-                        value={[field.value || 0]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        max={100}
-                        step={1}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => router.back()}>

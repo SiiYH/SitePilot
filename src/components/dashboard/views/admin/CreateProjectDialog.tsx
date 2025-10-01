@@ -42,7 +42,7 @@ const formSchema = z.object({
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
-  progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual', 'mixed-mode']),
+  progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual', 'task-milestone-driven']),
   progress: z.number().min(0).max(100).optional(),
   jobNo: z.string().optional(),
   orderNo: z.string().optional(),
@@ -469,7 +469,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                           <SelectItem value="task-driven">Task-Driven</SelectItem>
                           <SelectItem value="milestone-driven">Milestone-Driven</SelectItem>
                           <SelectItem value="manual">Manual</SelectItem>
-                          <SelectItem value="mixed-mode">Mixed Mode</SelectItem>
+                          <SelectItem value="task-milestone-driven">Task + Milestone</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
