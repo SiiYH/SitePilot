@@ -109,7 +109,7 @@ export interface AttendanceRecord {
 }
 
 export interface CreateWorkItemDialogProps {
-    projectId: string;
+    project: Project;
     engineers: User[];
     onWorkItemCreated: (task: Task) => void;
 }

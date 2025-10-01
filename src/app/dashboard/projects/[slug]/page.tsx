@@ -218,7 +218,7 @@ export default function ProjectDetailsPage() {
               </div>
               {canManageWorkItems && (
                 <CreateWorkItemDialog 
-                  projectId={project.id}
+                  project={project}
                   engineers={assignedEngineers} 
                   onWorkItemCreated={handleWorkItemCreated} 
                 />
