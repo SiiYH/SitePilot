@@ -161,7 +161,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     let tasksToFilter = allTasks;
 
     if (selectedEngineerId) {
-      tasksToFilter = tasksToFilter.filter(t => t.assignedTo === selectedEngineerId);
+      tasksToFilter = tasksToFilter.filter(t => t.owner === selectedEngineerId);
     }
     if (selectedProjectId) {
       tasksToFilter = tasksToFilter.filter(t => t.projectId === selectedProjectId);
@@ -196,7 +196,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const dueSites = assignedProjects.filter(p => {
         try {
             const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
-            const hasOverdueTasks = p.tasks.some(t => t.assignedTo === engineer.id && t.status === 'Overdue');
+            const hasOverdueTasks = p.tasks.some(t => t.owner === engineer.id && t.status === 'Overdue');
             return isOverdue || hasOverdueTasks;
         } catch {
             return false;
@@ -218,7 +218,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     if (!engineers.length) return [];
     
     return engineers.map(engineer => {
-      const assignedTasks = filteredTasks.filter(t => t.assignedTo === engineer.id);
+      const assignedTasks = filteredTasks.filter(t => t.owner === engineer.id);
       const totalTasks = assignedTasks.length;
       const completedTasks = assignedTasks.filter(t => t.status === 'Completed').length;
       const overdueTasks = assignedTasks.filter(t => t.status === 'Overdue').length;

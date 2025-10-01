@@ -11,14 +11,14 @@ import ClaimsOverview from './admin/ClaimsOverview';
 import AttendanceSummary from './admin/AttendanceSummary';
 import AdminAlerts from './admin/AdminAlerts';
 
-interface DirectorDashboardProps {
+interface AdminDashboardProps {
   projects: Project[];
   claims: Claim[];
   attendance: AttendanceRecord[];
   users: User[];
 }
 
-export default function DirectorDashboard({ projects: initialProjects, claims, attendance, users }: DirectorDashboardProps) {
+export default function AdminDashboard({ projects: initialProjects, claims, attendance, users }: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const engineers = mockUsers.filter(u => u.role === 'Engineer');
 
