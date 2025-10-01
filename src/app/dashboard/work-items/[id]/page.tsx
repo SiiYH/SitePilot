@@ -122,7 +122,7 @@ export default function WorkItemDetailsPage() {
     <div className="space-y-6">
        <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to List
+          Back to Work Items
         </Button>
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
