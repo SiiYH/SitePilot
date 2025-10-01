@@ -24,7 +24,8 @@ export interface Task {
   id: string;
   title: string;
   type: 'Task' | 'Milestone';
-  assignedTo: string; // User ID
+  owner: string; // User ID
+  contributors?: string[]; // User IDs
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
   dueDate: string;
   projectName?: string;

@@ -18,18 +18,21 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Loader2, Calendar as CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { Task, CreateWorkItemDialogProps } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+
 
 const formSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   type: z.enum(['Task', 'Milestone']),
-  assignedTo: z.string().min(1, 'You must assign this to an engineer.'),
+  owner: z.string().min(1, 'You must assign an owner.'),
+  contributors: z.array(z.string()).optional(),
   dueDate: z.date({ required_error: 'A due date is required.' }),
   status: z.enum(['Not Started', 'In Progress', 'Completed']),
 });
@@ -44,7 +47,8 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
     defaultValues: {
       title: '',
       type: 'Task',
-      assignedTo: '',
+      owner: '',
+      contributors: [],
       status: 'Not Started',
     },
   });
@@ -56,13 +60,12 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
       id: `task-${Date.now()}`,
       title: values.title,
       type: values.type,
-      assignedTo: values.assignedTo,
+      owner: values.owner,
+      contributors: values.contributors,
       dueDate: values.dueDate.toISOString(),
       status: values.status,
     };
     
-    // In a real app, this would be an API call
-    // For now, we just pass it up to the parent
     onWorkItemCreated(newWorkItem);
 
     setTimeout(() => {
@@ -127,14 +130,14 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
             />
             <FormField
               control={form.control}
-              name="assignedTo"
+              name="owner"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign To</FormLabel>
+                  <FormLabel>Owner</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select an engineer" />
+                        <SelectValue placeholder="Select an owner" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -146,6 +149,58 @@ export default function CreateWorkItemDialog({ projectId, engineers, onWorkItemC
                   <FormMessage />
                 </FormItem>
               )}
+            />
+             <FormField
+                control={form.control}
+                name="contributors"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Contributors (Optional)</FormLabel>
+                    <Popover>
+                    <PopoverTrigger asChild>
+                        <FormControl>
+                        <Button variant="outline" role="combobox" className="w-full justify-between">
+                            {field.value?.length > 0
+                            ? `${field.value.length} contributor(s) selected`
+                            : 'Select contributors...'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                        </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                        <CommandInput placeholder="Search engineers..." />
+                        <CommandList>
+                            <CommandEmpty>No engineers found.</CommandEmpty>
+                            <CommandGroup>
+                            {engineers.map((engineer) => (
+                                <CommandItem
+                                key={engineer.id}
+                                onSelect={() => {
+                                    const selected = field.value || [];
+                                    const newValue = selected.includes(engineer.id)
+                                    ? selected.filter((id) => id !== engineer.id)
+                                    : [...selected, engineer.id];
+                                    field.onChange(newValue);
+                                }}
+                                >
+                                <Check
+                                    className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                />
+                                {engineer.name}
+                                </CommandItem>
+                            ))}
+                            </CommandGroup>
+                        </CommandList>
+                        </Command>
+                    </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                </FormItem>
+                )}
             />
              <FormField
                 control={form.control}

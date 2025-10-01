@@ -27,7 +27,7 @@ export default function DashboardPage() {
         
         const engineerTasks = engineerProjects.flatMap(p => 
             p.tasks
-            .filter(t => t.assignedTo === user.id)
+            .filter(t => t.owner === user.id)
             .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
         );
         setTasks(engineerTasks);

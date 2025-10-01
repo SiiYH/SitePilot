@@ -77,7 +77,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const getTasksForEngineer = (engineerId: string) => {
     return projects.flatMap(p => 
       p.tasks
-        .filter(t => t.assignedTo === engineerId)
+        .filter(t => t.owner === engineerId)
         .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
     );
   };
