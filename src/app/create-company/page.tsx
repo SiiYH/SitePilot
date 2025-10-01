@@ -3,29 +3,22 @@ import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import CreateCompanyForm from './_components/CreateCompanyForm';
 import GoBackButton from './_components/GoBackButton';
+import industryData from '@/lib/msic-sub-category-codes.json';
 
 type Industry = {
   Code: string;
   Description: string;
 };
 
-async function getIndustries(): Promise<Industry[]> {
-  try {
-    const res = await fetch('https://sdk.myinvois.hasil.gov.my/files/MSICSubCategoryCodes.json', { cache: 'force-cache' });
-    if (!res.ok) {
-      console.error('Failed to fetch industries');
-      return [];
-    }
-    return res.json();
-  } catch (error) {
-    console.error('Error fetching industries:', error);
-    return [];
-  }
-}
+// The data is now read from the local JSON file.
+const industries: Industry[] = industryData.map(item => ({
+  Code: item.Code,
+  Description: item.Description
+})).filter((value, index, self) => 
+  self.findIndex(t => t.Code === value.Code && t.Description === value.Description) === index
+);
 
 export default async function CreateCompanyPage() {
-  const industries = await getIndustries();
-  
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">

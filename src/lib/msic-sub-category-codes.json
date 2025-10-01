@@ -1,0 +1,532 @@
+
+[
+    {
+        "Code": "A",
+        "Description": "AGRICULTURE, FORESTRY AND FISHING",
+        "Sub Category Code": "01",
+        "Sub Category Description": "Crop and animal production, hunting and related service activities"
+    },
+    {
+        "Code": "A",
+        "Description": "AGRICULTURE, FORESTRY AND FISHING",
+        "Sub Category Code": "02",
+        "Sub Category Description": "Forestry and logging"
+    },
+    {
+        "Code": "A",
+        "Description": "AGRICULTURE, FORESTRY AND FISHING",
+        "Sub Category Code": "03",
+        "Sub Category Description": "Fishing and aquaculture"
+    },
+    {
+        "Code": "B",
+        "Description": "MINING AND QUARRYING",
+        "Sub Category Code": "05",
+        "Sub Category Description": "Mining of coal and lignite"
+    },
+    {
+        "Code": "B",
+        "Description": "MINING AND QUARRYING",
+        "Sub Category Code": "06",
+        "Sub Category Description": "Extraction of crude petroleum and natural gas"
+    },
+    {
+        "Code": "B",
+        "Description": "MINING AND QUARRYING",
+        "Sub Category Code": "07",
+        "Sub Category Description": "Mining of metal ores"
+    },
+    {
+        "Code": "B",
+        "Description": "MINING AND QUARRYING",
+        "Sub Category Code": "08",
+        "Sub Category Description": "Other mining and quarrying"
+    },
+    {
+        "Code": "B",
+        "Description": "MINING AND QUARRYING",
+        "Sub Category Code": "09",
+        "Sub Category Description": "Mining support service activities"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "10",
+        "Sub Category Description": "Manufacture of food products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "11",
+        "Sub Category Description": "Manufacture of beverages"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "12",
+        "Sub Category Description": "Manufacture of tobacco products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "13",
+        "Sub Category Description": "Manufacture of textiles"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "14",
+        "Sub Category Description": "Manufacture of wearing apparel"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "15",
+        "Sub Category Description": "Manufacture of leather and related products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "16",
+        "Sub Category Description": "Manufacture of wood and of products of wood and cork, except furniture; manufacture of articles of straw and plaiting materials"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "17",
+        "Sub Category Description": "Manufacture of paper and paper products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "18",
+        "Sub Category Description": "Printing and reproduction of recorded media"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "19",
+        "Sub Category Description": "Manufacture of coke and refined petroleum products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "20",
+        "Sub Category Description": "Manufacture of chemicals and chemical products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "21",
+        "Sub Category Description": "Manufacture of basic pharmaceutical products and pharmaceutical preparations"
+also known as "Manufacture of pharmaceuticals, medicinal chemical and botanical products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "22",
+        "Sub Category Description": "Manufacture of rubber and plastics products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "23",
+        "Sub Category Description": "Manufacture of other non-metallic mineral products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "24",
+        "Sub Category Description": "Manufacture of basic metals"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "25",
+        "Sub Category Description": "Manufacture of fabricated metal products, except machinery and equipment"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "26",
+        "Sub Category Description": "Manufacture of computer, electronic and optical products"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "27",
+        "Sub Category Description": "Manufacture of electrical equipment"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "28",
+        "Sub Category Description": "Manufacture of machinery and equipment n.e.c."
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "29",
+        "Sub Category Description": "Manufacture of motor vehicles, trailers and semi-trailers"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "30",
+        "Sub Category Description": "Manufacture of other transport equipment"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "31",
+        "Sub Category Description": "Manufacture of furniture"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "32",
+        "Sub Category Description": "Other manufacturing"
+    },
+    {
+        "Code": "C",
+        "Description": "MANUFACTURING",
+        "Sub Category Code": "33",
+        "Sub Category Description": "Repair and installation of machinery and equipment"
+    },
+    {
+        "Code": "D",
+        "Description": "ELECTRICITY, GAS, STEAM AND AIR CONDITIONING SUPPLY",
+        "Sub Category Code": "35",
+        "Sub Category Description": "Electricity, gas, steam and air conditioning supply"
+    },
+    {
+        "Code": "E",
+        "Description": "WATER SUPPLY; SEWERAGE, WASTE MANAGEMENT AND REMEDIATION ACTIVITIES",
+        "Sub Category Code": "36",
+        "Sub Category Description": "Water collection, treatment and supply"
+    },
+    {
+        "Code": "E",
+        "Description": "WATER SUPPLY; SEWERAGE, WASTE MANAGEMENT AND REMEDIATION ACTIVITIES",
+        "Sub Category Code": "37",
+        "Sub Category Description": "Sewerage"
+    },
+    {
+        "Code": "E",
+        "Description": "WATER SUPPLY; SEWERAGE, WASTE MANAGEMENT AND REMEDIATION ACTIVITIES",
+        "Sub Category Code": "38",
+        "Sub Category Description": "Waste collection, treatment and disposal activities; materials recovery"
+    },
+    {
+        "Code": "E",
+        "Description": "WATER SUPPLY; SEWERAGE, WASTE MANAGEMENT AND REMEDIATION ACTIVITIES",
+        "Sub Category Code": "39",
+        "Sub Category Description": "Remediation activities and other waste management services"
+    },
+    {
+        "Code": "F",
+        "Description": "CONSTRUCTION",
+        "Sub Category Code": "41",
+        "Sub Category Description": "Construction of buildings"
+    },
+    {
+        "Code": "F",
+        "Description": "CONSTRUCTION",
+        "Sub Category Code": "42",
+        "Sub Category Description": "Civil engineering"
+    },
+    {
+        "Code": "F",
+        "Description": "CONSTRUCTION",
+        "Sub Category Code": "43",
+        "Sub Category Description": "Specialized construction activities"
+    },
+    {
+        "Code": "G",
+        "Description": "WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES",
+        "Sub Category Code": "45",
+        "Sub Category Description": "Wholesale and retail trade and repair of motor vehicles and motorcycles"
+    },
+    {
+        "Code": "G",
+        "Description": "WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES",
+        "Sub Category Code": "46",
+        "Sub Category Description": "Wholesale trade, except of motor vehicles and motorcycles"
+    },
+    {
+        "Code": "G",
+        "Description": "WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES",
+        "Sub Category Code": "47",
+        "Sub Category Description": "Retail trade, except of motor vehicles and motorcycles"
+    },
+    {
+        "Code": "H",
+        "Description": "TRANSPORTATION AND STORAGE",
+        "Sub Category Code": "49",
+        "Sub Category Description": "Land transport and transport via pipelines"
+    },
+    {
+        "Code": "H",
+        "Description": "TRANSPORTATION AND STORAGE",
+        "Sub Category Code": "50",
+        "Sub Category Description": "Water transport"
+    },
+    {
+        "Code": "H",
+        "Description": "TRANSPORTATION AND STORAGE",
+        "Sub Category Code": "51",
+        "Sub Category Description": "Air transport"
+    },
+    {
+        "Code": "H",
+        "Description": "TRANSPORTATION AND STORAGE",
+        "Sub Category Code": "52",
+        "Sub Category Description": "Warehousing and support activities for transportation"
+    },
+    {
+        "Code": "H",
+        "Description": "TRANSPORTATION AND STORAGE",
+        "Sub Category Code": "53",
+        "Sub Category Description": "Postal and courier activities"
+    },
+    {
+        "Code": "I",
+        "Description": "ACCOMMODATION AND FOOD SERVICE ACTIVITIES",
+        "Sub Category Code": "55",
+        "Sub Category Description": "Accommodation"
+    },
+    {
+        "Code": "I",
+        "Description": "ACCOMMODATION AND FOOD SERVICE ACTIVITIES",
+        "Sub Category Code": "56",
+        "Sub Category Description": "Food and beverage service activities"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "58",
+        "Sub Category Description": "Publishing activities"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "59",
+        "Sub Category Description": "Motion picture, video and television programme production, sound recording and music publishing activities"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "60",
+        "Sub Category Description": "Programming and broadcasting activities"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "61",
+        "Sub Category Description": "Telecommunications"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "62",
+        "Sub Category Description": "Computer programming, consultancy and related activities"
+    },
+    {
+        "Code": "J",
+        "Description": "INFORMATION AND COMMUNICATION",
+        "Sub Category Code": "63",
+        "Sub Category Description": "Information service activities"
+    },
+    {
+        "Code": "K",
+        "Description": "FINANCIAL AND INSURANCE/TAKAFUL ACTIVITIES",
+        "Sub Category Code": "64",
+        "Sub Category Description": "Financial service activities, except insurance/takaful and pension funding"
+    },
+    {
+        "Code": "K",
+        "Description": "FINANCIAL AND INSURANCE/TAKAFUL ACTIVITIES",
+        "Sub Category Code": "65",
+        "Sub Category Description": "Insurance, reinsurance and pension funding, except compulsory social security"
+    },
+    {
+        "Code": "K",
+        "Description": "FINANCIAL AND INSURANCE/TAKAFUL ACTIVITIES",
+        "Sub Category Code": "66",
+        "Sub Category Description": "Activities auxiliary to financial service and insurance/takaful activities"
+    },
+    {
+        "Code": "L",
+        "Description": "REAL ESTATE ACTIVITIES",
+        "Sub Category Code": "68",
+        "Sub Category Description": "Real estate activities"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "69",
+        "Sub Category Description": "Legal and accounting activities"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "70",
+        "Sub Category Description": "Activities of head offices; management consultancy activities"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "71",
+        "Sub Category Description": "Architectural and engineering activities; technical testing and analysis"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "72",
+        "Sub Category Description": "Scientific research and development"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "73",
+        "Sub Category Description": "Advertising and market research"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "74",
+        "Sub Category Description": "Other professional, scientific and technical activities"
+    },
+    {
+        "Code": "M",
+        "Description": "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+        "Sub Category Code": "75",
+        "Sub Category Description": "Veterinary activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "77",
+        "Sub Category Description": "Rental and leasing activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "78",
+        "Sub Category Description": "Employment activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "79",
+        "Sub Category Description": "Travel agency, tour operator, reservation service and related activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "80",
+        "Sub Category Description": "Security and investigation activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "81",
+        "Sub Category Description": "Services to buildings and landscape activities"
+    },
+    {
+        "Code": "N",
+        "Description": "ADMINISTRATIVE AND SUPPORT SERVICE ACTIVITIES",
+        "Sub Category Code": "82",
+        "Sub Category Description": "Office administrative, office support and other business support activities"
+    },
+    {
+        "Code": "O",
+        "Description": "PUBLIC ADMINISTRATION AND DEFENCE; COMPULSORY SOCIAL SECURITY",
+        "Sub Category Code": "84",
+        "Sub Category Description": "Public administration and defence; compulsory social security"
+    },
+    {
+        "Code": "P",
+        "Description": "EDUCATION",
+        "Sub Category Code": "85",
+        "Sub Category Description": "Education"
+    },
+    {
+        "Code": "Q",
+        "Description": "HUMAN HEALTH AND SOCIAL WORK ACTIVITIES",
+        "Sub Category Code": "86",
+        "Sub Category Description": "Human health activities"
+    },
+    {
+        "Code": "Q",
+        "Description": "HUMAN HEALTH AND SOCIAL WORK ACTIVITIES",
+        "Sub Category Code": "87",
+        "Sub Category Description": "Residential care activities"
+    },
+    {
+        "Code": "Q",
+        "Description": "HUMAN HEALTH AND SOCIAL WORK ACTIVITIES",
+        "Sub Category Code": "88",
+        "Sub Category Description": "Social work activities without accommodation"
+    },
+    {
+        "Code": "R",
+        "Description": "ARTS, ENTERTAINMENT AND RECREATION",
+        "Sub Category Code": "90",
+        "Sub Category Description": "Creative, arts and entertainment activities"
+    },
+    {
+        "Code": "R",
+        "Description": "ARTS, ENTERTAINMENT AND RECREATION",
+        "Sub Category Code": "91",
+        "Sub Category Description": "Libraries, archives, museums and other cultural activities"
+    },
+    {
+        "Code": "R",
+        "Description": "ARTS, ENTERTAINMENT AND RECREATION",
+        "Sub Category Code": "92",
+        "Sub Category Description": "Gambling and betting activities"
+    },
+    {
+        "Code": "R",
+        "Description": "ARTS, ENTERTAINMENT AND RECREATION",
+        "Sub Category Code": "93",
+        "Sub Category Description": "Sports activities and amusement and recreation activities"
+    },
+    {
+        "Code": "S",
+        "Description": "OTHER SERVICE ACTIVITIES",
+        "Sub Category Code": "94",
+        "Sub Category Description": "Activities of membership organizations"
+    },
+    {
+        "Code": "S",
+        "Description": "OTHER SERVICE ACTIVITIES",
+        "Sub Category Code": "95",
+        "Sub Category Description": "Repair of computers and personal and household goods"
+    },
+    {
+        "Code": "S",
+        "Description": "OTHER SERVICE ACTIVITIES",
+        "Sub Category Code": "96",
+        "Sub Category Description": "Other personal service activities"
+    },
+    {
+        "Code": "T",
+        "Description": "ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE",
+        "Sub Category Code": "97",
+        "Sub Category Description": "Activities of households as employers of domestic personnel"
+    },
+    {
+        "Code": "T",
+        "Description": "ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE",
+        "Sub Category Code": "98",
+        "Sub Category Description": "Undifferentiated goods- and services-producing activities of private households for own use"
+    },
+    {
+        "Code": "U",
+        "Description": "ACTIVITIES OF EXTRATERRITORIAL ORGANIZATIONS AND BODIES",
+        "Sub Category Code": "99",
+        "Sub Category Description": "Activities of extraterritorial organizations and bodies"
+    }
+]
