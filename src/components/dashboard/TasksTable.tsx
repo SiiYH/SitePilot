@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
 
 interface TasksTableProps {
   tasks: Task[];
@@ -30,6 +31,7 @@ const typeIcon: { [key: string]: React.ElementType } = {
 }
 
 export default function TasksTable({ tasks: initialTasks, user }: TasksTableProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
 
@@ -44,6 +46,10 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const getUserName = (userId: string) => {
     return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
   }
+
+  const handleRowClick = (taskId: string) => {
+    router.push(`/dashboard/work-items/${taskId}`);
+  };
 
   const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
   
@@ -65,7 +71,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
             {tasks.map(task => {
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 return (
-                    <Card key={task.id} className="cursor-pointer transition-shadow hover:shadow-md">
+                    <Card key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer transition-shadow hover:shadow-md">
                         <CardHeader>
                             <div className="flex items-start justify-between gap-4">
                                 <CardTitle className="text-lg">{task.title}</CardTitle>
@@ -79,7 +85,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                             {showProjectColumn && task.projectSlug && (
                                 <div className="flex items-center gap-2">
                                     <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                                    <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
+                                    <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                                         {task.projectName}
                                     </Link>
                                 </div>
@@ -94,7 +100,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-muted-foreground">{format(new Date(task.dueDate), 'MMM dd, yyyy')}</span>
                             </div>
-                             <div className="pt-2">
+                             <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                                 {canEdit ? (
                                     <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
                                     <SelectTrigger>
@@ -133,7 +139,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 {tasks.map(task => {
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     return (
-                    <TableRow key={task.id}>
+                    <TableRow key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer">
                         <TableCell>
                             <Badge variant="outline" className='h-8'>
                                 <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -144,7 +150,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                         {showProjectColumn && (
                         <TableCell>
                             {task.projectSlug ? (
-                            <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
+                            <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                                 {task.projectName}
                             </Link>
                             ) : (
@@ -154,7 +160,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                         )}
                         {showAssignedToColumn && <TableCell>{getUserName(task.owner)}</TableCell>}
                         <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canEdit ? (
                             <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
                             <SelectTrigger className="w-[150px] ml-auto">
@@ -179,3 +185,5 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     </>
   );
 }
+
+    

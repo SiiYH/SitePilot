@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 const mainMenuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tooltip: 'Dashboard', roles: ['Admin', 'Director', 'Engineer'] },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban, tooltip: 'Projects', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['Engineer'] },
+  { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['Engineer'], activePaths: ['/dashboard/work-items'] },
   { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['Admin', 'Director'] },
   { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['Admin', 'Director', 'Engineer'] },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director'] },
@@ -27,12 +27,13 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  const isActive = (href: string) => {
+  const isActive = (href: string, activePaths?: string[]) => {
     if (href === '/dashboard' && pathname !== '/dashboard') return false;
-    if (href === '/dashboard/reports' && (pathname.startsWith('/dashboard/reports/'))) {
-        return true;
+    if (pathname.startsWith(href)) return true;
+    if (activePaths) {
+      return activePaths.some(path => pathname.startsWith(path));
     }
-    return pathname.startsWith(href);
+    return false;
   };
   
   const userHasAccess = (roles: string[]) => {
@@ -52,7 +53,7 @@ export default function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton
-                  isActive={isActive(item.href)}
+                  isActive={isActive(item.href, item.activePaths)}
                   tooltip={{ children: item.tooltip, side: 'right' }}
                 >
                   <item.icon />
@@ -86,3 +87,5 @@ export default function AppSidebar() {
     </>
   );
 }
+
+    
