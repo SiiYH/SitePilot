@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { GanttChartSquare, Milestone } from 'lucide-react';
+import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface TasksTableProps {
   tasks: Task[];
@@ -30,7 +31,7 @@ const typeIcon: { [key: string]: React.ElementType } = {
 
 export default function TasksTable({ tasks: initialTasks, user }: TasksTableProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const canEdit = user.role === 'Engineer' || user.role === 'Admin';
+  const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
 
   const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
     setTasks(currentTasks => 
@@ -49,63 +50,133 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   // Only show the "Assigned To" column if there are multiple assignees in the list
   const showAssignedToColumn = new Set(tasks.map(t => t.assignedTo)).size > 1;
 
+  if (tasks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+        <h3 className="text-lg font-semibold text-muted-foreground">No Work Items Found</h3>
+        <p className="mt-1 text-sm text-muted-foreground">There are no work items associated with this project yet.</p>
+      </div>
+    )
+  }
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead>Work Item</TableHead>
-          {showProjectColumn && <TableHead>Project</TableHead>}
-          {showAssignedToColumn && <TableHead>Assigned To</TableHead>}
-          <TableHead>Due Date</TableHead>
-          <TableHead className="text-right">Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {tasks.map(task => {
-            const Icon = typeIcon[task.type] || GanttChartSquare;
-            return (
-              <TableRow key={task.id}>
-                 <TableCell>
-                    <Badge variant="outline" className='h-8'>
-                        <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
-                        {task.type}
-                    </Badge>
-                 </TableCell>
-                <TableCell className="font-medium">{task.title}</TableCell>
-                 {showProjectColumn && (
-                  <TableCell>
-                    {task.projectSlug ? (
-                      <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
-                        {task.projectName}
-                      </Link>
-                    ) : (
-                      task.projectName || 'N/A'
-                    )}
-                  </TableCell>
-                )}
-                {showAssignedToColumn && <TableCell>{getUserName(task.assignedTo)}</TableCell>}
-                <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
-                <TableCell className="text-right">
-                  {canEdit ? (
-                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
-                      <SelectTrigger className="w-[150px] ml-auto">
-                        <SelectValue placeholder="Set status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Not Started">Not Started</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant={statusVariant[task.status] || 'secondary'}>{task.status}</Badge>
-                  )}
-                </TableCell>
-              </TableRow>
-            )
-        })}
-      </TableBody>
-    </Table>
+    <>
+        {/* Mobile View: List of Cards */}
+        <div className="space-y-4 md:hidden">
+            {tasks.map(task => {
+                const Icon = typeIcon[task.type] || GanttChartSquare;
+                return (
+                    <Card key={task.id} className="cursor-pointer transition-shadow hover:shadow-md">
+                        <CardHeader>
+                            <div className="flex items-start justify-between gap-4">
+                                <CardTitle className="text-lg">{task.title}</CardTitle>
+                                <Badge variant="outline" className='h-8'>
+                                    <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
+                                    {task.type}
+                                </Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm">
+                            {showProjectColumn && task.projectSlug && (
+                                <div className="flex items-center gap-2">
+                                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                                    <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
+                                        {task.projectName}
+                                    </Link>
+                                </div>
+                            )}
+                            {showAssignedToColumn && (
+                                <div className="flex items-center gap-2">
+                                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">{getUserName(task.assignedTo)}</span>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">{format(new Date(task.dueDate), 'MMM dd, yyyy')}</span>
+                            </div>
+                             <div className="pt-2">
+                                {canEdit ? (
+                                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Set status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Not Started">Not Started</SelectItem>
+                                        <SelectItem value="In Progress">In Progress</SelectItem>
+                                        <SelectItem value="Completed">Completed</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Badge variant={statusVariant[task.status] || 'secondary'}>{task.status}</Badge>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            })}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="hidden md:block">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Work Item</TableHead>
+                {showProjectColumn && <TableHead>Project</TableHead>}
+                {showAssignedToColumn && <TableHead>Assigned To</TableHead>}
+                <TableHead>Due Date</TableHead>
+                <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {tasks.map(task => {
+                    const Icon = typeIcon[task.type] || GanttChartSquare;
+                    return (
+                    <TableRow key={task.id}>
+                        <TableCell>
+                            <Badge variant="outline" className='h-8'>
+                                <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
+                                {task.type}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{task.title}</TableCell>
+                        {showProjectColumn && (
+                        <TableCell>
+                            {task.projectSlug ? (
+                            <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline">
+                                {task.projectName}
+                            </Link>
+                            ) : (
+                            task.projectName || 'N/A'
+                            )}
+                        </TableCell>
+                        )}
+                        {showAssignedToColumn && <TableCell>{getUserName(task.assignedTo)}</TableCell>}
+                        <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
+                        <TableCell className="text-right">
+                        {canEdit ? (
+                            <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
+                            <SelectTrigger className="w-[150px] ml-auto">
+                                <SelectValue placeholder="Set status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Not Started">Not Started</SelectItem>
+                                <SelectItem value="In Progress">In Progress</SelectItem>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                            </Select>
+                        ) : (
+                            <Badge variant={statusVariant[task.status] || 'secondary'}>{task.status}</Badge>
+                        )}
+                        </TableCell>
+                    </TableRow>
+                    )
+                })}
+            </TableBody>
+            </Table>
+        </div>
+    </>
   );
 }
