@@ -188,7 +188,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-6 px-6">
+      <CardContent className="pt-6 px-3 sm:px-6">
         {sortedUsers.length > 0 ? (
           <Accordion type="single" collapsible className="w-full space-y-3">
             {sortedUsers.map(user => {
@@ -205,8 +205,8 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                   )}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-2 bg-background/50 backdrop-blur-sm">
-                    <AccordionTrigger className="flex-1 px-5 py-5 hover:no-underline group [&[data-state=open]]:bg-muted/30 transition-all">
-                      <div className="flex items-center gap-5 flex-1 min-w-0">
+                    <AccordionTrigger className="flex-1 px-3 sm:px-5 py-5 hover:no-underline group [&[data-state=open]]:bg-muted/30 transition-all">
+                      <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
                         <div className="relative">
                           <Avatar className="h-14 w-14 ring-2 ring-background group-hover:ring-primary/30 transition-all duration-300 shadow-md">
                             <AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -240,7 +240,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                               </span>
                               {tasks.length > 0 && (
-                                <div className="flex items-center gap-3">
+                                <div className="hidden sm:flex items-center gap-3">
                                   {stats.inProgress > 0 && (
                                     <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                                       {stats.inProgress} in progress
@@ -265,14 +265,14 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     </AccordionTrigger>
                     
                     {canManageUsers && (
-                      <div className="flex flex-wrap items-center justify-start gap-3 px-5 pb-4 pl-[76px] lg:justify-end lg:py-5 lg:pl-0 lg:pr-5 lg:ml-auto">
-                        <div className="w-40">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 px-3 sm:px-5 pb-4 lg:justify-end lg:py-5 lg:pl-0 lg:pr-5 lg:ml-auto">
+                        <div className="w-full sm:w-40">
                           <Select 
                             value={user.role} 
                             onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
                             disabled={user.id === currentUser?.id}
                           >
-                            <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm">
+                            <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
                               <SelectValue placeholder="Set role" />
                             </SelectTrigger>
                             <SelectContent>
@@ -285,7 +285,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                           </Select>
                         </div>
                         
-                        <div className="flex items-center gap-2.5 px-4 py-2 rounded-lg border bg-background/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg border bg-background/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all h-10">
                           <Switch
                             id={`status-${user.id}`}
                             checked={user.status === 'Active'}
@@ -303,7 +303,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     )}
                   </div>
                   
-                  <AccordionContent className="px-5 pb-5 pt-3">
+                  <AccordionContent className="px-3 sm:px-5 pb-5 pt-3">
                     <div className="flex flex-col gap-4">
                         <Dialog>
                             <DialogTrigger asChild>
@@ -356,8 +356,8 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 <TableHeader>
                                 <TableRow className="hover:bg-transparent border-b bg-muted/40">
                                     <TableHead className="font-bold text-foreground/90">Task</TableHead>
-                                    <TableHead className="font-bold text-foreground/90">Project</TableHead>
-                                    <TableHead className="font-bold text-foreground/90">Due Date</TableHead>
+                                    <TableHead className="font-bold text-foreground/90 hidden sm:table-cell">Project</TableHead>
+                                    <TableHead className="font-bold text-foreground/90 hidden md:table-cell">Due Date</TableHead>
                                     <TableHead className="text-right font-bold text-foreground/90">Status</TableHead>
                                 </TableRow>
                                 </TableHeader>
@@ -373,7 +373,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                       )}
                                     >
                                       <TableCell className="font-semibold">{task.title}</TableCell>
-                                      <TableCell>
+                                      <TableCell className="hidden sm:table-cell">
                                         <Link 
                                           href={`/dashboard/projects/${task.projectSlug}`} 
                                           className="text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1.5 font-semibold hover:underline decoration-2 underline-offset-2"
@@ -381,7 +381,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                           {task.projectName}
                                         </Link>
                                       </TableCell>
-                                      <TableCell className="text-muted-foreground font-medium">
+                                      <TableCell className="text-muted-foreground font-medium hidden md:table-cell">
                                         {format(new Date(task.dueDate), 'MMM dd, yyyy')}
                                       </TableCell>
                                       <TableCell className="text-right">
@@ -389,7 +389,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                           className={cn("font-semibold border shadow-sm", statusConfig[task.status]?.className)}
                                         >
                                           <StatusIcon className={cn("h-3 w-3 mr-1.5", task.status === 'In Progress' && "animate-spin")} />
-                                          {task.status}
+                                          <span className='hidden sm:inline'>{task.status}</span>
                                         </Badge>
                                       </TableCell>
                                     </TableRow>
@@ -453,7 +453,3 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
-
-    
-
-    
