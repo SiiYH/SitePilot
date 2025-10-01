@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Check, ChevronsUpDown, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { User, Project } from '@/types';
+import { User, Project, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -29,9 +30,12 @@ interface EditProjectFormProps {
   engineers: User[];
 }
 
+const projectStatuses: ProjectStatus[] = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+
 const formSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
+  status: z.enum(['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled']),
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
@@ -63,6 +67,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     defaultValues: {
       name: project.name,
       description: project.description,
+      status: project.status,
       startDate: parseISO(project.startDate),
       endDate: parseISO(project.endDate),
       assignedEngineers: project.assignedEngineers,
@@ -143,6 +148,28 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projectStatuses.map(status => (
+                             <SelectItem key={status} value={status}>{status}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
               <Separator className="my-4"/>
               <h4 className="text-sm font-semibold">Site Information</h4>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
@@ -178,7 +179,7 @@ export default function ProjectDetailsPage() {
       </Dialog>
       
       <div className="space-y-2">
-          <Badge>In Progress</Badge>
+          <Badge>{project.status}</Badge>
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
              <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
              <div className="flex flex-col gap-2 sm:flex-row">

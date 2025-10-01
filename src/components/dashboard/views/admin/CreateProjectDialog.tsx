@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Check, ChevronsUpDown, PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { User, Project, ProgressTrackingMode } from '@/types';
+import { User, Project, ProgressTrackingMode, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -37,9 +38,12 @@ interface CreateProjectDialogProps {
   onProjectCreated: (project: Project) => void;
 }
 
+const projectStatuses: ProjectStatus[] = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+
 const formSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
+  status: z.enum(['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled']),
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
@@ -81,6 +85,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
     defaultValues: {
       name: '',
       description: '',
+      status: 'Not Started',
       assignedEngineers: [],
       progressTrackingMode: 'task-driven',
       progress: 0,
@@ -119,6 +124,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       slug: createSlug(values.name),
       name: values.name,
       description: values.description,
+      status: values.status,
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
       assignedEngineers: values.assignedEngineers,
@@ -192,6 +198,28 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                   </FormItem>
                 )}
               />
+              <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projectStatuses.map(status => (
+                             <SelectItem key={status} value={status}>{status}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
               <Separator className="my-4"/>
               <h4 className="text-sm font-semibold">Site Information</h4>

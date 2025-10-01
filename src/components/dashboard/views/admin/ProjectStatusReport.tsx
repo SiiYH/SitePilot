@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useReportContext } from '@/contexts/ReportContext';
@@ -9,16 +10,19 @@ import { format, parseISO } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { Progress } from '@/components/ui/progress';
 import { getProjectProgress } from '@/lib/projects';
+import { ProjectStatus } from '@/types';
 
 export default function ProjectStatusReport() {
   const { projectStatusData, reportData } = useReportContext();
   const { user } = useAuth();
   const canViewFinancials = user?.role === 'Admin' || user?.role === 'Director';
 
-  const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' } = {
+  const statusVariant: { [key in ProjectStatus]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
       'Completed': 'default',
       'In Progress': 'secondary',
-      'Overdue': 'destructive',
+      'On Hold': 'outline',
+      'Cancelled': 'destructive',
+      'Not Started': 'outline',
   };
 
   return (
@@ -57,7 +61,7 @@ export default function ProjectStatusReport() {
                           </div>
                       </TableCell>
                       <TableCell>
-                          <Badge variant={statusVariant[data.Status as keyof typeof statusVariant] || 'outline'}>
+                          <Badge variant={statusVariant[data.Status as ProjectStatus] || 'outline'}>
                               {data.Status}
                           </Badge>
                       </TableCell>

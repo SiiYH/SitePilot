@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
-import { User, Project, Claim, Task } from '@/types';
+import { User, Project, Claim, Task, ProjectStatus } from '@/types';
 import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO } from 'date-fns';
@@ -119,16 +120,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         });
     }
      if (selectedProjectStatus && selectedProjectStatus !== 'all') {
-      if (selectedProjectStatus === 'Completed') {
-        projectsToFilter = projectsToFilter.filter(p => getProjectProgress(p) === 100);
-      } else if (selectedProjectStatus === 'In Progress') {
-        projectsToFilter = projectsToFilter.filter(p => {
-          const progress = getProjectProgress(p);
-          return progress > 0 && progress < 100;
-        });
-      } else if (selectedProjectStatus === 'Overdue') {
-        projectsToFilter = projectsToFilter.filter(p => new Date(p.endDate) < new Date() && getProjectProgress(p) < 100);
-      }
+      projectsToFilter = projectsToFilter.filter(p => p.status === selectedProjectStatus);
     }
 
     return projectsToFilter;
@@ -264,18 +256,11 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const projectStatusData: ProjectStatusData[] = useMemo(() => {
     return filteredProjects.map(project => {
         const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
-        let status = 'In Progress';
-        const progress = getProjectProgress(project);
-        if (progress === 100) {
-            status = 'Completed';
-        } else if (new Date(project.endDate) < new Date()) {
-            status = 'Overdue';
-        }
 
         return {
             "Project Name": project.name,
-            "Progress": progress,
-            "Status": status,
+            "Progress": getProjectProgress(project),
+            "Status": project.status,
             "Start Date": project.startDate,
             "End Date": project.endDate,
             "Assigned Engineers": assignedEngineers,

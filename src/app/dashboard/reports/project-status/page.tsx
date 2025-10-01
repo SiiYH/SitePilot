@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -14,6 +15,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
+import { ProjectStatus } from '@/types';
+
+const projectStatuses: ProjectStatus[] = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
 
 export default function ProjectStatusPage() {
   const { setDateRange, setSelectedProjectStatus, setSelectedProjectId, reportData, setSelectedEngineerId } = useReportContext();
@@ -92,9 +96,9 @@ export default function ProjectStatusPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Overdue">Overdue</SelectItem>
+                       {projectStatuses.map(status => (
+                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                       ))}
                     </SelectContent>
                   </Select>
                </div>

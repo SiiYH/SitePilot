@@ -54,11 +54,14 @@ export type ProgressTrackingModeChange = {
   changedBy: string; // User ID
 };
 
+export type ProjectStatus = 'Not Started' | 'In Progress' | 'On Hold' | 'Completed' | 'Cancelled';
+
 export interface Project {
   id: string;
   slug: string;
   name: string;
   description: string;
+  status: ProjectStatus;
   progress: number;
   progressTrackingMode: ProgressTrackingMode;
   progressTrackingModeHistory?: ProgressTrackingModeChange[];
