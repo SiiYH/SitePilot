@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { LogOut, User as UserIcon } from 'lucide-react';
 import Logo from '../icons/Logo';
 import Link from 'next/link';
+import { ThemeToggle } from './ThemeToggle';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -36,6 +37,7 @@ export default function Header() {
       </div>
       
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <div className="md:hidden">
           <Logo />
         </div>
