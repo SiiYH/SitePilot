@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +25,7 @@ const formSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['Admin', 'Director', 'Engineer']),
+  role: z.enum(['Admin', 'Director', 'Engineer', 'System Super Admin']),
 }).refine(data => data.contactMethod === 'email' ? z.string().email().safeParse(data.email).success : true, {
   message: 'A valid email is required',
   path: ['email'],
@@ -37,7 +38,7 @@ interface CreateUserDialogProps {
     onUserCreated: (newUser: any) => void;
 }
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'System Super Admin'];
 
 export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);

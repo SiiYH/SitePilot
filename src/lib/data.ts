@@ -4,6 +4,16 @@ import type { User, Project, Claim, AttendanceRecord, ProjectStatus } from '@/ty
 
 export const mockUsers: User[] = [
   {
+    id: 'user-super-admin',
+    name: 'Super Admin',
+    email: 'superadmin@sitepilot.com',
+    role: 'System Super Admin',
+    avatarUrl: 'https://picsum.photos/seed/user-sa/200/200',
+    status: 'Active',
+    createdAt: '2023-01-01T09:00:00Z',
+    history: [{ status: 'Active', date: '2023-01-01T09:00:00Z' }],
+  },
+  {
     id: 'user-admin',
     name: 'Jane Smith (Admin)',
     email: 'admin@sitepilot.com',

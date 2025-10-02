@@ -3,7 +3,7 @@
 
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@/types';
+import type { User, UserRole } from '@/types';
 import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData, createNewUser, CreateUserData } from '@/lib/auth';
 import { licenseLimits } from '@/lib/license';
 import { mockUsers } from '@/lib/data';
@@ -17,11 +17,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (data: User) => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
-  licenseUsage: {
-    Admin: number;
-    Director: number;
-    Engineer: number;
-  }
+  licenseUsage: Record<UserRole, number>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,9 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const licenseUsage = {
-    Admin: mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active').length,
-    Director: mockUsers.filter(u => u.role === 'Director' && u.status === 'Active').length,
-    Engineer: mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active').length,
+    'System Super Admin': mockUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
+    'Admin': mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active').length,
+    'Director': mockUsers.filter(u => u.role === 'Director' && u.status === 'Active').length,
+    'Engineer': mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active').length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
@@ -66,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   name: "SitePilot Demo Construction",
                   industry: "(F) CONSTRUCTION",
                   description: "A sample company for the default users to demonstrate SitePilot's features.",
+                  activated: true, // Sample company is activated by default
                   eInvoicing: {} // Empty e-invoicing details
               };
               localStorage.setItem('sitepilot-company', JSON.stringify(sampleCompany));
@@ -80,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignUp = async (data: SignUpData): Promise<User | null> => {
     setLoading(true);
-    if (licenseUsage.Engineer >= licenseLimits.Engineer) {
+    if (licenseUsage[data.role] >= licenseLimits[data.role]) {
       setLoading(false);
       return null;
     }
