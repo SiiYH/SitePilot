@@ -37,7 +37,23 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function LicenseGenerator() {
+export type License = {
+  key: string;
+  purchaser: string;
+  maxDirectors: number;
+  maxAdmins: number;
+  maxEngineers: number;
+  expiresAt: string;
+  createdAt: string;
+}
+
+const STORAGE_KEY = 'sitepilot-licenses';
+
+interface LicenseGeneratorProps {
+    onLicenseGenerated: (newLicense: License) => void;
+}
+
+export default function LicenseGenerator({ onLicenseGenerated }: LicenseGeneratorProps) {
     const [generatedKey, setGeneratedKey] = useState<string | null>(null);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
@@ -56,17 +72,37 @@ export default function LicenseGenerator() {
     const duration = form.watch('duration');
 
     const onSubmit = (values: FormValues) => {
-        const expiry = values.duration === 'specific' && values.expiresAt 
-            ? format(values.expiresAt, 'yyyyMMdd') 
-            : 'UNLIMITED';
+        const expiryDate = values.duration === 'specific' && values.expiresAt 
+            ? values.expiresAt
+            : null;
+            
+        const expiryString = expiryDate ? format(expiryDate, 'yyyyMMdd') : 'UNLIMITED';
 
-        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiry}`;
+        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}`;
+        const encodedKey = btoa(key);
         
-        setGeneratedKey(btoa(key)); // Base64 encode for simple obfuscation
+        const newLicense: License = {
+            key: encodedKey,
+            purchaser: values.purchaser,
+            maxDirectors: values.maxDirectors,
+            maxAdmins: values.maxAdmins,
+            maxEngineers: values.maxEngineers,
+            expiresAt: expiryDate ? expiryDate.toISOString() : 'Unlimited',
+            createdAt: new Date().toISOString(),
+        }
+
+        // Store in localStorage
+        const storedLicenses = localStorage.getItem(STORAGE_KEY);
+        const licenses = storedLicenses ? JSON.parse(storedLicenses) : [];
+        licenses.push(newLicense);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+
+        onLicenseGenerated(newLicense);
+        setGeneratedKey(encodedKey);
         setHasCopied(false);
         toast({
             title: 'License Key Generated',
-            description: 'The license key has been created successfully.',
+            description: 'The license key has been created and saved successfully.',
         });
     };
 
@@ -219,7 +255,7 @@ export default function LicenseGenerator() {
                     <>
                         <Separator className="my-6" />
                         <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Generated Key</h3>
+                            <h3 className="text-lg font-medium">Generated Key (Copied to Clipboard)</h3>
                              <div className="flex w-full max-w-lg items-center space-x-2 rounded-md border bg-muted p-2">
                                 <p className="flex-1 select-all break-all p-2 font-mono text-sm">
                                     {generatedKey}
