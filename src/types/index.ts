@@ -1,5 +1,6 @@
 
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -30,6 +31,7 @@ export interface Task {
   dueDate: string;
   projectName?: string;
   projectSlug?: string;
+  projectId?: string;
 }
 
 export interface Document {

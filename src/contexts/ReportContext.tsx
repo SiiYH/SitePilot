@@ -56,6 +56,15 @@ interface ProjectStatusData {
     "Currency": string;
 }
 
+interface TaskMilestoneData {
+    "Work Item Title": string;
+    "Type": 'Task' | 'Milestone';
+    "Project Name": string;
+    "Owner": string;
+    "Due Date": string;
+    "Status": string;
+}
+
 
 interface ReportContextType {
   reportData: ReportDataContext;
@@ -64,11 +73,13 @@ interface ReportContextType {
   performanceData: PerformanceData[];
   detailedClaimsData: DetailedClaimData[];
   projectStatusData: ProjectStatusData[];
+  taskMilestoneData: TaskMilestoneData[];
   exportAllToExcel: () => void;
   exportSummaryToExcel: () => void;
   exportPerformanceToExcel: () => void;
   exportDetailedClaimsToExcel: () => void;
   exportProjectStatusToExcel: () => void;
+  exportTaskMilestoneToExcel: () => void;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
@@ -148,7 +159,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
-    const allTasks: (Task & {projectId: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id})));
+    const allTasks: (Task & {projectId: string, projectName: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id, projectName: p.name})));
     
     let tasksToFilter = allTasks;
 
@@ -271,6 +282,20 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     });
   }, [filteredProjects, reportData.users]);
 
+  const taskMilestoneData: TaskMilestoneData[] = useMemo(() => {
+    return filteredTasks.map(task => {
+        const owner = reportData.users.find(u => u.id === task.owner);
+        return {
+            "Work Item Title": task.title,
+            "Type": task.type,
+            "Project Name": task.projectName,
+            "Owner": owner?.name || 'N/A',
+            "Due Date": task.dueDate,
+            "Status": task.status,
+        };
+    });
+  }, [filteredTasks, reportData.users]);
+
 
   const exportToExcel = (worksheet: XLSX.WorkSheet, sheetName: string, fileName: string) => {
     const workbook = XLSX.utils.book_new();
@@ -297,12 +322,19 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     const worksheet = XLSX.utils.json_to_sheet(projectStatusData);
     exportToExcel(worksheet, 'Project Status', 'SitePilot_Project_Status.xlsx');
   };
+
+  const exportTaskMilestoneToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(taskMilestoneData);
+    exportToExcel(worksheet, 'Task &amp; Milestone Details', 'SitePilot_Task_Milestone_Report.xlsx');
+  }
   
   const exportAllToExcel = () => {
     const projectStatusWorksheet = XLSX.utils.json_to_sheet(projectStatusData);
     const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
     const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
     const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
+    const taskMilestoneWorksheet = XLSX.utils.json_to_sheet(taskMilestoneData);
+
     
     const workbook = XLSX.utils.book_new();
     
@@ -310,6 +342,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
+    XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task &amp; Milestone Details');
     
     XLSX.writeFile(workbook, 'SitePilot_All_Reports.xlsx');
   };
@@ -322,11 +355,13 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     performanceData,
     detailedClaimsData,
     projectStatusData,
+    taskMilestoneData,
     exportAllToExcel,
     exportSummaryToExcel,
     exportPerformanceToExcel,
     exportDetailedClaimsToExcel,
     exportProjectStatusToExcel,
+    exportTaskMilestoneToExcel,
     dateRange,
     setDateRange,
     selectedEngineerId,

@@ -3,12 +3,13 @@
 
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, ArrowRight, LineChart, FileText, FolderKanban } from 'lucide-react';
+import { BarChart, ArrowRight, LineChart, FileText, FolderKanban, GanttChartSquare } from 'lucide-react';
 import ReportsPageLayout from './ReportsPageLayout';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import EngineerPerformanceReport from '@/components/dashboard/views/admin/EngineerPerformanceReport';
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
+import TaskMilestoneReport from '@/components/dashboard/views/admin/TaskMilestoneReport';
 
 const reports = [
   {
@@ -16,6 +17,12 @@ const reports = [
     description: 'An overview of all projects, their progress, and key metrics.',
     href: '/dashboard/reports/project-status',
     icon: FolderKanban,
+  },
+  {
+    title: 'Task & Milestone Report',
+    description: 'A detailed list of all tasks and milestones across projects.',
+    href: '/dashboard/reports/task-milestone-report',
+    icon: GanttChartSquare,
   },
   {
     title: 'Engineer Summary Report',
@@ -50,7 +57,7 @@ export default function ReportsPage() {
               </p>
             </div>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 print-hidden">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-hidden">
           {reports.map((report) => (
             <Link href={report.href} key={report.href}>
               <Card className="flex h-full flex-col justify-between transition-all hover:shadow-lg">
@@ -74,6 +81,10 @@ export default function ReportsPage() {
             <div className="printable-content print-break-after">
                 <h2 className="text-xl font-bold mb-4">Project Status Report</h2>
                 <ProjectStatusReport />
+            </div>
+            <div className="printable-content print-break-after">
+                <h2 className="text-xl font-bold mb-4">Task &amp; Milestone Report</h2>
+                <TaskMilestoneReport />
             </div>
             <div className="printable-content print-break-after">
                 <h2 className="text-xl font-bold mb-4">Engineer Summary Report</h2>
