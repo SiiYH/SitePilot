@@ -10,6 +10,7 @@ import { Copy, Check, KeyRound } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { type License } from './LicenseGenerator';
 import { useToast } from '@/hooks/use-toast';
+import LicenseExpiryCountdown from './LicenseExpiryCountdown';
 
 interface LicenseListProps {
     licenses: License[];
@@ -69,7 +70,7 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                             {license.expiresAt === 'Unlimited' ? (
                                                 <Badge variant="secondary">Unlimited</Badge>
                                             ) : (
-                                                format(parseISO(license.expiresAt), 'PPP')
+                                                <LicenseExpiryCountdown expiresAt={license.expiresAt} />
                                             )}
                                         </TableCell>
                                         <TableCell>{format(parseISO(license.createdAt), 'PPP p')}</TableCell>
