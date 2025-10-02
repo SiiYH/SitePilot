@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,7 +38,7 @@ export default function AttendanceCard() {
         setIsLoading(false);
       },
       (error) => {
-        console.error("Geolocation error:", error);
+        console.log(`Geolocation error: ${error.message} (code: ${error.code})`);
         toast({
           variant: 'destructive',
           title: 'Location Error',
