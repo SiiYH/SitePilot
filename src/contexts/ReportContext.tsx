@@ -48,6 +48,7 @@ interface ProjectStatusData {
     "Project Name": string;
     "Progress": number;
     "Status": string;
+    "Work Items": string;
     "Start Date": string;
     "End Date": string;
     "Assigned Engineers": string;
@@ -267,11 +268,14 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const projectStatusData: ProjectStatusData[] = useMemo(() => {
     return filteredProjects.map(project => {
         const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
+        const totalWorkItems = project.tasks.length;
+        const completedWorkItems = project.tasks.filter(t => t.status === 'Completed').length;
 
         return {
             "Project Name": project.name,
             "Progress": getProjectProgress(project),
             "Status": project.status,
+            "Work Items": `${completedWorkItems}/${totalWorkItems}`,
             "Start Date": project.startDate,
             "End Date": project.endDate,
             "Assigned Engineers": assignedEngineers,
@@ -325,7 +329,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
 
   const exportTaskMilestoneToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(taskMilestoneData);
-    exportToExcel(worksheet, 'Task &amp; Milestone Details', 'SitePilot_Task_Milestone_Report.xlsx');
+    exportToExcel(worksheet, 'Task & Milestone Details', 'SitePilot_Task_Milestone_Report.xlsx');
   }
   
   const exportAllToExcel = () => {
@@ -342,7 +346,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
     XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
-    XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task &amp; Milestone Details');
+    XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task & Milestone Details');
     
     XLSX.writeFile(workbook, 'SitePilot_All_Reports.xlsx');
   };
