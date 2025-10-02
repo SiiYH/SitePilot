@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { CalendarIcon, Copy, Check, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -215,24 +215,29 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                     <FormLabel>Expiry Date</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                            variant={'outline'}
-                                            className={cn(
-                                                'w-full pl-3 text-left font-normal sm:w-80',
-                                                !field.value && 'text-muted-foreground'
-                                            )}
-                                            >
-                                            {field.value ? format(field.value, 'PPP') : <span>Pick an expiry date</span>}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
+                                        <div className="relative">
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="yyyy-MM-dd"
+                                                    value={field.value ? format(field.value, 'yyyy-MM-dd') : ''}
+                                                    onChange={(e) => {
+                                                        const date = parse(e.target.value, 'yyyy-MM-dd', new Date());
+                                                        if (!isNaN(date.getTime())) {
+                                                            field.onChange(date);
+                                                        } else {
+                                                            field.onChange(undefined);
+                                                        }
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+                                        </div>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
                                             selected={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(date) => field.onChange(date)}
                                             disabled={(date) => date < new Date()}
                                             initialFocus
                                         />
@@ -270,4 +275,5 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             </CardContent>
         </Card>
     );
-}
+
+    
