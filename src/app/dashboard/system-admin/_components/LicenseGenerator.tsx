@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -70,6 +71,8 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
     });
 
     const duration = form.watch('duration');
+    const [dateInput, setDateInput] = useState('');
+     const [calendarOpen, setCalendarOpen] = useState(false);
 
     const onSubmit = (values: FormValues) => {
         const expiryDate = values.duration === 'specific' && values.expiresAt 
@@ -110,6 +113,23 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         setHasCopied(true);
         setTimeout(() => setHasCopied(false), 2000);
     }
+    
+    const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setDateInput(value);
+        const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
+        if (!isNaN(parsedDate.getTime())) {
+            form.setValue('expiresAt', parsedDate, { shouldValidate: true });
+        }
+    };
+    
+    const handleDateSelect = (date: Date | undefined) => {
+        if (date) {
+            form.setValue('expiresAt', date, { shouldValidate: true });
+            setDateInput(format(date, 'yyyy-MM-dd'));
+            setCalendarOpen(false);
+        }
+    };
 
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-lg">
@@ -160,7 +180,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                 <Users className="h-4 w-4" />
                                 <span>User Limits</span>
                             </div>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <FormField
                                     control={form.control}
                                     name="maxDirectors"
@@ -235,33 +255,33 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                             <RadioGroup
                                                 onValueChange={field.onChange}
                                                 defaultValue={field.value}
-                                                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                                                className="grid grid-cols-1 gap-3 md:grid-cols-2"
                                             >
                                                 <FormItem>
-                                                    <FormControl>
-                                                        <div className={cn(
-                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
-                                                            field.value === 'unlimited' ? 'border-primary bg-primary/5' : 'border-muted'
-                                                        )}>
+                                                    <FormLabel className={cn(
+                                                        "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                        field.value === 'unlimited' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                    )}>
+                                                        <FormControl>
                                                             <RadioGroupItem value="unlimited" />
-                                                            <FormLabel className="font-medium cursor-pointer flex-1">
-                                                                Unlimited Duration
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <span className="font-medium flex-1">
+                                                            Unlimited Duration
+                                                        </span>
+                                                    </FormLabel>
                                                 </FormItem>
                                                 <FormItem>
-                                                    <FormControl>
-                                                        <div className={cn(
-                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
-                                                            field.value === 'specific' ? 'border-primary bg-primary/5' : 'border-muted'
-                                                        )}>
+                                                     <FormLabel className={cn(
+                                                        "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                        field.value === 'specific' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                    )}>
+                                                        <FormControl>
                                                             <RadioGroupItem value="specific" />
-                                                            <FormLabel className="font-medium cursor-pointer flex-1">
-                                                                Specific Expiry Date
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormControl>
+                                                        </FormControl>
+                                                        <span className="font-medium flex-1">
+                                                            Specific Expiry Date
+                                                        </span>
+                                                    </FormLabel>
                                                 </FormItem>
                                             </RadioGroup>
                                         </FormControl>
@@ -277,26 +297,25 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
                                             <FormLabel className="text-base">Expiry Date</FormLabel>
-                                            <Popover>
+                                             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                                                 <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "w-full h-11 pl-3 text-left font-normal justify-start",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                                                        </Button>
+                                                     <FormControl>
+                                                        <div className="relative">
+                                                             <Input
+                                                                placeholder="YYYY-MM-DD"
+                                                                value={dateInput}
+                                                                onChange={handleDateInputChange}
+                                                                className="w-full h-11 pl-3 pr-10 text-left font-normal"
+                                                            />
+                                                            <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                        </div>
                                                     </FormControl>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0" align="start">
                                                     <Calendar
                                                         mode="single"
                                                         selected={field.value}
-                                                        onSelect={(date) => field.onChange(date)}
+                                                        onSelect={handleDateSelect}
                                                         disabled={(date) => date < new Date()}
                                                         initialFocus
                                                     />
