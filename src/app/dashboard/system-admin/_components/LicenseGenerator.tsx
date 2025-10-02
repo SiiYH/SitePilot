@@ -137,7 +137,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                 </FormItem>
                             )}
                         />
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                              <FormField
                                 control={form.control}
                                 name="maxDirectors"
@@ -255,8 +255,8 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                     <>
                         <Separator className="my-6" />
                         <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Generated Key (Copied to Clipboard)</h3>
-                             <div className="flex w-full max-w-lg items-center space-x-2 rounded-md border bg-muted p-2">
+                            <h3 className="text-lg font-medium">Generated Key</h3>
+                             <div className="flex w-full max-w-full items-center space-x-2 rounded-md border bg-muted p-2">
                                 <p className="flex-1 select-all break-all p-2 font-mono text-sm">
                                     {generatedKey}
                                 </p>
