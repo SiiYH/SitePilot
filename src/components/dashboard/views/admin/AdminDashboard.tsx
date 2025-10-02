@@ -28,6 +28,10 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
 
   const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.owner));
 
+  const latestProjects = [...projects]
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+    .slice(0, 5);
+
   return (
     <div className="space-y-6">
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
@@ -44,12 +48,15 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-semibold">Active Projects</h3>
+          <div>
+            <h3 className="text-xl font-semibold">Active Projects</h3>
+            <p className="text-sm text-muted-foreground">Showing the 5 most recent projects.</p>
+          </div>
           <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
         </div>
-        {projects.length > 0 ? (
+        {latestProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map(project => (
+            {latestProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
