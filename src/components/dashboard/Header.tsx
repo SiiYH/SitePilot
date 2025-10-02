@@ -5,7 +5,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, User as UserIcon, Globe } from 'lucide-react';
 import Logo from '../icons/Logo';
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
@@ -36,8 +36,24 @@ export default function Header() {
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <ThemeToggle />
+         <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Globe className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Toggle language</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              English
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              Chinese
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="md:hidden">
           <Logo />
         </div>
