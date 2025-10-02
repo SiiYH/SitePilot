@@ -57,6 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (loggedInUser) {
       setUser(loggedInUser);
       localStorage.setItem('sitepilot-user', JSON.stringify(loggedInUser));
+      
+      // If the default engineer logs in and there's no company data, create a sample company.
+      if (loggedInUser.email === 'engineer@sitepilot.com') {
+          const storedCompany = localStorage.getItem('sitepilot-company');
+          if (!storedCompany) {
+              const sampleCompany = {
+                  name: "SitePilot Demo Construction",
+                  industry: "(F) CONSTRUCTION",
+                  description: "A sample company for the default engineer user to demonstrate SitePilot's features.",
+                  eInvoicing: {} // Empty e-invoicing details
+              };
+              localStorage.setItem('sitepilot-company', JSON.stringify(sampleCompany));
+          }
+      }
+      
       router.push('/dashboard');
     }
     setLoading(false);
