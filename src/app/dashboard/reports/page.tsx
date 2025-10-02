@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -57,7 +58,7 @@ export default function ReportsPage() {
               </p>
             </div>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-hidden">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 print-hidden">
           {reports.map((report) => (
             <Link href={report.href} key={report.href}>
               <Card className="flex h-full flex-col justify-between transition-all hover:shadow-lg">

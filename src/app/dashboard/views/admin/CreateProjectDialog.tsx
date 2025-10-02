@@ -114,6 +114,8 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
   });
 
   const progressTrackingMode = form.watch('progressTrackingMode');
+  const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
+
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -291,92 +293,95 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                         </FormItem>
                     )}
                 />
+              
+              {canEditFinancials && (
+                <>
+                  <Separator className="my-4"/>
+                  <h4 className="text-sm font-semibold">Financials & Insurance</h4>
 
-              <Separator className="my-4"/>
-              <h4 className="text-sm font-semibold">Financials & Insurance</h4>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField
-                    control={form.control}
-                    name="performanceBondNo"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Performance Bond No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., PB-12345" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="performanceBondAmount"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Performance Bond Amt.</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField
-                    control={form.control}
-                    name="grossProfit"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Gross Profit</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="marginProfit"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Margin Profit (%)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g., 20" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <FormField
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
                         control={form.control}
-                        name="insuranceAmount"
+                        name="performanceBondNo"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Insurance Amt.</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                            <FormLabel>Performance Bond No.</FormLabel>
+                            <FormControl><Input placeholder="e.g., PB-12345" {...field} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="currency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Currency</FormLabel>
-                           <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a currency" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-
+                        />
+                        <FormField
+                        control={form.control}
+                        name="performanceBondAmount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Performance Bond Amt.</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                        control={form.control}
+                        name="grossProfit"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Gross Profit</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="marginProfit"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Margin Profit (%)</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 20" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <FormField
+                            control={form.control}
+                            name="insuranceAmount"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Insurance Amt.</FormLabel>
+                                <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Currency</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a currency" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    </div>
+                </>
+              )}
 
               <Separator className="my-4"/>
               <h4 className="text-sm font-semibold">Schedule, Team & Progress</h4>

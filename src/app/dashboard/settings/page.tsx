@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -30,7 +31,9 @@ export default function SettingsPage() {
         </p>
       </div>
       <Separator />
-      <StatusManager />
+      <div className="grid grid-cols-1 gap-6">
+        <StatusManager />
+      </div>
     </div>
   );
 }

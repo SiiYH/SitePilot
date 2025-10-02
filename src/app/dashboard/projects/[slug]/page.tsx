@@ -144,7 +144,7 @@ export default function ProjectDetailsPage() {
   return (
     <div className="space-y-6">
       <Dialog>
-      <div className="group relative -mx-4 -mt-4 h-60 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:w-[calc(100%+3rem)]">
+      <div className="group relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:h-60 sm:w-[calc(100%+3rem)]">
         <DialogTrigger asChild>
           <div className="absolute inset-0 cursor-pointer">
               <Image
@@ -193,9 +193,9 @@ export default function ProjectDetailsPage() {
           {currentStatus && <Badge>{currentStatus.name}</Badge>}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
              <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-             <div className="flex flex-col gap-2 sm:flex-row">
+             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 {canEditProject && (
-                  <Button variant="outline" asChild>
+                  <Button variant="outline" asChild className="w-full sm:w-auto">
                       <Link href={`/dashboard/projects/${project.slug}/edit`}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Project
@@ -223,7 +223,7 @@ export default function ProjectDetailsPage() {
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Work Item Management</CardTitle>
                 <CardDescription>All work items associated with this project.</CardDescription>
