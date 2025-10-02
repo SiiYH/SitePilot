@@ -26,30 +26,37 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
 
-  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.assignedTo));
+  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.owner));
+
+  const latestProjects = [...projects]
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
             <ClaimsOverview claims={claims} projects={projects} users={users} />
         </div>
-        <div className="lg:col-span-1">
+        <div className="md:col-span-1">
             <AttendanceSummary attendance={attendance} users={users} />
         </div>
       </div>
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-semibold">Active Projects</h3>
+          <div>
+            <h3 className="text-xl font-semibold">Active Projects</h3>
+            <p className="text-sm text-muted-foreground">Showing the 5 most recent projects.</p>
+          </div>
           <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
         </div>
-        {projects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map(project => (
+        {latestProjects.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {latestProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>

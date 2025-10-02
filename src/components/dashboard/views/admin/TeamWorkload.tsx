@@ -64,9 +64,10 @@ const roleColors: { [key in UserRole]: string } = {
   'Admin': 'bg-gradient-to-br from-purple-500/10 to-purple-600/10 text-purple-700 dark:from-purple-500/20 dark:to-purple-600/20 dark:text-purple-300 border-purple-500/20',
   'Director': 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300 border-blue-500/20',
   'Engineer': 'bg-gradient-to-br from-green-500/10 to-green-600/10 text-green-700 dark:from-green-500/20 dark:to-green-600/20 dark:text-green-300 border-green-500/20',
+  'System Super Admin': 'bg-gradient-to-br from-gray-500/10 to-gray-600/10 text-gray-700 dark:from-gray-500/20 dark:to-gray-600/20 dark:text-gray-300 border-gray-500/20',
 };
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'System Super Admin'];
 
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser, licenseUsage } = useAuth();
@@ -175,7 +176,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                 </Select>
               </div>
               <div className="flex gap-3 text-xs">
-                {roles.map(role => (
+                {roles.filter(r => r !== 'System Super Admin').map(role => (
                   <div key={role} className="flex flex-col items-center px-4 py-3 bg-background/80 backdrop-blur-sm rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 flex-1 sm:flex-initial group hover:scale-105">
                     <span className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent group-hover:from-primary/90 group-hover:to-primary/60 transition-all">
                       {licenseUsage[role]}/{licenseLimits[role]}
@@ -204,7 +205,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     user.status === 'Inactive' && 'opacity-60 hover:opacity-70'
                   )}
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 bg-background/50 backdrop-blur-sm">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 bg-background/50 backdrop-blur-sm">
                     <AccordionTrigger className="flex-1 px-3 sm:px-5 py-5 hover:no-underline group [&[data-state=open]]:bg-muted/30 transition-all">
                       <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
                         <div className="relative">
@@ -265,18 +266,18 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     </AccordionTrigger>
                     
                     {canManageUsers && (
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 px-3 sm:px-5 pb-4 lg:justify-end lg:py-5 lg:pl-0 lg:pr-5 lg:ml-auto">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 px-3 sm:px-5 pb-4 md:justify-end md:py-5 md:pl-0 md:pr-5 md:ml-auto">
                         <div className="w-full sm:w-40">
                           <Select 
                             value={user.role} 
                             onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
-                            disabled={user.id === currentUser?.id}
+                            disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
                           >
                             <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
                               <SelectValue placeholder="Set role" />
                             </SelectTrigger>
                             <SelectContent>
-                              {roles.map(r => (
+                              {roles.filter(r => r !== 'System Super Admin').map(r => (
                                 <SelectItem key={r} value={r} disabled={r !== user.role && licenseUsage[r] >= licenseLimits[r]}>
                                   {r}
                                 </SelectItem>
@@ -290,7 +291,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             id={`status-${user.id}`}
                             checked={user.status === 'Active'}
                             onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
-                            disabled={user.id === currentUser?.id}
+                            disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
                           />
                           <Label 
                             htmlFor={`status-${user.id}`}

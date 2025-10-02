@@ -13,8 +13,8 @@ interface EngineerDashboardProps {
 
 export default function EngineerDashboard({ projects, tasks, user }: EngineerDashboardProps) {
     return (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="space-y-6 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="space-y-6 md:col-span-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>My Assigned Tasks</CardTitle>
@@ -32,7 +32,7 @@ export default function EngineerDashboard({ projects, tasks, user }: EngineerDas
                 </Card>
                 <ProjectCalendar projects={projects} />
             </div>
-            <div className="lg:col-span-1">
+            <div className="md:col-span-1">
                 <AttendanceCard />
             </div>
         </div>
