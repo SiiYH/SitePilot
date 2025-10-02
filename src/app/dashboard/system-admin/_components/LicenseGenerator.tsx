@@ -20,8 +20,8 @@ import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
     purchaser: z.string().min(3, 'Purchaser name is required.'),
-    maxAdmins: z.coerce.number().min(1, 'At least one admin is required.'),
     maxDirectors: z.coerce.number().min(1, 'At least one director is required.'),
+    maxAdmins: z.coerce.number().min(1, 'At least one admin is required.'),
     maxEngineers: z.coerce.number().min(1, 'At least one engineer is required.'),
     duration: z.enum(['unlimited', 'specific']),
     expiresAt: z.date().optional(),
@@ -46,8 +46,8 @@ export default function LicenseGenerator() {
         resolver: zodResolver(formSchema),
         defaultValues: {
             purchaser: '',
-            maxAdmins: 1,
             maxDirectors: 2,
+            maxAdmins: 1,
             maxEngineers: 5,
             duration: 'unlimited',
         },
@@ -60,7 +60,7 @@ export default function LicenseGenerator() {
             ? format(values.expiresAt, 'yyyyMMdd') 
             : 'UNLIMITED';
 
-        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-A${values.maxAdmins}-D${values.maxDirectors}-E${values.maxEngineers}-EXP${expiry}`;
+        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiry}`;
         
         setGeneratedKey(btoa(key)); // Base64 encode for simple obfuscation
         setHasCopied(false);
@@ -102,12 +102,12 @@ export default function LicenseGenerator() {
                             )}
                         />
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                            <FormField
+                             <FormField
                                 control={form.control}
-                                name="maxAdmins"
+                                name="maxDirectors"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Max Admins</FormLabel>
+                                        <FormLabel>Max Directors</FormLabel>
                                         <FormControl>
                                             <Input type="number" {...field} />
                                         </FormControl>
@@ -117,10 +117,10 @@ export default function LicenseGenerator() {
                             />
                             <FormField
                                 control={form.control}
-                                name="maxDirectors"
+                                name="maxAdmins"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Max Directors</FormLabel>
+                                        <FormLabel>Max Admins</FormLabel>
                                         <FormControl>
                                             <Input type="number" {...field} />
                                         </FormControl>
