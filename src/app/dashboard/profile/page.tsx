@@ -41,6 +41,21 @@ const InfoField = ({ icon, label, value }: { icon: React.ElementType; label: str
 export default function ProfilePage() {
   const { user, loading, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedCompanyData = localStorage.getItem('sitepilot-company');
+      if (storedCompanyData) {
+        try {
+          const company = JSON.parse(storedCompanyData);
+          setCompanyName(company.name);
+        } catch (e) {
+          console.error("Failed to parse company data from localStorage", e);
+        }
+      }
+    }
+  }, []);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -112,6 +127,9 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <InfoField icon={Mail} label="Email Address" value={user.email} />
                     <InfoField icon={Phone} label="Phone Number" value={user.phone} />
+                    {companyName && (
+                        <InfoField icon={Building} label="Company" value={companyName} />
+                    )}
                 </div>
                 <Separator />
                  <Card className="bg-muted/40">
