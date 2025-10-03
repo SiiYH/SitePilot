@@ -113,18 +113,25 @@ export default function CompanyPage() {
   }, []);
 
   const handleActivate = (key: string) => {
-    // In a real app, this would involve backend validation
     const licensesString = localStorage.getItem('sitepilot-licenses');
     const licenses = licensesString ? JSON.parse(licensesString) : [];
     
     const license = licenses.find((lic: any) => lic.key === key);
 
     if (license) {
+        if (license.activatedAt) {
+            toast({
+                variant: "destructive",
+                title: "License Key Already Used",
+                description: "This license key has already been activated and cannot be used again.",
+            });
+            return;
+        }
+
         const updatedCompanyData = { ...companyData, activated: true, licenseKey: key };
         setCompanyData(updatedCompanyData);
         localStorage.setItem('sitepilot-company', JSON.stringify(updatedCompanyData));
 
-        // Mark license as activated
         const updatedLicenses = licenses.map((lic: any) => 
             lic.key === key ? { ...lic, activatedAt: new Date().toISOString() } : lic
         );
