@@ -113,11 +113,23 @@ export default function CompanyPage() {
   }, []);
 
   const handleActivate = (key: string) => {
-    // Mock validation: In a real app, this would be an API call.
-    if (key.includes('valid')) {
-        const updatedCompanyData = { ...companyData, activated: true };
+    // In a real app, this would involve backend validation
+    const licensesString = localStorage.getItem('sitepilot-licenses');
+    const licenses = licensesString ? JSON.parse(licensesString) : [];
+    
+    const license = licenses.find((lic: any) => lic.key === key);
+
+    if (license) {
+        const updatedCompanyData = { ...companyData, activated: true, licenseKey: key };
         setCompanyData(updatedCompanyData);
         localStorage.setItem('sitepilot-company', JSON.stringify(updatedCompanyData));
+
+        // Mark license as activated
+        const updatedLicenses = licenses.map((lic: any) => 
+            lic.key === key ? { ...lic, activatedAt: new Date().toISOString() } : lic
+        );
+        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
+
         toast({
             title: "License Activated!",
             description: "Your company is now active.",
@@ -279,3 +291,5 @@ export default function CompanyPage() {
     </div>
   );
 }
+
+    

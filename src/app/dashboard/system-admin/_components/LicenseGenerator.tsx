@@ -46,6 +46,7 @@ export type License = {
   maxEngineers: number;
   expiresAt: string;
   createdAt: string;
+  activatedAt?: string;
 }
 
 const STORAGE_KEY = 'sitepilot-licenses';
@@ -386,3 +387,5 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         </Card>
     );
 }
+
+    

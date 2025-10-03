@@ -8,12 +8,16 @@ import { Building2, User, Users, Wrench } from 'lucide-react';
 import { type License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 import LicenseExpiryCountdown from '@/app/dashboard/system-admin/_components/LicenseExpiryCountdown';
 import { differenceInDays, parseISO } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 interface CompanyListProps {
     licenses: License[];
 }
 
-const getStatus = (expiresAt: string): { text: 'Active' | 'Expired'; variant: 'default' | 'destructive' } => {
+const getStatus = (expiresAt: string, activatedAt?: string): { text: 'Active' | 'Expired' | 'Inactive'; variant: 'default' | 'destructive' | 'secondary' } => {
+    if (!activatedAt) {
+        return { text: 'Inactive', variant: 'secondary' };
+    }
     if (expiresAt === 'Unlimited') {
         return { text: 'Active', variant: 'default' };
     }
@@ -25,12 +29,18 @@ const getStatus = (expiresAt: string): { text: 'Active' | 'Expired'; variant: 'd
 }
 
 export default function CompanyList({ licenses }: CompanyListProps) {
+    const router = useRouter();
+
+    const handleRowClick = (key: string) => {
+        router.push(`/dashboard/company-management/${key}`);
+    };
+    
     return (
         <Card>
             <CardHeader>
                 <CardTitle>All Companies</CardTitle>
                 <CardDescription>
-                    List of all companies with generated licenses.
+                    List of all companies with generated licenses. Click on a row to view details.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -47,9 +57,9 @@ export default function CompanyList({ licenses }: CompanyListProps) {
                         <TableBody>
                             {licenses.length > 0 ? (
                                 [...licenses].reverse().map(license => {
-                                    const status = getStatus(license.expiresAt);
+                                    const status = getStatus(license.expiresAt, license.activatedAt);
                                     return (
-                                        <TableRow key={license.key}>
+                                        <TableRow key={license.key} onClick={() => handleRowClick(license.key)} className="cursor-pointer">
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <Building2 className="h-4 w-4 text-muted-foreground"/>
@@ -101,3 +111,5 @@ export default function CompanyList({ licenses }: CompanyListProps) {
         </Card>
     );
 }
+
+    
