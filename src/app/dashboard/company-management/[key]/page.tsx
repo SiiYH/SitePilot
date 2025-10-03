@@ -60,7 +60,20 @@ export default function CompanyDetailsPage() {
     }
     
     const isActivated = !!license.activatedAt;
-    const isActive = isActivated && (license.expiresAt === 'Unlimited' || parseISO(license.expiresAt) > new Date());
+    const isExpired = license.expiresAt !== 'Unlimited' && parseISO(license.expiresAt) < new Date();
+    const isActive = isActivated && !isExpired;
+
+    const getStatus = (): { text: 'Active' | 'Expired' | 'Inactive'; variant: 'default' | 'destructive' | 'secondary' } => {
+        if (!isActivated) {
+            return { text: 'Inactive', variant: 'secondary' };
+        }
+        if (isExpired) {
+            return { text: 'Expired', variant: 'destructive' };
+        }
+        return { text: 'Active', variant: 'default' };
+    };
+
+    const status = getStatus();
 
     return (
         <div className="space-y-6">
@@ -81,8 +94,8 @@ export default function CompanyDetailsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <InfoField label="Purchaser Name" value={license.purchaser} />
                          <InfoField label="License Status">
-                            <Badge variant={isActive ? 'default' : 'destructive'} className={isActive ? 'bg-green-100 text-green-800' : ''}>
-                                {isActivated ? (isActive ? 'Active' : 'Expired') : 'Inactive'}
+                            <Badge variant={status.variant} className={status.variant === 'default' ? 'bg-green-100 text-green-800' : ''}>
+                                {status.text}
                             </Badge>
                         </InfoField>
                     </div>
@@ -135,5 +148,3 @@ export default function CompanyDetailsPage() {
         </div>
     );
 }
-
-    
