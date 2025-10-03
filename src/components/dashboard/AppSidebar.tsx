@@ -2,7 +2,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 
 import Logo from '@/components/icons/Logo';
@@ -20,6 +20,7 @@ const mainMenuItems = [
 
 const settingsMenuItems = [
   { href: '/dashboard/system-admin', label: 'System Admin', icon: ShieldCheck, tooltip: 'System Admin', roles: ['System Super Admin'] },
+  { href: '/dashboard/company-management', label: 'Company Mgt', icon: Briefcase, tooltip: 'Company Management', roles: ['System Super Admin'] },
   { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['Admin', 'Director', 'Engineer', 'System Super Admin'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['Admin', 'Director', 'Engineer'] },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['Admin', 'Director'] },
