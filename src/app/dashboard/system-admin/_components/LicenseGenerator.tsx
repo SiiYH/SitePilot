@@ -18,6 +18,7 @@ import { CalendarIcon, Copy, Check, ShieldCheck, Building2, Users, Wrench } from
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
     purchaser: z.string().min(3, 'Purchaser name is required.'),
