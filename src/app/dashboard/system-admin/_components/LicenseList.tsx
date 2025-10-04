@@ -11,6 +11,7 @@ import { format, parseISO } from 'date-fns';
 import { type License } from './LicenseGenerator';
 import { useToast } from '@/hooks/use-toast';
 import LicenseExpiryCountdown from './LicenseExpiryCountdown';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface LicenseListProps {
     licenses: License[];
@@ -52,10 +53,11 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                 {/* Mobile View */}
                 <div className="space-y-4 md:hidden">
                     {licenses.length > 0 ? (
-                        [...licenses].reverse().map(license => (
-                             <Card key={license.key} className="overflow-hidden">
-                                <CardHeader className="bg-muted/30 p-4">
-                                    <div className="flex items-center gap-3">
+                       <Accordion type="single" collapsible className="w-full space-y-3">
+                         {[...licenses].reverse().map(license => (
+                            <AccordionItem value={license.key} key={license.key} className="border-0 rounded-xl overflow-hidden shadow-sm bg-muted/20 hover:shadow-md transition-shadow">
+                                <AccordionTrigger className="p-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
+                                     <div className="flex items-center gap-3 text-left">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                                             <Building2 className="h-5 w-5 text-primary" />
                                         </div>
@@ -68,9 +70,10 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                             )}
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent className="p-4 space-y-3">
-                                     <div className="space-y-2 rounded-md border p-3">
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="px-4 pb-4 space-y-3">
+                                     <div className="space-y-2 rounded-md border bg-background p-3">
                                         <div className="flex items-center justify-between">
                                              <span className="text-sm text-muted-foreground font-medium">License Key</span>
                                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.key)}>
@@ -87,9 +90,11 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                     <InfoRow icon={Calendar} label="Generated">
                                         {format(parseISO(license.createdAt), 'MMM dd, yyyy')}
                                     </InfoRow>
-                                </CardContent>
-                            </Card>
-                        ))
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                         ))}
+                       </Accordion>
                     ) : (
                         <div className="h-24 text-center flex items-center justify-center">
                             <p>No licenses have been generated yet.</p>
