@@ -63,7 +63,6 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = () => {
-    // Elevate user role to Director upon company creation if they are not already one.
     if (user && user.role !== 'Director' && !isEditing) {
       const updatedUser = { ...user, role: 'Director' as const };
       setUser(updatedUser);
@@ -75,12 +74,30 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
 
     const companyData = {
       ...existingData,
+      id: existingData.id || `company-${Date.now()}`,
       name: companyName,
       industry: getIndustryDisplay(industryCode),
       description: companyDescription,
+      activated: existingData.activated || false,
+      licenseKey: existingData.licenseKey || null,
     };
+    
+    // Save to current user's company context
     localStorage.setItem('sitepilot-company', JSON.stringify(companyData));
     
+    // Add/Update in global list of companies
+    const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
+    let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
+    
+    const companyIndex = allCompanies.findIndex((c: any) => c.id === companyData.id);
+
+    if (companyIndex > -1) {
+        allCompanies[companyIndex] = companyData;
+    } else {
+        allCompanies.push(companyData);
+    }
+    localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
+
     if (isEditing) {
       router.push('/dashboard/company');
     } else {

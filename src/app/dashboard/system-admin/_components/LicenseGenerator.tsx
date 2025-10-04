@@ -47,6 +47,7 @@ export type License = {
   expiresAt: string;
   createdAt: string;
   activatedAt?: string;
+  companyId?: string;
 }
 
 const STORAGE_KEY = 'sitepilot-licenses';
@@ -82,7 +83,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             
         const expiryString = expiryDate ? format(expiryDate, 'yyyyMMdd') : 'UNLIMITED';
 
-        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}`;
+        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
         const encodedKey = btoa(key);
         
         const newLicense: License = {
@@ -95,9 +96,10 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             createdAt: new Date().toISOString(),
         }
 
-        // Store in memory instead of localStorage
-        const licenses = [];
+        const storedLicenses = localStorage.getItem(STORAGE_KEY);
+        const licenses = storedLicenses ? JSON.parse(storedLicenses) : [];
         licenses.push(newLicense);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
 
         onLicenseGenerated(newLicense);
         setGeneratedKey(encodedKey);
@@ -259,30 +261,30 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                                 className="grid grid-cols-1 gap-3 md:grid-cols-2"
                                             >
                                                 <FormItem>
-                                                    <FormLabel className={cn(
-                                                        "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
-                                                        field.value === 'unlimited' ? 'border-primary bg-primary/5' : 'border-muted'
-                                                    )}>
-                                                        <FormControl>
+                                                    <FormControl>
+                                                        <Label className={cn(
+                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                            field.value === 'unlimited' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                        )}>
                                                             <RadioGroupItem value="unlimited" />
-                                                        </FormControl>
-                                                        <span className="font-medium flex-1">
-                                                            Unlimited Duration
-                                                        </span>
-                                                    </FormLabel>
+                                                            <span className="font-medium flex-1">
+                                                                Unlimited Duration
+                                                            </span>
+                                                        </Label>
+                                                    </FormControl>
                                                 </FormItem>
                                                 <FormItem>
-                                                     <FormLabel className={cn(
-                                                        "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
-                                                        field.value === 'specific' ? 'border-primary bg-primary/5' : 'border-muted'
-                                                    )}>
-                                                        <FormControl>
+                                                     <FormControl>
+                                                        <Label className={cn(
+                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                            field.value === 'specific' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                        )}>
                                                             <RadioGroupItem value="specific" />
-                                                        </FormControl>
-                                                        <span className="font-medium flex-1">
-                                                            Specific Expiry Date
-                                                        </span>
-                                                    </FormLabel>
+                                                            <span className="font-medium flex-1">
+                                                                Specific Expiry Date
+                                                            </span>
+                                                        </Label>
+                                                     </FormControl>
                                                 </FormItem>
                                             </RadioGroup>
                                         </FormControl>
@@ -387,5 +389,3 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         </Card>
     );
 }
-
-    

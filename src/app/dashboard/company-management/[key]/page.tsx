@@ -12,13 +12,11 @@ import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-const STORAGE_KEY = 'sitepilot-licenses';
-
 const InfoField = ({ label, value, children }: { label: string; value?: string | number | null, children?: React.ReactNode }) => {
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            {value && <p className="text-sm font-semibold break-words">{value}</p>}
+            {value != null ? <p className="text-sm font-semibold break-words">{value}</p> : null}
             {children}
         </div>
     );
@@ -28,17 +26,27 @@ export default function CompanyDetailsPage() {
     const params = useParams();
     const router = useRouter();
     const { toast } = useToast();
+    const [company, setCompany] = useState<any | null>(null);
     const [license, setLicense] = useState<License | null>(null);
     const [hasCopied, setHasCopied] = useState(false);
 
     useEffect(() => {
-        const key = params.key as string;
-        if (key) {
-            const storedLicenses = localStorage.getItem(STORAGE_KEY);
-            if (storedLicenses) {
-                const licenses: License[] = JSON.parse(storedLicenses);
-                const foundLicense = licenses.find(lic => lic.key === key);
-                setLicense(foundLicense || null);
+        const companyId = params.key as string;
+        if (companyId) {
+            const storedCompanies = localStorage.getItem('sitepilot-all-companies');
+            if (storedCompanies) {
+                const companies = JSON.parse(storedCompanies);
+                const foundCompany = companies.find((c: any) => c.id === companyId);
+                setCompany(foundCompany || null);
+
+                if (foundCompany && foundCompany.licenseKey) {
+                    const storedLicenses = localStorage.getItem('sitepilot-licenses');
+                    if(storedLicenses) {
+                        const licenses: License[] = JSON.parse(storedLicenses);
+                        const foundLicense = licenses.find(lic => lic.key === foundCompany.licenseKey);
+                        setLicense(foundLicense || null);
+                    }
+                }
             }
         }
     }, [params.key]);
@@ -51,7 +59,7 @@ export default function CompanyDetailsPage() {
         setTimeout(() => setHasCopied(false), 2000);
     }
 
-    if (!license) {
+    if (!company) {
         return (
             <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
                 <p>Loading company details...</p>
@@ -59,10 +67,9 @@ export default function CompanyDetailsPage() {
         );
     }
     
-    const isActivated = !!license.activatedAt;
-    const isExpired = license.expiresAt !== 'Unlimited' && parseISO(license.expiresAt) < new Date();
-    const isActive = isActivated && !isExpired;
-
+    const isActivated = company.activated;
+    const isExpired = license && license.expiresAt !== 'Unlimited' && parseISO(license.expiresAt) < new Date();
+    
     const getStatus = (): { text: 'Active' | 'Expired' | 'Inactive'; variant: 'default' | 'destructive' | 'secondary' } => {
         if (!isActivated) {
             return { text: 'Inactive', variant: 'secondary' };
@@ -82,18 +89,19 @@ export default function CompanyDetailsPage() {
                 Back to Company Management
             </Button>
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">{license.purchaser}</h2>
-                <p className="text-muted-foreground">Detailed license information for this company.</p>
+                <h2 className="text-2xl font-bold tracking-tight">{company.name}</h2>
+                <p className="text-muted-foreground">Detailed information for this company and its license.</p>
             </div>
             
             <Card>
                 <CardHeader>
-                    <CardTitle>License Details</CardTitle>
+                    <CardTitle>Company & License Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <InfoField label="Purchaser Name" value={license.purchaser} />
-                         <InfoField label="License Status">
+                        <InfoField label="Company Name" value={company.name} />
+                        <InfoField label="Industry" value={company.industry} />
+                        <InfoField label="License Status">
                             <Badge variant={status.variant} className={status.variant === 'default' ? 'bg-green-100 text-green-800' : ''}>
                                 {status.text}
                             </Badge>
@@ -103,45 +111,57 @@ export default function CompanyDetailsPage() {
                     <Separator />
                     
                     <h3 className="text-lg font-semibold">User Limits</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <InfoField label="Directors" value={license.maxDirectors} />
-                        <InfoField label="Admins" value={license.maxAdmins} />
-                        <InfoField label="Engineers" value={license.maxEngineers} />
-                    </div>
+                    {license ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <InfoField label="Directors" value={license.maxDirectors} />
+                            <InfoField label="Admins" value={license.maxAdmins} />
+                            <InfoField label="Engineers" value={license.maxEngineers} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground italic">No license assigned. User limits are not set.</p>
+                    )}
 
                     <Separator />
                     
                     <h3 className="text-lg font-semibold">Important Dates</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <InfoField label="License Created At" value={format(parseISO(license.createdAt), 'PPP p')} />
-                        <InfoField label="License Activated At" value={license.activatedAt ? format(parseISO(license.activatedAt), 'PPP p') : 'Not Activated'} />
-                        <InfoField label="Expires At" value={license.expiresAt === 'Unlimited' ? 'Never' : format(parseISO(license.expiresAt), 'PPP')} />
-                    </div>
+                    {license ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <InfoField label="License Created At" value={format(parseISO(license.createdAt), 'PPP p')} />
+                            <InfoField label="License Activated At" value={license.activatedAt ? format(parseISO(license.activatedAt), 'PPP p') : 'Not Activated'} />
+                            <InfoField label="Expires At" value={license.expiresAt === 'Unlimited' ? 'Never' : format(parseISO(license.expiresAt), 'PPP')} />
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground italic">No license dates available.</p>
+                    )}
                     
                     <Separator />
                     
                      <div className="space-y-2">
-                        <h3 className="text-lg font-semibold">License Key</h3>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <div className="flex-1 rounded-lg border bg-muted/50 p-3">
-                                <p className="select-all break-all font-mono text-xs sm:text-sm">
-                                    {license.key}
-                                </p>
+                        <h3 className="text-lg font-semibold">Assigned License Key</h3>
+                        {license ? (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex-1 rounded-lg border bg-muted/50 p-3">
+                                    <p className="select-all break-all font-mono text-xs sm:text-sm">
+                                        {license.key}
+                                    </p>
+                                </div>
+                                <Button 
+                                    type="button" 
+                                    onClick={copyToClipboard}
+                                    variant={hasCopied ? "default" : "outline"}
+                                    className="w-full sm:w-auto"
+                                >
+                                    {hasCopied ? (
+                                        <Check className="mr-2 h-4 w-4" />
+                                    ) : (
+                                        <Copy className="mr-2 h-4 w-4" />
+                                    )}
+                                    {hasCopied ? 'Copied' : 'Copy Key'}
+                                </Button>
                             </div>
-                            <Button 
-                                type="button" 
-                                onClick={copyToClipboard}
-                                variant={hasCopied ? "default" : "outline"}
-                                className="w-full sm:w-auto"
-                            >
-                                {hasCopied ? (
-                                    <Check className="mr-2 h-4 w-4" />
-                                ) : (
-                                    <Copy className="mr-2 h-4 w-4" />
-                                )}
-                                {hasCopied ? 'Copied' : 'Copy Key'}
-                            </Button>
-                        </div>
+                        ) : (
+                             <p className="text-sm text-muted-foreground italic">No license key has been assigned to this company yet.</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>

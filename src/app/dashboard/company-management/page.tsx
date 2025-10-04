@@ -5,19 +5,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import CompanyList from './_components/CompanyList';
-import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
-
-const STORAGE_KEY = 'sitepilot-licenses';
 
 export default function CompanyManagementPage() {
   const { user } = useAuth();
-  const [licenses, setLicenses] = useState<License[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedLicenses = localStorage.getItem(STORAGE_KEY);
-    if (storedLicenses) {
-      setLicenses(JSON.parse(storedLicenses));
+    const storedCompanies = localStorage.getItem('sitepilot-all-companies');
+    if (storedCompanies) {
+      setCompanies(JSON.parse(storedCompanies));
     }
     setLoading(false);
   }, []);
@@ -46,10 +43,10 @@ export default function CompanyManagementPage() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Company Management</h2>
         <p className="text-muted-foreground">
-          An overview of all companies with generated licenses.
+          An overview of all companies created in the system.
         </p>
       </div>
-      <CompanyList licenses={licenses} />
+      <CompanyList companies={companies} />
     </div>
   );
 }

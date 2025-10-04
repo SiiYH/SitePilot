@@ -98,7 +98,6 @@ export default function CompanyPage() {
         const storedCompanyData = localStorage.getItem('sitepilot-company');
         if (storedCompanyData) {
           const parsedData = JSON.parse(storedCompanyData);
-          // Initialize activated status if not present
           if (typeof parsedData.activated === 'undefined') {
             parsedData.activated = false;
           }
@@ -128,12 +127,23 @@ export default function CompanyPage() {
             return;
         }
 
+        // Update company in `sitepilot-company`
         const updatedCompanyData = { ...companyData, activated: true, licenseKey: key };
         setCompanyData(updatedCompanyData);
         localStorage.setItem('sitepilot-company', JSON.stringify(updatedCompanyData));
 
+        // Update company in `sitepilot-all-companies`
+        const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
+        let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
+        const companyIndex = allCompanies.findIndex((c: any) => c.id === companyData.id);
+        if (companyIndex > -1) {
+            allCompanies[companyIndex] = updatedCompanyData;
+            localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
+        }
+
+        // Mark license as used
         const updatedLicenses = licenses.map((lic: any) => 
-            lic.key === key ? { ...lic, activatedAt: new Date().toISOString() } : lic
+            lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: companyData.id } : lic
         );
         localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
 
