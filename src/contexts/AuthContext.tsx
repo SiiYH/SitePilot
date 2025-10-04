@@ -60,13 +60,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const storedCompany = localStorage.getItem('sitepilot-company');
           if (!storedCompany) {
               const sampleCompany = {
+                  id: 'company-demo-123',
                   name: "SitePilot Demo Construction",
                   industry: "(F) CONSTRUCTION",
                   description: "A sample company for the default users to demonstrate SitePilot's features.",
-                  activated: true, // Sample company is activated by default
-                  eInvoicing: {} // Empty e-invoicing details
+                  activated: true,
+                  licenseKey: 'DEMO-LICENSE-KEY',
+                  eInvoicing: {}
               };
               localStorage.setItem('sitepilot-company', JSON.stringify(sampleCompany));
+              
+              const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
+              let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
+              if (!allCompanies.some((c: any) => c.id === sampleCompany.id)) {
+                  allCompanies.push(sampleCompany);
+                  localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
+              }
           }
       }
       
