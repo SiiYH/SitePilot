@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, KeyRound } from 'lucide-react';
+import { Copy, Check, KeyRound, Building2, User, Users, Wrench, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { type License } from './LicenseGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,19 @@ export default function LicenseList({ licenses }: LicenseListProps) {
         toast({ title: "License key copied to clipboard." });
         setTimeout(() => setCopiedKey(null), 2000);
     };
+    
+    const InfoRow = ({ icon, label, children }: { icon: React.ElementType, label: string, children: React.ReactNode }) => {
+        const Icon = icon;
+        return (
+            <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                    <span>{label}</span>
+                </div>
+                <div className="font-medium text-right">{children}</div>
+            </div>
+        )
+    };
 
     return (
         <Card>
@@ -36,7 +49,56 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="overflow-x-auto">
+                {/* Mobile View */}
+                <div className="space-y-4 md:hidden">
+                    {licenses.length > 0 ? (
+                        [...licenses].reverse().map(license => (
+                             <Card key={license.key} className="overflow-hidden">
+                                <CardHeader className="bg-muted/30 p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                            <Building2 className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">{license.purchaser}</p>
+                                            {license.expiresAt === 'Unlimited' ? (
+                                                <Badge variant="secondary">Unlimited</Badge>
+                                            ) : (
+                                                <LicenseExpiryCountdown expiresAt={license.expiresAt} />
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-4 space-y-3">
+                                     <div className="space-y-2 rounded-md border p-3">
+                                        <div className="flex items-center justify-between">
+                                             <span className="text-sm text-muted-foreground font-medium">License Key</span>
+                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.key)}>
+                                                {copiedKey === license.key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                            </Button>
+                                        </div>
+                                        <p className="font-mono text-xs break-all leading-relaxed">
+                                            {license.key}
+                                        </p>
+                                    </div>
+                                    <InfoRow icon={User} label="Directors">{license.maxDirectors}</InfoRow>
+                                    <InfoRow icon={Wrench} label="Admins">{license.maxAdmins}</InfoRow>
+                                    <InfoRow icon={Users} label="Engineers">{license.maxEngineers}</InfoRow>
+                                    <InfoRow icon={Calendar} label="Generated">
+                                        {format(parseISO(license.createdAt), 'MMM dd, yyyy')}
+                                    </InfoRow>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="h-24 text-center flex items-center justify-center">
+                            <p>No licenses have been generated yet.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop View */}
+                <div className="overflow-x-auto hidden md:block">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -57,7 +119,7 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <KeyRound className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-mono text-xs truncate max-w-xs">{license.key}</span>
+                                                <span className="font-mono text-xs truncate max-w-[200px]">{license.key}</span>
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.key)}>
                                                     {copiedKey === license.key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                                                 </Button>
