@@ -37,11 +37,11 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
             <ClaimsOverview claims={claims} projects={projects} users={users} />
         </div>
-        <div className="lg:col-span-1">
+        <div className="md:col-span-1">
             <AttendanceSummary attendance={attendance} users={users} />
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
           <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
         </div>
         {latestProjects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {latestProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
@@ -70,3 +70,5 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
     </div>
   );
 }
+
+    

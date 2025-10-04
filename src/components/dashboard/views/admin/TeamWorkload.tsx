@@ -151,7 +151,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="relative">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             <div className="space-y-2">
               <CardTitle className="text-3xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
                 Team Overview
@@ -454,3 +454,5 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
+
+    
