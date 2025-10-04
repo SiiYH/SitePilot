@@ -39,6 +39,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+
+    // Seed sample companies for Company Management
+    const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
+    if (!allCompaniesString) {
+      const sampleCompanies = [
+        {
+          id: 'company-demo-123',
+          name: "SitePilot Demo Construction",
+          industry: "(F) CONSTRUCTION",
+          description: "A sample company for the default users to demonstrate SitePilot's features.",
+          activated: true,
+          licenseKey: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
+        },
+        {
+          id: 'company-456',
+          name: "Innovate Builders",
+          industry: "(F) CONSTRUCTION",
+          description: "Pioneering the future of modular construction.",
+          activated: false,
+          licenseKey: null,
+        },
+        {
+          id: 'company-789',
+          name: "Heritage Restorations",
+          industry: "(M) PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+          description: "Specializing in the restoration of historical buildings.",
+          activated: true,
+          licenseKey: 'U1AtVkFMSUQtSEVSSVRBR0UtUkVTVE9SQVRJT05TLUQxLUEyLUUxMC1FWFBVTkxJTUlURUQtMTcyMjE2MTQyODg4MA==',
+        }
+      ];
+
+       const sampleLicenses = [
+        {
+          key: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
+          purchaser: 'SitePilot Demo Construction',
+          maxDirectors: 2,
+          maxAdmins: 2,
+          maxEngineers: 5,
+          expiresAt: '2025-07-28T00:00:00.000Z',
+          createdAt: '2024-07-28T16:07:09.123Z',
+          activatedAt: '2024-07-28T16:07:09.123Z',
+          companyId: 'company-demo-123',
+        },
+        {
+          key: 'U1AtVkFMSUQtSEVSSVRBR0UtUkVTVE9SQVRJT05TLUQxLUEyLUUxMC1FWFBVTkxJTUlURUQtMTcyMjE2MTQyODg4MA==',
+          purchaser: 'Heritage Restorations',
+          maxDirectors: 1,
+          maxAdmins: 2,
+          maxEngineers: 10,
+          expiresAt: 'Unlimited',
+          createdAt: '2024-07-28T16:10:28.880Z',
+          activatedAt: '2024-07-28T16:10:28.880Z',
+          companyId: 'company-789'
+        }
+      ];
+
+      localStorage.setItem('sitepilot-all-companies', JSON.stringify(sampleCompanies));
+      localStorage.setItem('sitepilot-licenses', JSON.stringify(sampleLicenses));
+    }
+
   }, []);
   
   const licenseUsage = {
@@ -65,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   industry: "(F) CONSTRUCTION",
                   description: "A sample company for the default users to demonstrate SitePilot's features.",
                   activated: true,
-                  licenseKey: 'DEMO-LICENSE-KEY',
+                  licenseKey: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
                   eInvoicing: {}
               };
               localStorage.setItem('sitepilot-company', JSON.stringify(sampleCompany));
