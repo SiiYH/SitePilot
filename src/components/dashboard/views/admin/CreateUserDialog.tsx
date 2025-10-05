@@ -38,7 +38,7 @@ interface CreateUserDialogProps {
     onUserCreated: (newUser: any) => void;
 }
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'System Super Admin'];
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
 
 export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);

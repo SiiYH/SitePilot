@@ -67,7 +67,7 @@ const roleColors: { [key in UserRole]: string } = {
   'System Super Admin': 'bg-gradient-to-br from-gray-500/10 to-gray-600/10 text-gray-700 dark:from-gray-500/20 dark:to-gray-600/20 dark:text-gray-300 border-gray-500/20',
 };
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer', 'System Super Admin'];
+const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
 
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser, licenseUsage } = useAuth();
@@ -136,7 +136,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   };
   
   const filteredUsers = users.filter(user => {
-      if (roleFilter === 'All') return true;
+      if (roleFilter === 'All') return user.role !== 'System Super Admin';
       return user.role === roleFilter;
   });
 
@@ -277,7 +277,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <SelectValue placeholder="Set role" />
                             </SelectTrigger>
                             <SelectContent>
-                              {roles.filter(r => r !== 'System Super Admin').map(r => (
+                              {roles.map(r => (
                                 <SelectItem key={r} value={r} disabled={r !== user.role && licenseUsage[r] >= licenseLimits[r]}>
                                   {r}
                                 </SelectItem>
@@ -454,5 +454,3 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
-
-    
