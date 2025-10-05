@@ -9,7 +9,9 @@ import type { User, UserRole } from '@/types';
 import { login, signUp, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { licenseLimits } from '@/lib/license';
 import { mockUsers } from '@/lib/data';
-import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
+import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase } from '@/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +35,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
 
   useEffect(() => {
+    const seedUsers = async () => {
+        const auth = getAuth();
+        for (const mockUser of mockUsers) {
+            if (mockUser.email) {
+                try {
+                    // This is a temporary solution to seed users.
+                    // In a real app, you wouldn't use this logic.
+                    // It attempts to create users, and fails silently if they exist.
+                    await createUserWithEmailAndPassword(auth, mockUser.email, 'password');
+                    console.log(`Created user: ${mockUser.email}`);
+                } catch (error: any) {
+                    if (error.code !== 'auth/email-already-in-use') {
+                        console.error(`Error creating user ${mockUser.email}:`, error);
+                    }
+                }
+            }
+        }
+    };
+    
+    // This is a one-off seeding process.
+    if (localStorage.getItem('sitepilot-users-seeded') !== 'true') {
+        seedUsers().then(() => {
+            localStorage.setItem('sitepilot-users-seeded', 'true');
+        });
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
       if (firebaseUser) {
         // User is signed in, fetch profile.
@@ -41,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDoc.exists()) {
           setUser({ id: userDoc.id, ...userDoc.data() } as User);
         } else {
-          // Profile doesn't exist, maybe this is a new signup or an error.
-          // For now, we sign them out.
+          // This case might happen if a user is in Auth but not in Firestore.
+          // For this app's logic, we sign them out.
           await auth.signOut();
           setUser(null);
         }
@@ -127,7 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loggedInUser = await login(credentials);
     if (loggedInUser) {
       setUser(loggedInUser);
-      // No need to set localStorage here, onAuthStateChanged handles it
       router.push('/dashboard');
     }
     setLoading(false);
@@ -142,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const newUser = await signUp(data);
     if (newUser) {
-      // onAuthStateChanged will set the user state
       router.push('/welcome');
     }
     setLoading(false);
@@ -156,7 +182,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        return null;
     }
     const newUser = await createNewUser(data);
-    // This doesn't log the new user in, so no state change needed here.
     setLoading(false);
     return newUser;
   };
@@ -169,7 +194,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handleUpdateUser = (data: User) => {
-    // This should ideally be a Firestore update.
     setUser(data);
   };
 
