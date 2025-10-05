@@ -135,9 +135,19 @@ export default function WorkItemDetailsPage() {
                 <CardHeader>
                     <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>{workItem.title}</CardTitle>
-                        <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
-                            {workItem.status}
-                        </Badge>
+                         <div className="flex items-center gap-2">
+                             {canManageWorkItem && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/dashboard/work-items/${workItem.id}/edit`}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            )}
+                            <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
+                                {workItem.status}
+                            </Badge>
+                         </div>
                     </div>
                     <CardDescription className="flex items-center gap-2">
                         <Icon className="h-4 w-4" />
