@@ -55,6 +55,7 @@ export default function ProjectStatusReport() {
                 <TableHead>Project Name</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Work Items</TableHead>
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead>Assigned Engineers</TableHead>
@@ -85,6 +86,7 @@ export default function ProjectStatusReport() {
                             </Badge>
                           }
                       </TableCell>
+                      <TableCell>{data['Work Items']}</TableCell>
                       <TableCell>{format(parseISO(data['Start Date']), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{format(parseISO(data['End Date']), 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{data['Assigned Engineers']}</TableCell>
@@ -100,7 +102,7 @@ export default function ProjectStatusReport() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={canViewFinancials ? 8 : 6} className="h-24 text-center">
+                  <TableCell colSpan={canViewFinancials ? 9 : 7} className="h-24 text-center">
                     No projects found for the selected filters.
                   </TableCell>
                 </TableRow>
