@@ -1,0 +1,250 @@
+{
+  "entities": {
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a construction project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the project."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the project.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "Expected end date of the project.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the project (e.g., 'Active', 'Completed', 'Delayed')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "status"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task within a construction project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Task)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the task."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the task (e.g., 'To Do', 'In Progress', 'Completed')."
+        },
+        "assigneeId": {
+          "type": "string",
+          "description": "Reference to User assigned to the task. (Relationship: User 1:N Task)"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Due date for the task.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "description",
+        "status",
+        "assigneeId",
+        "dueDate"
+      ]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "Represents a document related to a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Document entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Document)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the document."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "URL where the document is stored."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date when the document was uploaded.",
+          "format": "date-time"
+        },
+        "accessRole": {
+          "type": "string",
+          "description": "Role required to access the document (e.g., 'Engineer', 'Admin', 'Director')."
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "fileUrl",
+        "uploadDate",
+        "accessRole"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the user (e.g., 'Engineer', 'Admin', 'Director')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "role"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data. The 'userId' is the Firebase Authentication UID. The user's role is stored directly in the document for easy access. Includes 'phoneNumber' to allow SMS password recovery for users without email addresses. ",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project data. The 'projectId' is a unique identifier for each project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "Unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores task data within a project. Includes denormalized user role information to enable efficient role-based task assignment and authorization. The 'projectId' links to the parent project, and 'taskId' is a unique identifier for each task.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The ID of the project the task belongs to."
+            },
+            {
+              "name": "taskId",
+              "description": "Unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores documents related to a project. The 'accessRole' field is used for role-based access control, allowing only users with the specified role to view the document.  The 'projectId' links to the parent project, and 'documentId' is a unique identifier for each document.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The ID of the project the document belongs to."
+            },
+            {
+              "name": "documentId",
+              "description": "Unique identifier for the document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Project data is stored in `/projects/{projectId}`. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored similarly at `/projects/{projectId}/documents/{documentId}` with denormalized access roles. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations (QAPs) by ensuring each collection has a homogeneous security posture. Since engineers might not have emails we will store the user data in `/users/{userId}` with phone number for password recovery by SMS verification."
+  }
+}
