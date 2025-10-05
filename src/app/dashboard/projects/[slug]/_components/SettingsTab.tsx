@@ -127,7 +127,7 @@ export default function SettingsTab({ project, onProjectUpdate, user }: Settings
                                     </div>
                                 </div>
                             </div>
-                            {index < project.progressTrackingModeHistory!.length - 1 && <Separator/>}
+                            {index < project.progressTrackingModeHistory.length - 1 && <Separator/>}
                            </div>
                         )
                     })
