@@ -70,8 +70,19 @@ export default function SignUpForm() {
       return;
     }
 
+    const { password, email, phone } = values;
+    if (!password || (!email && !phone)) {
+        toast({
+            variant: 'destructive',
+            title: 'Sign Up Failed',
+            description: 'Please provide all required information.',
+        });
+        setIsLoading(false);
+        return;
+    }
+
     // Role is defaulted to 'Engineer' on signup now.
-    const user = await signUp({ ...values, role: 'Engineer' });
+    const user = await signUp({ ...values, role: 'Engineer', password });
     if (!user) {
       toast({
         variant: 'destructive',

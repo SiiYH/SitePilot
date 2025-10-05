@@ -3,10 +3,13 @@
 
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
+import type { User as AuthUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
-import { loginWithEmail, loginWithPhone, signup, UserCredentials, SignUpData, createNewUser, CreateUserData } from '@/lib/auth';
+import { login, signUp, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { licenseLimits } from '@/lib/license';
 import { mockUsers } from '@/lib/data';
+import { useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -26,19 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const auth = useFirebaseAuth();
+  const firestore = useFirestore();
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('sitepilot-user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
+      if (firebaseUser) {
+        // User is signed in, fetch profile.
+        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUser({ id: userDoc.id, ...userDoc.data() } as User);
+        } else {
+          // Profile doesn't exist, maybe this is a new signup or an error.
+          // For now, we sign them out.
+          await auth.signOut();
+          setUser(null);
+        }
+      } else {
+        // User is signed out.
+        setUser(null);
       }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('sitepilot-user');
-    } finally {
       setLoading(false);
-    }
+    });
 
     // Seed sample companies for Company Management
     const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
@@ -98,8 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('sitepilot-all-companies', JSON.stringify(sampleCompanies));
       localStorage.setItem('sitepilot-licenses', JSON.stringify(sampleLicenses));
     }
-
-  }, []);
+    
+    return () => unsubscribe();
+  }, [auth, firestore]);
   
   const licenseUsage = {
     'System Super Admin': mockUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
@@ -110,35 +124,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
     setLoading(true);
-    const loggedInUser = 'email' in credentials ? await loginWithEmail(credentials) : await loginWithPhone(credentials);
+    const loggedInUser = await login(credentials);
     if (loggedInUser) {
       setUser(loggedInUser);
-      localStorage.setItem('sitepilot-user', JSON.stringify(loggedInUser));
-      
-      const defaultUsers = ['engineer@sitepilot.com', 'admin@sitepilot.com', 'director@sitepilot.com'];
-      if (loggedInUser.email && defaultUsers.includes(loggedInUser.email)) {
-          const storedCompany = localStorage.getItem('sitepilot-company');
-          if (!storedCompany) {
-              const sampleCompany = {
-                  id: 'company-demo-123',
-                  name: "SitePilot Demo Construction",
-                  industry: "(F) CONSTRUCTION",
-                  description: "A sample company for the default users to demonstrate SitePilot's features.",
-                  activated: true,
-                  licenseKey: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
-                  eInvoicing: {}
-              };
-              localStorage.setItem('sitepilot-company', JSON.stringify(sampleCompany));
-              
-              const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
-              let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
-              if (!allCompanies.some((c: any) => c.id === sampleCompany.id)) {
-                  allCompanies.push(sampleCompany);
-                  localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
-              }
-          }
-      }
-      
+      // No need to set localStorage here, onAuthStateChanged handles it
       router.push('/dashboard');
     }
     setLoading(false);
@@ -151,10 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return null;
     }
-    const newUser = await signup(data);
+    const newUser = await signUp(data);
     if (newUser) {
-      setUser(newUser);
-      localStorage.setItem('sitepilot-user', JSON.stringify(newUser));
+      // onAuthStateChanged will set the user state
       router.push('/welcome');
     }
     setLoading(false);
@@ -168,20 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        return null;
     }
     const newUser = await createNewUser(data);
+    // This doesn't log the new user in, so no state change needed here.
     setLoading(false);
     return newUser;
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await auth.signOut();
     setUser(null);
-    localStorage.removeItem('sitepilot-user');
     localStorage.removeItem('sitepilot-company');
     router.push('/login');
   };
 
   const handleUpdateUser = (data: User) => {
+    // This should ideally be a Firestore update.
     setUser(data);
-    localStorage.setItem('sitepilot-user', JSON.stringify(data));
   };
 
 

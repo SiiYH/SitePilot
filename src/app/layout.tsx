@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'SitePilot',
@@ -29,9 +30,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-              {children}
-          </AuthProvider>
+          <FirebaseClientProvider>
+            <AuthProvider>
+                {children}
+            </AuthProvider>
+          </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
       </body>

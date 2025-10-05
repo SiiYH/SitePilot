@@ -49,7 +49,7 @@ export default function LoginForm() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid email or password. Please try again.',
+        description: 'Invalid credentials or inactive account.',
       });
     }
     setIsLoading(false);
@@ -62,7 +62,7 @@ export default function LoginForm() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid phone number or password. Please try again.',
+        description: 'Invalid credentials or inactive account.',
       });
     }
     setIsLoading(false);
