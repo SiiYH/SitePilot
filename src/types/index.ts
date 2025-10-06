@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director' | 'System Super Admin';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -15,7 +16,7 @@ export interface User {
   role: UserRole;
   avatarUrl: string;
   status: UserStatus;
-  createdAt: string;
+  createdAt: string; // Changed from serverTimestamp() to string
   history: UserStatusChange[];
 }
 
