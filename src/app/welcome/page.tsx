@@ -55,7 +55,7 @@ export default function WelcomePage() {
                         <CardDescription>Set up a new workspace for your company and start managing projects.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button className="w-full" variant="outline" asChild>
+                        <Button className="w-full" variant="secondary" asChild>
                             <Link href="/create-company">Create Company</Link>
                         </Button>
                     </CardContent>
