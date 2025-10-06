@@ -95,8 +95,13 @@ export async function signUp(data: SignUpData): Promise<User | null> {
         return { id: firebaseUser.uid, ...newUser } as User;
 
     } catch (error: any) {
-        // This will catch auth errors like 'email-already-in-use' but we won't log it to avoid console errors for expected behavior.
-        return null;
+        // This will catch auth errors like 'email-already-in-use'
+        if (error.code === 'auth/email-already-in-use') {
+          return null;
+        }
+        // For other errors, re-throw them to be caught by a higher-level error handler
+        // or to be visible in the console for debugging, which is better than failing silently.
+        throw error;
     }
 }
 
@@ -135,8 +140,11 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
         return { id: firebaseUser.uid, ...newUser } as User;
 
     } catch (error: any) {
-        // This will catch auth errors like 'email-already-in-use' but we won't log it to avoid console errors for expected behavior.
-        return null;
+        // This will catch auth errors like 'email-already-in-use'
+        if (error.code === 'auth/email-already-in-use') {
+          return null;
+        }
+        throw error;
     }
 }
 
