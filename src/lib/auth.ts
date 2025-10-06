@@ -78,8 +78,11 @@ export async function signUp(data: SignUpData): Promise<User | null> {
             status: 'Active',
             createdAt: new Date().toISOString(), // Use ISO string for consistency
             history: [{ status: 'Active', date: new Date().toISOString() }],
-            companyId: data.companyId,
         };
+
+        if (data.companyId) {
+            newUser.companyId = data.companyId;
+        }
         
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
 
@@ -123,8 +126,11 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
             status: 'Active',
             createdAt: new Date().toISOString(),
             history: [{ status: 'Active', date: new Date().toISOString() }],
-            companyId: data.companyId,
         };
+
+        if (data.companyId) {
+            newUser.companyId = data.companyId;
+        }
 
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
 
@@ -152,4 +158,3 @@ export async function updateUserCompany(userId: string, companyId: string): Prom
     const userDocRef = doc(firestore, 'users', userId);
     await updateDoc(userDocRef, { companyId });
 }
-
