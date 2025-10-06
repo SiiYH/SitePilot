@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore } from '@/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { updateUserCompany } from '@/lib/auth';
 
 type Industry = {
@@ -52,13 +52,6 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   const handleContinue = async () => {
     if (!user) return;
     setIsLoading(true);
-
-    if (user.role !== 'Director' && !isEditing) {
-      const updatedUser = { ...user, role: 'Director' as const };
-      // In a real app, you would update the user role in your backend.
-      // For now, we update the context.
-      setUser(updatedUser);
-    }
     
     const companyId = `company-${Date.now()}`;
     const companyData = {
@@ -76,12 +69,17 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       const companyDocRef = doc(firestore, 'companies', companyId);
       await setDoc(companyDocRef, companyData);
 
-      // Update user's companyId
-      await updateUserCompany(user.id, companyId);
+      // Update user's companyId and role
+      const userDocRef = doc(firestore, 'users', user.id);
+      const userUpdates: { companyId: string; role?: 'Director' } = { companyId };
+      if (user.role !== 'Director' && !isEditing) {
+          userUpdates.role = 'Director';
+      }
+      await updateDoc(userDocRef, userUpdates);
       
       // Update auth context
       setAuthCompany(companyData);
-      setUser(prevUser => prevUser ? { ...prevUser, companyId } : null);
+      setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
 
       setIsLoading(false);
       if (isEditing) {
