@@ -23,12 +23,15 @@ interface AuthContextType {
   updateUser: (data: User) => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
   licenseUsage: Record<UserRole, number>;
+  company: any; // Consider creating a Company type
+  setCompany: Dispatch<SetStateAction<any>>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [company, setCompany] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const auth = useFirebaseAuth();
@@ -68,12 +71,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
-              setUser({ id: userDoc.id, ...userDoc.data() } as User);
+              const userData = { id: userDoc.id, ...userDoc.data() } as User;
+              setUser(userData);
+              if (userData.companyId) {
+                const companyDocRef = doc(firestore, 'companies', userData.companyId);
+                const companyDoc = await getDoc(companyDocRef);
+                if (companyDoc.exists()) {
+                  setCompany({ id: companyDoc.id, ...companyDoc.data() });
+                } else {
+                  setCompany(null);
+                }
+              } else {
+                setCompany(null);
+              }
             } else {
               // This case might happen if a user is in Auth but not in Firestore.
               // For this app's logic, we sign them out.
               await auth.signOut();
               setUser(null);
+              setCompany(null);
             }
         } catch (e: any) {
             // Check if it is a Firestore permission error
@@ -90,10 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Sign out the user if their document can't be fetched
             await auth.signOut();
             setUser(null);
+            setCompany(null);
         }
       } else {
         // User is signed out.
         setUser(null);
+        setCompany(null);
       }
       setLoading(false);
     });
@@ -206,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleLogout = async () => {
     await auth.signOut();
     setUser(null);
-    localStorage.removeItem('sitepilot-company');
+    setCompany(null);
     router.push('/login');
   };
 
@@ -218,6 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     setUser,
+    company,
+    setCompany,
     loading,
     login: handleLogin,
     signUp: handleSignUp,
@@ -229,3 +249,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+

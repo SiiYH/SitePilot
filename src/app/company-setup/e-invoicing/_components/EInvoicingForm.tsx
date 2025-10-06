@@ -22,6 +22,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/use-auth';
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 type StateCode = {
   Code: string;
@@ -125,6 +128,8 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const [openStateCode, setOpenStateCode] = useState(false)
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { company, setCompany } = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -150,16 +155,10 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const customerType = form.watch('customerType') || 'malaysia-business';
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedCompanyData = localStorage.getItem('sitepilot-company');
-      if (storedCompanyData) {
-        const company = JSON.parse(storedCompanyData);
-        if (company.eInvoicing) {
-          form.reset(company.eInvoicing);
-        }
-      }
+    if (company?.eInvoicing) {
+      form.reset(company.eInvoicing);
     }
-  }, [form]);
+  }, [company, form]);
   
   useEffect(() => {
     if (customerType === 'non-malaysian-business' || customerType === 'non-malaysian-individual' || customerType === 'government') {
@@ -177,29 +176,46 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     return `${state.State} (${state.Code})`;
   }
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    if (!company) {
+        toast({
+            variant: 'destructive',
+            title: "Error",
+            description: "No company context found. Please create a company first.",
+        });
+        return;
+    }
     setIsSubmitting(true);
     
-    const companyDataString = localStorage.getItem('sitepilot-company');
-    const companyData = companyDataString ? JSON.parse(companyDataString) : {};
-    
-    const combinedData = {
-      ...companyData,
-      eInvoicing: values,
-    };
+    try {
+        const companyDocRef = doc(firestore, 'companies', company.id);
+        await updateDoc(companyDocRef, {
+            eInvoicing: values,
+        });
 
-    localStorage.setItem('sitepilot-company', JSON.stringify(combinedData));
-    
-    console.log(values);
-    toast({
-        title: "Form Submitted!",
-        description: "Your e-invoicing details have been saved.",
-    });
+        // Update company in auth context
+        const updatedCompany = { ...company, eInvoicing: values };
+        setCompany(updatedCompany);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      router.push('/dashboard');
-    }, 1500);
+        toast({
+            title: "Form Submitted!",
+            description: "Your e-invoicing details have been saved.",
+        });
+
+        setTimeout(() => {
+          setIsSubmitting(false);
+          router.push('/dashboard');
+        }, 1500);
+
+    } catch (error) {
+        console.error("Error saving e-invoicing details:", error);
+        toast({
+            variant: 'destructive',
+            title: "Save Failed",
+            description: "Could not save your e-invoicing details. Please try again.",
+        });
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -485,3 +501,4 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
+

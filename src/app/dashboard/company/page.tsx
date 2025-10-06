@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -13,6 +12,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -43,8 +44,9 @@ const InfoField = ({ label, value }: { label: string; value?: string | null }) =
     );
 };
 
-const LicenseActivationCard = ({ isActivated, canEdit, onActivate }: { isActivated: boolean, canEdit: boolean, onActivate: (key: string) => void }) => {
+const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyData: any, canEdit: boolean, onActivate: (key: string) => void }) => {
     const [licenseKey, setLicenseKey] = useState('');
+    const isActivated = companyData.activated;
     
     return (
         <Card>
@@ -86,71 +88,57 @@ const LicenseActivationCard = ({ isActivated, canEdit, onActivate }: { isActivat
 
 
 export default function CompanyPage() {
-  const [companyData, setCompanyData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, company, setCompany, loading } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const canEdit = user?.role === 'Admin' || user?.role === 'Director';
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedCompanyData = localStorage.getItem('sitepilot-company');
-        if (storedCompanyData) {
-          const parsedData = JSON.parse(storedCompanyData);
-          if (typeof parsedData.activated === 'undefined') {
-            parsedData.activated = false;
-          }
-          setCompanyData(parsedData);
-        }
-      } catch (error) {
-        console.error("Failed to parse company data from localStorage", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, []);
-
-  const handleActivate = (key: string) => {
+  const handleActivate = async (key: string) => {
+    // Note: In a real app, license validation would happen on a secure backend.
+    // This client-side logic is for demonstration purposes.
     const licensesString = localStorage.getItem('sitepilot-licenses');
     const licenses = licensesString ? JSON.parse(licensesString) : [];
     
     const license = licenses.find((lic: any) => lic.key === key);
 
     if (license) {
-        if (license.activatedAt) {
+        if (license.activatedAt && license.companyId !== company.id) {
             toast({
                 variant: "destructive",
                 title: "License Key Already Used",
-                description: "This license key has already been activated and cannot be used again.",
+                description: "This license key has already been activated for another company.",
             });
             return;
         }
+        try {
+            const companyDocRef = doc(firestore, 'companies', company.id);
+            await updateDoc(companyDocRef, {
+                activated: true,
+                licenseKey: key,
+            });
 
-        // Update company in `sitepilot-company`
-        const updatedCompanyData = { ...companyData, activated: true, licenseKey: key };
-        setCompanyData(updatedCompanyData);
-        localStorage.setItem('sitepilot-company', JSON.stringify(updatedCompanyData));
+            // Update local state
+            const updatedCompanyData = { ...company, activated: true, licenseKey: key };
+            setCompany(updatedCompanyData);
 
-        // Update company in `sitepilot-all-companies`
-        const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
-        let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
-        const companyIndex = allCompanies.findIndex((c: any) => c.id === companyData.id);
-        if (companyIndex > -1) {
-            allCompanies[companyIndex] = updatedCompanyData;
-            localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
+            // Update license in localStorage
+            const updatedLicenses = licenses.map((lic: any) => 
+                lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
+            );
+            localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
+
+            toast({
+                title: "License Activated!",
+                description: "Your company is now active.",
+            });
+        } catch (error) {
+            console.error("Error activating license:", error);
+            toast({
+                variant: "destructive",
+                title: "Activation Failed",
+                description: "Could not activate the license. Please try again.",
+            });
         }
-
-        // Mark license as used
-        const updatedLicenses = licenses.map((lic: any) => 
-            lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: companyData.id } : lic
-        );
-        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
-
-        toast({
-            title: "License Activated!",
-            description: "Your company is now active.",
-        });
     } else {
         toast({
             variant: "destructive",
@@ -169,6 +157,7 @@ export default function CompanyPage() {
     );
   }
 
+  const companyData = company;
   const eInvData = companyData?.eInvoicing;
   const hasEInvData = !!eInvData && Object.keys(eInvData).length > 0;
 
@@ -298,7 +287,7 @@ export default function CompanyPage() {
          <div className="lg:col-span-1">
             {companyData && (
                 <LicenseActivationCard 
-                    isActivated={companyData.activated} 
+                    companyData={companyData} 
                     canEdit={canEdit}
                     onActivate={handleActivate}
                 />
@@ -308,3 +297,4 @@ export default function CompanyPage() {
     </div>
   );
 }
+

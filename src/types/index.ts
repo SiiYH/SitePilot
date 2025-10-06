@@ -1,5 +1,4 @@
 
-
 export type UserRole = 'Engineer' | 'Admin' | 'Director' | 'System Super Admin';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -18,6 +17,7 @@ export interface User {
   status: UserStatus;
   createdAt: string; // Changed from serverTimestamp() to string
   history: UserStatusChange[];
+  companyId?: string;
 }
 
 export interface Task {
@@ -130,3 +130,4 @@ export interface CreateWorkItemDialogProps {
     engineers: User[];
     onWorkItemCreated: (task: Task) => void;
 }
+

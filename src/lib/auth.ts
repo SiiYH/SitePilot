@@ -6,10 +6,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, FirestoreError } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, FirestoreError, updateDoc } from 'firebase/firestore';
 import { initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { User, UserRole, UserStatus } from '@/types';
-import { mockUsers } from '@/lib/data'; // Keep for user profile creation logic
 
 export type EmailCredentials = {
   email: string;
@@ -29,6 +28,7 @@ export type SignUpData = {
     phone?: string;
     password: string;
     role: UserRole;
+    companyId?: string;
 };
 
 export type CreateUserData = {
@@ -37,6 +37,7 @@ export type CreateUserData = {
     phone?: string;
     password?: string;
     role: UserRole;
+    companyId?: string;
 };
 
 const { firestore } = initializeFirebase();
@@ -61,7 +62,6 @@ export async function login(credentials: UserCredentials): Promise<User | null> 
 
 export async function signUp(data: SignUpData): Promise<User | null> {
     if (!data.email) {
-        console.error("Sign up error: Email is required.");
         return null;
     }
     
@@ -78,6 +78,7 @@ export async function signUp(data: SignUpData): Promise<User | null> {
             status: 'Active',
             createdAt: new Date().toISOString(), // Use ISO string for consistency
             history: [{ status: 'Active', date: new Date().toISOString() }],
+            companyId: data.companyId,
         };
         
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
@@ -101,7 +102,6 @@ export async function signUp(data: SignUpData): Promise<User | null> {
 
 export async function createNewUser(data: CreateUserData): Promise<User | null> {
     if (!data.email || !data.password) {
-        console.error("Create user error: Email and password are required.");
         return null;
     }
 
@@ -118,6 +118,7 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
             status: 'Active',
             createdAt: new Date().toISOString(),
             history: [{ status: 'Active', date: new Date().toISOString() }],
+            companyId: data.companyId,
         };
 
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
@@ -138,3 +139,9 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
         return null;
     }
 }
+
+export async function updateUserCompany(userId: string, companyId: string): Promise<void> {
+    const userDocRef = doc(firestore, 'users', userId);
+    await updateDoc(userDocRef, { companyId });
+}
+

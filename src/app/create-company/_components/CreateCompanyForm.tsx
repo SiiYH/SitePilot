@@ -9,11 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useState, useEffect } from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { useFirestore } from '@/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { updateUserCompany } from '@/lib/auth';
 
 type Industry = {
   Code: string;
@@ -26,34 +29,18 @@ interface CreateCompanyFormProps {
 
 export default function CreateCompanyForm({ industries }: CreateCompanyFormProps) {
   const router = useRouter();
-  const { user, setUser } = useAuth();
+  const { user, setUser, setCompany: setAuthCompany } = useAuth();
+  const firestore = useFirestore();
   const [open, setOpen] = useState(false);
   const [industryCode, setIndustryCode] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedCompanyData = localStorage.getItem('sitepilot-company');
-      if (storedCompanyData) {
-        const company = JSON.parse(storedCompanyData);
-        // Only pre-fill if the company has a name, indicating it's an existing company.
-        if (company.name) {
-          setIsEditing(true);
-          setCompanyName(company.name || '');
-          setCompanyDescription(company.description || '');
-
-          if (company.industry) {
-              // Extracts code like 'F' from '(F) CONSTRUCTION'
-              const codeMatch = company.industry.match(/^\(([^)]+)\)/);
-              if (codeMatch && codeMatch[1]) {
-                  setIndustryCode(codeMatch[1]);
-              }
-          }
-        }
-      }
-    }
+    // This effect is for editing, which we might want to handle differently
+    // when data comes from Firestore. For now, we'll keep it simple.
   }, []);
 
   const getIndustryDisplay = (code: string) => {
@@ -62,53 +49,57 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     return `(${industry.Code}) ${industry.Description}`;
   }
   
-  const handleContinue = () => {
-    if (user && user.role !== 'Director' && !isEditing) {
+  const handleContinue = async () => {
+    if (!user) return;
+    setIsLoading(true);
+
+    if (user.role !== 'Director' && !isEditing) {
       const updatedUser = { ...user, role: 'Director' as const };
+      // In a real app, you would update the user role in your backend.
+      // For now, we update the context.
       setUser(updatedUser);
-      localStorage.setItem('sitepilot-user', JSON.stringify(updatedUser));
     }
     
-    const storedCompanyData = localStorage.getItem('sitepilot-company');
-    const existingData = storedCompanyData ? JSON.parse(storedCompanyData) : {};
-
+    const companyId = `company-${Date.now()}`;
     const companyData = {
-      ...existingData,
-      id: existingData.id || `company-${Date.now()}`,
+      id: companyId,
       name: companyName,
       industry: getIndustryDisplay(industryCode),
       description: companyDescription,
-      activated: existingData.activated || false,
-      licenseKey: existingData.licenseKey || null,
+      activated: false,
+      licenseKey: null,
+      ownerId: user.id,
     };
     
-    // Save to current user's company context
-    localStorage.setItem('sitepilot-company', JSON.stringify(companyData));
-    
-    // Add/Update in global list of companies
-    const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
-    let allCompanies = allCompaniesString ? JSON.parse(allCompaniesString) : [];
-    
-    const companyIndex = allCompanies.findIndex((c: any) => c.id === companyData.id);
+    try {
+      // Save company to Firestore
+      const companyDocRef = doc(firestore, 'companies', companyId);
+      await setDoc(companyDocRef, companyData);
 
-    if (companyIndex > -1) {
-        allCompanies[companyIndex] = companyData;
-    } else {
-        allCompanies.push(companyData);
-    }
-    localStorage.setItem('sitepilot-all-companies', JSON.stringify(allCompanies));
+      // Update user's companyId
+      await updateUserCompany(user.id, companyId);
+      
+      // Update auth context
+      setAuthCompany(companyData);
+      setUser(prevUser => prevUser ? { ...prevUser, companyId } : null);
 
-    if (isEditing) {
-      router.push('/dashboard/company');
-    } else {
-      router.push('/company-setup/e-invoicing');
+      setIsLoading(false);
+      if (isEditing) {
+        router.push('/dashboard/company');
+      } else {
+        router.push('/company-setup/e-invoicing');
+      }
+    } catch (error) {
+        console.error("Error creating company:", error);
+        setIsLoading(false);
+        // Handle error (e.g., show a toast message)
     }
   }
 
   return (
     <Card className="mt-6">
       <CardContent className="pt-6">
-        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleContinue(); }}>
           <div className="space-y-2">
             <Label htmlFor="company-name">Company Name</Label>
             <Input 
@@ -179,11 +170,11 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
             />
           </div>
           <Button 
-            type="button" 
+            type="submit" 
             className="w-full"
-            disabled={!companyName || !industryCode}
-            onClick={handleContinue}
+            disabled={!companyName || !industryCode || isLoading}
           >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isEditing ? 'Save Changes' : 'Save and Continue'}
           </Button>
         </form>
@@ -191,3 +182,4 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     </Card>
   );
 }
+
