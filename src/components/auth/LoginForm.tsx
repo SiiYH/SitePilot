@@ -146,7 +146,7 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1 555-123-4567" {...field} />
+                    <Input placeholder="+60123456789" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
