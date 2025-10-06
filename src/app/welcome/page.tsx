@@ -20,8 +20,6 @@ export default function WelcomePage() {
     );
   }
 
-  const canCreateCompany = user.role === 'Admin' || user.role === 'Director';
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-lg text-center">
@@ -34,8 +32,8 @@ export default function WelcomePage() {
         <p className="mb-8 max-w-md mx-auto text-muted-foreground">
             You're one step away from managing your construction projects. How would you like to get started?
         </p>
-        <div className={`grid grid-cols-1 ${canCreateCompany ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-           <Card className={`text-left hover:shadow-lg transition-shadow ${!canCreateCompany && 'md:max-w-sm mx-auto'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <Card className="text-left hover:shadow-lg transition-shadow">
                 <CardHeader>
                     <Users className="h-8 w-8 mb-2 text-primary" />
                     <CardTitle>Join a Company</CardTitle>
@@ -47,7 +45,6 @@ export default function WelcomePage() {
                     </Button>
                 </CardContent>
            </Card>
-           {canCreateCompany && (
             <Card className="text-left hover:shadow-lg transition-shadow">
                     <CardHeader>
                         <PlusCircle className="h-8 w-8 mb-2 text-primary" />
@@ -60,7 +57,6 @@ export default function WelcomePage() {
                         </Button>
                     </CardContent>
             </Card>
-           )}
         </div>
          <p className="mt-8 text-center text-sm text-muted-foreground">
           If you need to log in to a different account, you can <Link href="/login" className="font-medium text-primary hover:underline">log in</Link>.
