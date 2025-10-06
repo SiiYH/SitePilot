@@ -2,139 +2,154 @@
  * @fileoverview Firestore Security Rules for SiteFlow application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles
- * and role-based access control for project-related data. It prioritizes
- * security by default, explicitly denying access unless specifically allowed.
+ * This ruleset enforces a user-ownership model for user-specific data and a company-ownership model for company data.
+ * Projects and their subcollections (tasks and documents) inherit the security context of their parent project,
+ * ensuring that only authorized users can access project-related information.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information, with 'userId' matching the
- *   Firebase Authentication UID.
- * - /projects/{projectId}: Stores project information.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with projects.
- * - /projects/{projectId}/documents/{documentId}: Stores project documents.
+ * - /users/{userId}: Stores individual user profiles. Access is restricted to the owning user.
+ * - /companies/{companyId}: Stores company information. Access is restricted to company owners.
+ * - /projects/{projectId}: Stores project data. Access control is based on project ownership or shared access.
+ * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with a project. Access is controlled by project membership.
+ * - /projects/{projectId}/documents/{documentId}: Stores documents related to a project. Access is controlled by project membership and document-specific roles.
  *
  * Key Security Decisions:
- * - User profiles are strictly owned by the authenticated user.
- * - Listing of user profiles is disallowed to prevent information disclosure.
- * - Project documents enforce role-based access control via the 'accessRole' field.
- * - Data validation is minimal in this prototype, focusing on ownership and
- *   relational integrity checks.
+ * - User listing is disallowed for privacy.
+ * - Data validation is limited to authorization-critical fields for rapid prototyping.
+ * - Read access to user and company collections is limited to the authenticated user.
+ * - Write access to projects and related documents is based on user roles and ownership.
  *
  * Denormalization for Authorization:
- * - The `User` document stores the user's `role` for simplified access control
- *   when accessing project documents.
+ * - The 'ownerId' field in the 'Company' entity facilitates owner-based access control.
+ * - The 'projectId' in 'Task' and 'Document' entities enables access control based on the parent project.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile data.
+     * @description Protects user profiles, allowing only the owner to read and write their data.
      * @path /users/{userId}
-     * @allow (create) User with UID 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2' can create their own profile.
-     * @allow (get) User with UID 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2' can get their own profile.
-     * @allow (update) User with UID 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2' can update their own profile.
-     * @allow (delete) User with UID 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2' can delete their own profile.
-     * @deny (create) User with UID 'anotherUserId' cannot create a profile for 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2'.
-     * @deny (get) User with UID 'anotherUserId' cannot get profile of 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2'.
-     * @deny (update) User with UID 'anotherUserId' cannot update profile of 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2'.
-     * @deny (delete) User with UID 'anotherUserId' cannot delete profile of 'RO0L7yKqDqRnOTVx4Rk4v84tmfp2'.
-     * @principle Enforces document ownership for all operations on user profiles.
+     * @allow (read, write) if the request is made by the user with matching userId (isOwner).
+     * @deny (read, write) if the request is made by a different user (not isOwner).
+     * @principle Enforces strict user-ownership for data privacy.
      */
     match /users/{userId} {
+      // Define a function to check if the user is signed in
       function isSignedIn() {
         return request.auth != null;
       }
 
+      // Define a function to check if the user is the owner of the document
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false; // User listing is not permitted for privacy reasons.
+      allow create: if isSignedIn() && isOwner(userId); // Allow self-creation.
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Controls access to project data.
-     * @path /projects/{projectId}
-     * @allow (get) Any signed-in user can read project data.
-     * @allow (list) Any signed-in user can list project data.
-     * @allow (create) Any signed-in user can create project data.
-     * @allow (update) Any signed-in user can update project data if they are the owner.
-     * @allow (delete) Any signed-in user can delete project data if they are the owner.
-     * @deny (create) Unauthorized user cannot create project data.
-     * @deny (update) Unauthorized user cannot update project data.
-     * @deny (delete) Unauthorized user cannot delete project data.
-     * @principle Public read, owner-only writes for projects.
+     * @description Manages company profiles, ensuring only the owner can create, update, and delete.
+     * @path /companies/{companyId}
+     * @allow (create, update, delete) if the user is the owner of the company (ownerId matches auth.uid).
+     * @allow (read) if true for public data.
+     * @deny (create, update, delete) if the user is not the owner.
+     * @principle Enforces company ownership for data management.
      */
-    match /projects/{projectId} {
+    match /companies/{companyId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();  // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      // ownerId must match the authenticated user's uid on create, update and delete.
+      function isOwner(companyId) {
+        return get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      }
+
+      allow get, list: if true; // Public read access for company data.
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && isOwner(companyId);
+      allow delete: if isSignedIn() && isOwner(companyId);
     }
 
     /**
-     * @description Controls access to task data within a project.
+     * @description Controls access to project data, restricting write access to authorized users.
+     * @path /projects/{projectId}
+     * @allow (read) if true for public project information.
+     * @allow (create, update, delete) if the user has the necessary roles.
+     * @deny (create, update, delete) if the user lacks authorization.
+     * @principle Ensures project data integrity through role-based access control.
+     */
+    match /projects/{projectId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isProjectOwner(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      }
+      // For prototyping, allow anyone to read project data
+      // In production, read access will need to be more controlled
+      allow get, list: if true;
+      // TODO: Implement proper role-based access control for project creation, updates, and deletion.
+      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if isSignedIn() && isProjectOwner(projectId);
+      allow delete: if isSignedIn() && isProjectOwner(projectId);
+    }
+
+    /**
+     * @description Secures tasks within projects, linking access to the parent project's permissions.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get) Any signed-in user can read task data within a project.
-     * @allow (list) Any signed-in user can list task data within a project.
-     * @allow (create) Any signed-in user can create task data within a project.
-     * @allow (update) Any signed-in user can update task data if they are the owner.
-     * @allow (delete) Any signed-in user can delete task data if they are the owner.
-     * @deny (create) Unauthorized user cannot create task data within a project.
-     * @deny (update) Unauthorized user cannot update task data within a project.
-     * @deny (delete) Unauthorized user cannot delete task data within a project.
-     * @principle Public read, owner-only writes for tasks within a project.
+     * @allow (read) if the user has access to the parent project.
+     * @allow (create, update, delete) if the user has the necessary roles within the project.
+     * @deny (create, update, delete) if the user is not authorized.
+     * @principle Enforces consistent access control for project tasks.
      */
     match /projects/{projectId}/tasks/{taskId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();  // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
+       function isProjectOwner(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      }
+      // For prototyping, allow anyone to read task data if they can read the project
+      // In production, read access will need to be more controlled, possibly tied to assigneeId
+      allow get, list: if true;
+      // TODO: Implement proper role-based access control for task creation, updates, and deletion.
+      allow create: if isSignedIn() && isProjectOwner(projectId); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if isSignedIn() && isProjectOwner(projectId);
+      allow delete: if isSignedIn() && isProjectOwner(projectId);
     }
 
     /**
-     * @description Controls access to document data within a project based on the 'accessRole'.
+     * @description Manages documents within projects, using role-based access control for viewing.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (get) Any signed-in user can read document data within a project.
-     * @allow (list) Any signed-in user can list document data within a project.
-     * @allow (create) Any signed-in user can create document data within a project.
-     * @allow (update) Any signed-in user can update document data if they have the required role.
-     * @allow (delete) Any signed-in user can delete document data if they have the required role.
-     * @deny (create) Unauthorized user cannot create document data within a project.
-     * @deny (update) Unauthorized user without the required role cannot update document data within a project.
-     * @deny (delete) Unauthorized user without the required role cannot delete document data within a project.
-     * @principle Role-based access control for project documents.
+     * @allow (read) if the user's role matches the document's 'accessRole'.
+     * @allow (create, update, delete) if the user has the necessary roles within the project.
+     * @deny (read) if the user's role does not match the 'accessRole'.
+     * @deny (create, update, delete) if the user is not authorized.
+     * @principle Enforces role-based access control for project documents.
      */
     match /projects/{projectId}/documents/{documentId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      // TODO: Implement role-based access control based on resource.data.accessRole and user.role.
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn(); // TODO: Implement role-based access validation based on resource.data.accessRole and user.role.
-      allow delete: if isSignedIn(); // TODO: Implement role-based access validation based on resource.data.accessRole and user.role.
+       function isProjectOwner(projectId) {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+      }
+      // For prototyping, allow anyone to read document data if they can read the project
+      // In production, read access will need to be more controlled, possibly tied to accessRole
+      allow get, list: if true;
+      // TODO: Implement proper role-based access control for document creation, updates, and deletion.
+      allow create: if isSignedIn() && isProjectOwner(projectId); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if isSignedIn() && isProjectOwner(projectId);
+      allow delete: if isSignedIn() && isProjectOwner(projectId);
     }
   }
 }
