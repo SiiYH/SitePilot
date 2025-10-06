@@ -11,11 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 type Industry = {
   Code: string;
@@ -28,19 +27,38 @@ interface CreateCompanyFormProps {
 
 export default function CreateCompanyForm({ industries }: CreateCompanyFormProps) {
   const router = useRouter();
-  const { user, setUser, setCompany: setAuthCompany } = useAuth();
+  const searchParams = useSearchParams();
+  const { user, setUser, company, setCompany: setAuthCompany } = useAuth();
   const firestore = useFirestore();
   const [open, setOpen] = useState(false);
   const [industryCode, setIndustryCode] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const isEditing = searchParams.get('edit') === 'true';
+  const companyId = searchParams.get('companyId');
+
   useEffect(() => {
-    // This effect is for editing, which we might want to handle differently
-    // when data comes from Firestore. For now, we'll keep it simple.
-  }, []);
+    if (isEditing && company) {
+      setCompanyName(company.name);
+      setCompanyDescription(company.description || "");
+      setIndustryCode(company.industryCode || "");
+    } else if (isEditing && companyId) {
+      // Fallback if company context is not yet populated
+      const fetchCompany = async () => {
+        const companyDocRef = doc(firestore, 'companies', companyId);
+        const companyDoc = await getDoc(companyDocRef);
+        if (companyDoc.exists()) {
+          const companyData = companyDoc.data();
+          setCompanyName(companyData.name);
+          setCompanyDescription(companyData.description || "");
+          setIndustryCode(companyData.industryCode || "");
+        }
+      }
+      fetchCompany();
+    }
+  }, [isEditing, company, companyId, firestore]);
 
   const getIndustryDisplay = (code: string) => {
     const industry = industries.find((industry) => industry.Code.toLowerCase() === code.toLowerCase());
@@ -49,37 +67,46 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = async () => {
-    if (!user) return;
+    if (!user || (!companyId && isEditing)) return;
     setIsLoading(true);
     
     const selectedIndustry = industries.find((industry) => industry.Code.toLowerCase() === industryCode.toLowerCase());
 
-    const companyId = `company-${Date.now()}`;
     const companyData = {
-      id: companyId,
       name: companyName,
       industryCode: selectedIndustry?.Code || '',
       industryDescription: selectedIndustry?.Description || '',
       description: companyDescription,
-      activated: false,
-      licenseKey: null,
-      ownerId: user.id,
     };
     
-    const companyDocRef = doc(firestore, 'companies', companyId);
-    setDocumentNonBlocking(companyDocRef, companyData, {});
-    
-    const userDocRef = doc(firestore, 'users', user.id);
-    const userUpdates: { companyId: string; role?: 'Director' } = { companyId };
-    if (user.role !== 'Director' && !isEditing) {
-        userUpdates.role = 'Director';
+    if (isEditing && companyId) {
+        const companyDocRef = doc(firestore, 'companies', companyId);
+        updateDocumentNonBlocking(companyDocRef, companyData);
+        setAuthCompany((prev: any) => ({ ...prev, ...companyData }));
+    } else {
+        const newCompanyId = `company-${Date.now()}`;
+        const finalCompanyData = {
+            ...companyData,
+            id: newCompanyId,
+            activated: false,
+            licenseKey: null,
+            ownerId: user.id,
+        };
+        const companyDocRef = doc(firestore, 'companies', newCompanyId);
+        setDocumentNonBlocking(companyDocRef, finalCompanyData, {});
+        
+        const userDocRef = doc(firestore, 'users', user.id);
+        const userUpdates: { companyId: string; role?: 'Director' } = { companyId: newCompanyId };
+        if (user.role !== 'Director') {
+            userUpdates.role = 'Director';
+        }
+        updateDocumentNonBlocking(userDocRef, userUpdates);
+        
+        // Update auth context
+        setAuthCompany(finalCompanyData);
+        setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
     }
-    updateDocumentNonBlocking(userDocRef, userUpdates);
-      
-    // Update auth context
-    setAuthCompany(companyData);
-    setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
-
+    
     setIsLoading(false);
     if (isEditing) {
       router.push('/dashboard/company');
@@ -175,5 +202,3 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     </Card>
   );
 }
-
-    

@@ -168,7 +168,7 @@ export default function CompanyPage() {
 
   const industryDisplay = companyData?.industryCode && companyData?.industryDescription 
     ? `(${companyData.industryCode}) ${companyData.industryDescription}` 
-    : companyData?.industry || null;
+    : companyData?.industryDescription || null;
 
   return (
     <div className="space-y-6">
@@ -187,7 +187,7 @@ export default function CompanyPage() {
                         </div>
                         {companyData && canEdit && (
                             <Button variant="outline" size="sm" asChild>
-                                <Link href="/create-company">
+                                <Link href={`/create-company?edit=true&companyId=${companyData.id}`}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Details
                                 </Link>
@@ -296,5 +296,3 @@ export default function CompanyPage() {
     </div>
   );
 }
-
-    
