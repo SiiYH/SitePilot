@@ -112,7 +112,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                   aria-expanded={open}
                   className="w-full justify-between h-auto"
                 >
-                  <span className="text-left">
+                  <span className="text-left whitespace-normal">
                     {getIndustryDisplay(industryCode)}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
