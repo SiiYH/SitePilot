@@ -154,7 +154,7 @@ export default function CompanyPage() {
 
   const companyData = company;
   const eInvData = companyData?.eInvoicing;
-  const hasEInvData = !!eInvData && Object.keys(eInvData).length > 0;
+  const hasEInvData = !!eInvData && eInvData.eInvEnabled;
 
   const fullAddress = eInvData ? [
     eInvData.address1,
@@ -212,7 +212,18 @@ export default function CompanyPage() {
 
                     {/* E-Invoicing Details */}
                     <div className="space-y-4">
-                        <h3 className="text-base font-semibold">E-Invoicing Details</h3>
+                        <div className="flex items-center justify-between">
+                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
+                           {canEdit && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/company-setup/e-invoicing?edit=true`}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        {hasEInvData ? 'Edit' : 'Setup'}
+                                    </Link>
+                                </Button>
+                           )}
+                        </div>
+
                         {hasEInvData ? (
                             <>
                             <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled` : 'Disabled'} />

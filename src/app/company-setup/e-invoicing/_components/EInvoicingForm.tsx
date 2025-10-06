@@ -5,9 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Link from 'next/link';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -125,11 +124,14 @@ const RequiredIndicator = () => <span className="text-destructive"> *</span>;
 
 export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [openStateCode, setOpenStateCode] = useState(false)
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { company, setCompany } = useAuth();
   const firestore = useFirestore();
+
+  const isEditing = searchParams.get('edit') === 'true';
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -197,14 +199,22 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     setCompany(updatedCompany);
 
     toast({
-        title: "Form Submitted!",
-        description: "Your e-invoicing details have been saved.",
+        title: isEditing ? "Details Updated!" : "Form Submitted!",
+        description: `Your e-invoicing details have been ${isEditing ? 'updated' : 'saved'}.`,
     });
 
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push('/dashboard');
+      router.push(isEditing ? '/dashboard/company' : '/dashboard');
     }, 1500);
+  };
+  
+  const handleCancel = () => {
+    if (isEditing) {
+      router.push('/dashboard/company');
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   return (
@@ -477,12 +487,12 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
             
 
             <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/dashboard">Skip for now</Link>
+              <Button type="button" variant="outline" className="w-full" onClick={handleCancel}>
+                {isEditing ? 'Cancel' : 'Skip for now'}
               </Button>
                <Button type="submit" className="w-full" disabled={isSubmitting || (eInvEnabled && !form.formState.isValid)}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save and Continue
+                {isEditing ? 'Save Changes' : 'Save and Continue'}
               </Button>
             </div>
           </form>

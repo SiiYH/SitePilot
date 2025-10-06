@@ -1,5 +1,8 @@
+
+'use client';
 import Logo from '@/components/icons/Logo';
 import EInvoicingForm from './_components/EInvoicingForm';
+import { useSearchParams, Suspense } from 'next/navigation';
 
 const stateCodes = [
     { "Code": "01", "State": "Johor" },
@@ -26,7 +29,15 @@ export type StateCode = {
   State: string;
 };
 
-export default function EInvoicingPage() {
+function EInvoicingPageContent() {
+  const searchParams = useSearchParams();
+  const isEditing = searchParams.get('edit') === 'true';
+
+  const title = isEditing ? 'Edit E-Invoicing Details' : 'E-Invoicing Details (Optional)';
+  const description = isEditing 
+    ? "Update your company's e-invoicing information below."
+    : "You can enter your company's e-invoicing information now, or skip and complete it later from your company settings.";
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl">
@@ -34,10 +45,8 @@ export default function EInvoicingPage() {
           <div className="mb-4 flex justify-center">
             <Logo />
           </div>
-          <h1 className="text-2xl font-bold">E-Invoicing Details (Optional)</h1>
-          <p className="text-muted-foreground">
-            You can enter your company's e-invoicing information now, or skip and complete it later from your company settings.
-          </p>
+          <h1 className="text-2xl font-bold">{title}</h1>
+          <p className="text-muted-foreground">{description}</p>
         </div>
         
         <EInvoicingForm stateCodes={stateCodes} />
@@ -45,4 +54,13 @@ export default function EInvoicingPage() {
       </div>
     </div>
   );
+}
+
+
+export default function EInvoicingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EInvoicingPageContent />
+    </Suspense>
+  )
 }
