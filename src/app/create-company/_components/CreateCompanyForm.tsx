@@ -128,9 +128,10 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                       {industries.map((industry, index) => (
                         <CommandItem
                           key={`${industry.Code}-${industry.Description}-${index}`}
-                          value={industry.Code}
+                          value={`${industry.Code} - ${industry.Description}`}
                           onSelect={(currentValue) => {
-                            setIndustryCode(currentValue.toUpperCase() === industryCode.toUpperCase() ? "" : currentValue.toUpperCase())
+                            const selectedCode = currentValue.split(' - ')[0];
+                            setIndustryCode(selectedCode.toUpperCase() === industryCode.toUpperCase() ? "" : selectedCode.toUpperCase())
                             setOpen(false)
                           }}
                         >
