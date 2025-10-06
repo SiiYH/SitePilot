@@ -10,7 +10,7 @@ import { login, signUp, createNewUser, CreateUserData, UserCredentials, SignUpDa
 import { licenseLimits } from '@/lib/license';
 import { mockUsers } from '@/lib/data';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 
 interface AuthContextType {
