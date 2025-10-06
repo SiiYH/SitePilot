@@ -4,12 +4,12 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
 import { login, signUp, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { licenseLimits } from '@/lib/license';
 import { mockUsers } from '@/lib/data';
-import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase } from '@/firebase';
+import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 
@@ -65,14 +65,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         // User is signed in, fetch profile.
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser({ id: userDoc.id, ...userDoc.data() } as User);
-        } else {
-          // This case might happen if a user is in Auth but not in Firestore.
-          // For this app's logic, we sign them out.
-          await auth.signOut();
-          setUser(null);
+        try {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              setUser({ id: userDoc.id, ...userDoc.data() } as User);
+            } else {
+              // This case might happen if a user is in Auth but not in Firestore.
+              // For this app's logic, we sign them out.
+              await auth.signOut();
+              setUser(null);
+            }
+        } catch (e: any) {
+            // Check if it is a Firestore permission error
+             if (e instanceof FirestoreError && e.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'get',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                // For other errors, you might want to handle them differently
+                console.error("Error fetching user document:", e);
+            }
+            // Sign out the user if their document can't be fetched
+            await auth.signOut();
+            setUser(null);
         }
       } else {
         // User is signed out.
