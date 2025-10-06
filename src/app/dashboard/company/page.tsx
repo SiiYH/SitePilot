@@ -166,6 +166,10 @@ export default function CompanyPage() {
   const getCustomerTypeLabel = (key: string) => customerTypeLabels[key] || 'N/A';
   const getIdentifierLabel = (key: string) => eInvData?.customerType ? identifierLabels[eInvData.customerType] : 'Identifier';
 
+  const industryDisplay = companyData?.industryCode && companyData?.industryDescription 
+    ? `(${companyData.industryCode}) ${companyData.industryDescription}` 
+    : companyData?.industry || null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -199,7 +203,7 @@ export default function CompanyPage() {
                         <h3 className="text-base font-semibold">General Details</h3>
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <InfoField label="Company Name" value={companyData.name} />
-                            <InfoField label="Industry" value={companyData.industry} />
+                            <InfoField label="Industry" value={industryDisplay} />
                         </div>
                         <InfoField label="Company Description" value={companyData.description} />
                     </div>
@@ -292,3 +296,5 @@ export default function CompanyPage() {
     </div>
   );
 }
+
+    

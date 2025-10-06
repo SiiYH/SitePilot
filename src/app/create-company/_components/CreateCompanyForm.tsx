@@ -52,11 +52,14 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     if (!user) return;
     setIsLoading(true);
     
+    const selectedIndustry = industries.find((industry) => industry.Code.toLowerCase() === industryCode.toLowerCase());
+
     const companyId = `company-${Date.now()}`;
     const companyData = {
       id: companyId,
       name: companyName,
-      industry: getIndustryDisplay(industryCode),
+      industryCode: selectedIndustry?.Code || '',
+      industryDescription: selectedIndustry?.Description || '',
       description: companyDescription,
       activated: false,
       licenseKey: null,
@@ -172,3 +175,5 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     </Card>
   );
 }
+
+    
