@@ -87,7 +87,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       if (isEditing) {
         router.push('/dashboard/company');
       } else {
-        router.push('/company-setup/e-invoicing');
+        router.push('/company-setup/license');
       }
     } catch (error) {
         console.error("Error creating company:", error);
@@ -182,4 +182,3 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     </Card>
   );
 }
-
