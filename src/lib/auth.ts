@@ -89,14 +89,12 @@ export async function signUp(data: SignUpData): Promise<User | null> {
                 requestResourceData: newUser,
             });
             errorEmitter.emit('permission-error', permissionError);
-            console.error("Firestore setDoc error during signUp:", error); // Keep for server-side logging if needed
         });
         
         return { id: firebaseUser.uid, ...newUser } as User;
 
     } catch (error: any) {
-        // This will catch auth errors like 'email-already-in-use'
-        console.error("Sign up error (Auth):", error.message);
+        // This will catch auth errors like 'email-already-in-use' but we won't log it to avoid console errors for expected behavior.
         return null;
     }
 }
@@ -131,13 +129,12 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
                 requestResourceData: newUser,
             });
             errorEmitter.emit('permission-error', permissionError);
-            console.error("Firestore setDoc error during createNewUser:", error);
         });
 
         return { id: firebaseUser.uid, ...newUser } as User;
 
     } catch (error: any) {
-        console.error("Create user error (Auth):", error.message);
+        // This will catch auth errors like 'email-already-in-use' but we won't log it to avoid console errors for expected behavior.
         return null;
     }
 }
