@@ -15,8 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { updateUserCompany } from '@/lib/auth';
+import { doc } from 'firebase/firestore';
 
 type Industry = {
   Code: string;
@@ -111,9 +110,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="w-full justify-between"
+                  className="w-full justify-between h-auto"
                 >
-                  <span className="truncate">
+                  <span className="text-left">
                     {getIndustryDisplay(industryCode)}
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -142,7 +141,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                             )}
                           />
                           <span className='font-mono text-xs mr-2 p-1 bg-muted rounded-sm text-foreground group-aria-selected:text-foreground'>{industry.Code}</span>
-                          <span className='flex-1'>{industry.Description}</span>
+                          <span className='flex-1 whitespace-normal'>{industry.Description}</span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
