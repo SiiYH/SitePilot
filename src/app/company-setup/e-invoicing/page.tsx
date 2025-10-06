@@ -2,7 +2,8 @@
 'use client';
 import Logo from '@/components/icons/Logo';
 import EInvoicingForm from './_components/EInvoicingForm';
-import { useSearchParams, Suspense } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const stateCodes = [
     { "Code": "01", "State": "Johor" },
