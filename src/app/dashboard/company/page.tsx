@@ -12,8 +12,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -94,6 +94,7 @@ export default function CompanyPage() {
   const canEdit = user?.role === 'Admin' || user?.role === 'Director';
 
   const handleActivate = async (key: string) => {
+    if (!company) return;
     // Note: In a real app, license validation would happen on a secure backend.
     // This client-side logic is for demonstration purposes.
     const licensesString = localStorage.getItem('sitepilot-licenses');
@@ -110,35 +111,29 @@ export default function CompanyPage() {
             });
             return;
         }
-        try {
-            const companyDocRef = doc(firestore, 'companies', company.id);
-            await updateDoc(companyDocRef, {
-                activated: true,
-                licenseKey: key,
-            });
+        
+        const companyDocRef = doc(firestore, 'companies', company.id);
+        const updateData = {
+            activated: true,
+            licenseKey: key,
+        };
+        updateDocumentNonBlocking(companyDocRef, updateData);
 
-            // Update local state
-            const updatedCompanyData = { ...company, activated: true, licenseKey: key };
-            setCompany(updatedCompanyData);
+        // Update local state
+        const updatedCompanyData = { ...company, ...updateData };
+        setCompany(updatedCompanyData);
 
-            // Update license in localStorage
-            const updatedLicenses = licenses.map((lic: any) => 
-                lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
-            );
-            localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
+        // Update license in localStorage
+        const updatedLicenses = licenses.map((lic: any) => 
+            lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
+        );
+        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
 
-            toast({
-                title: "License Activated!",
-                description: "Your company is now active.",
-            });
-        } catch (error) {
-            console.error("Error activating license:", error);
-            toast({
-                variant: "destructive",
-                title: "Activation Failed",
-                description: "Could not activate the license. Please try again.",
-            });
-        }
+        toast({
+            title: "License Activated!",
+            description: "Your company is now active.",
+        });
+
     } else {
         toast({
             variant: "destructive",

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { useFirestore } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { updateUserCompany } from '@/lib/auth';
 
@@ -64,33 +64,25 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       ownerId: user.id,
     };
     
-    try {
-      // Save company to Firestore
-      const companyDocRef = doc(firestore, 'companies', companyId);
-      await setDoc(companyDocRef, companyData);
-
-      // Update user's companyId and role
-      const userDocRef = doc(firestore, 'users', user.id);
-      const userUpdates: { companyId: string; role?: 'Director' } = { companyId };
-      if (user.role !== 'Director' && !isEditing) {
-          userUpdates.role = 'Director';
-      }
-      await updateDoc(userDocRef, userUpdates);
+    const companyDocRef = doc(firestore, 'companies', companyId);
+    setDocumentNonBlocking(companyDocRef, companyData, {});
+    
+    const userDocRef = doc(firestore, 'users', user.id);
+    const userUpdates: { companyId: string; role?: 'Director' } = { companyId };
+    if (user.role !== 'Director' && !isEditing) {
+        userUpdates.role = 'Director';
+    }
+    updateDocumentNonBlocking(userDocRef, userUpdates);
       
-      // Update auth context
-      setAuthCompany(companyData);
-      setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
+    // Update auth context
+    setAuthCompany(companyData);
+    setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
 
-      setIsLoading(false);
-      if (isEditing) {
-        router.push('/dashboard/company');
-      } else {
-        router.push('/company-setup/license');
-      }
-    } catch (error) {
-        console.error("Error creating company:", error);
-        setIsLoading(false);
-        // Handle error (e.g., show a toast message)
+    setIsLoading(false);
+    if (isEditing) {
+      router.push('/dashboard/company');
+    } else {
+      router.push('/company-setup/license');
     }
   }
 

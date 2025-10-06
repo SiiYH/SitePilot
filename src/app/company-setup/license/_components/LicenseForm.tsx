@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 
 export default function LicenseForm() {
   const router = useRouter();
@@ -52,40 +52,31 @@ export default function LicenseForm() {
             return;
         }
 
-        try {
-            const companyDocRef = doc(firestore, 'companies', company.id);
-            await updateDoc(companyDocRef, {
-                activated: true,
-                licenseKey: licenseKey,
-            });
+        const companyDocRef = doc(firestore, 'companies', company.id);
+        const updateData = {
+            activated: true,
+            licenseKey: licenseKey,
+        };
+        updateDocumentNonBlocking(companyDocRef, updateData);
 
-            const updatedCompanyData = { ...company, activated: true, licenseKey: licenseKey };
-            setCompany(updatedCompanyData);
+        const updatedCompanyData = { ...company, ...updateData };
+        setCompany(updatedCompanyData);
 
-            const updatedLicenses = licenses.map((lic: any) => 
-                lic.key === licenseKey ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
-            );
-            localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
+        const updatedLicenses = licenses.map((lic: any) => 
+            lic.key === licenseKey ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
+        );
+        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
 
-            toast({
-                title: "License Activated!",
-                description: "Your company is now active. Let's set up e-invoicing.",
-            });
-            
-            setTimeout(() => {
-                setIsLoading(false);
-                router.push('/company-setup/e-invoicing');
-            }, 1500);
-
-        } catch (error) {
-            console.error("Error activating license:", error);
-            toast({
-                variant: "destructive",
-                title: "Activation Failed",
-                description: "Could not activate the license. Please try again.",
-            });
+        toast({
+            title: "License Activated!",
+            description: "Your company is now active. Let's set up e-invoicing.",
+        });
+        
+        setTimeout(() => {
             setIsLoading(false);
-        }
+            router.push('/company-setup/e-invoicing');
+        }, 1500);
+
     } else {
         toast({
             variant: "destructive",

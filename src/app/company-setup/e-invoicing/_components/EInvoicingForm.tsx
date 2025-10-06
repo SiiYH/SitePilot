@@ -23,8 +23,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 type StateCode = {
   Code: string;
@@ -187,35 +187,24 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     }
     setIsSubmitting(true);
     
-    try {
-        const companyDocRef = doc(firestore, 'companies', company.id);
-        await updateDoc(companyDocRef, {
-            eInvoicing: values,
-        });
+    const companyDocRef = doc(firestore, 'companies', company.id);
+    updateDocumentNonBlocking(companyDocRef, {
+        eInvoicing: values,
+    });
 
-        // Update company in auth context
-        const updatedCompany = { ...company, eInvoicing: values };
-        setCompany(updatedCompany);
+    // Update company in auth context
+    const updatedCompany = { ...company, eInvoicing: values };
+    setCompany(updatedCompany);
 
-        toast({
-            title: "Form Submitted!",
-            description: "Your e-invoicing details have been saved.",
-        });
+    toast({
+        title: "Form Submitted!",
+        description: "Your e-invoicing details have been saved.",
+    });
 
-        setTimeout(() => {
-          setIsSubmitting(false);
-          router.push('/dashboard');
-        }, 1500);
-
-    } catch (error) {
-        console.error("Error saving e-invoicing details:", error);
-        toast({
-            variant: 'destructive',
-            title: "Save Failed",
-            description: "Could not save your e-invoicing details. Please try again.",
-        });
-        setIsSubmitting(false);
-    }
+    setTimeout(() => {
+      setIsSubmitting(false);
+      router.push('/dashboard');
+    }, 1500);
   };
 
   return (
@@ -501,4 +490,3 @@ export default function EInvoicingForm({ stateCodes }: EInvoicingFormProps) {
     </Card>
   );
 }
-
