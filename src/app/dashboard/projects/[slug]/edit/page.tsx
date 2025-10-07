@@ -1,14 +1,18 @@
 
-import { notFound } from 'next/navigation';
+'use client';
+
+import { notFound, useParams } from 'next/navigation';
 import { mockUsers } from '@/lib/data';
 import { Project } from '@/types';
 import EditProjectForm from './_components/EditProjectForm';
-import { initializeFirebase } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 
-async function getProject(slug: string): Promise<Project | undefined> {
-  const { firestore } = initializeFirebase();
+async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
+  if (!firestore) return undefined;
   const projectsRef = collection(firestore, 'projects');
   const q = query(projectsRef, where('slug', '==', slug), limit(1));
   const querySnapshot = await getDocs(q);
@@ -19,9 +23,34 @@ async function getProject(slug: string): Promise<Project | undefined> {
   return undefined;
 }
 
-export default async function EditProjectPage({ params }: { params: { slug: string } }) {
-  const project = await getProject(params.slug);
+export default function EditProjectPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const firestore = useFirestore();
+  const [project, setProject] = useState<Project | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (slug && firestore) {
+      getProject(slug, firestore).then(projectData => {
+        if (projectData) {
+          setProject(projectData);
+        } else {
+          notFound();
+        }
+        setLoading(false);
+      });
+    }
+  }, [slug, firestore]);
   
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!project) {
     notFound();
   }
@@ -38,5 +67,3 @@ export default async function EditProjectPage({ params }: { params: { slug: stri
     </div>
   );
 }
-
-    

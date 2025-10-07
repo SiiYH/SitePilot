@@ -98,6 +98,8 @@ export default function ProjectDetailsPage() {
           setClaims(claimsData);
           const engineersData = await getAssignedEngineers(projectData.assignedEngineers);
           setAssignedEngineers(engineersData);
+        } else {
+          notFound();
         }
         setLoading(false);
       };
