@@ -8,6 +8,7 @@ import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
 import { Loader2 } from 'lucide-react';
+import ActivateLicenseDialog from './_components/ActivateLicenseDialog';
 
 export default function TeamPage() {
   const { user, company } = useAuth();
@@ -63,7 +64,11 @@ export default function TeamPage() {
             </p>
         </div>
         {canManageUsers && company && (
-            <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
+            company.activated ? (
+                <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
+            ) : (
+                <ActivateLicenseDialog />
+            )
         )}
       </div>
       <TeamWorkload users={teamUsers} projects={projects} onUserUpdated={handleUserUpdated} />
