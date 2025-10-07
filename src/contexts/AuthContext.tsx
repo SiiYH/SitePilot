@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
 import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
-import { login, signUp, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
-import { licenseLimits } from '@/lib/license';
+import { createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { mockUsers } from '@/lib/data';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
 
 interface AuthContextType {
@@ -23,16 +23,25 @@ interface AuthContextType {
   updateUser: (data: User) => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
   licenseUsage: Record<UserRole, number>;
+  licenseLimits: Record<UserRole, number>;
   company: any; // Consider creating a Company type
   setCompany: Dispatch<SetStateAction<any>>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const defaultLimits: Record<UserRole, number> = {
+  'System Super Admin': 1,
+  Admin: 1,
+  Director: 1,
+  Engineer: 2,
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [licenseLimits, setLicenseLimits] = useState<Record<UserRole, number>>(defaultLimits);
   const router = useRouter();
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
@@ -77,12 +86,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const companyDocRef = doc(firestore, 'companies', userData.companyId);
                 const companyDoc = await getDoc(companyDocRef);
                 if (companyDoc.exists()) {
-                  setCompany({ id: companyDoc.id, ...companyDoc.data() });
+                  const companyData = { id: companyDoc.id, ...companyDoc.data() };
+                  setCompany(companyData);
+                  
+                  // Load license limits
+                  if (companyData.activated && companyData.licenseKey) {
+                    const storedLicenses = localStorage.getItem('sitepilot-licenses');
+                    if (storedLicenses) {
+                        const licenses: License[] = JSON.parse(storedLicenses);
+                        const activeLicense = licenses.find(lic => lic.key === companyData.licenseKey);
+                        if (activeLicense) {
+                            setLicenseLimits({
+                                'System Super Admin': 1, // System admin is not governed by license
+                                Admin: activeLicense.maxAdmins,
+                                Director: activeLicense.maxDirectors,
+                                Engineer: activeLicense.maxEngineers,
+                            });
+                        } else {
+                           setLicenseLimits(defaultLimits); // Fallback if key is invalid
+                        }
+                    } else {
+                       setLicenseLimits(defaultLimits); // Fallback if no licenses stored
+                    }
+                  } else {
+                    setLicenseLimits(defaultLimits); // Fallback if not activated
+                  }
+
                 } else {
                   setCompany(null);
                 }
               } else {
                 setCompany(null);
+                setLicenseLimits(defaultLimits);
               }
             } else {
               // This case might happen if a user is in Auth but not in Firestore.
@@ -112,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User is signed out.
         setUser(null);
         setCompany(null);
+        setLicenseLimits(defaultLimits);
       }
       setLoading(false);
     });
@@ -123,7 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         {
           id: 'company-demo-123',
           name: "SitePilot Demo Construction",
-          industry: "(F) CONSTRUCTION",
+          industryCode: "F",
+          industryDescription: "CONSTRUCTION",
           description: "A sample company for the default users to demonstrate SitePilot's features.",
           activated: true,
           licenseKey: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
@@ -131,7 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         {
           id: 'company-456',
           name: "Innovate Builders",
-          industry: "(F) CONSTRUCTION",
+          industryCode: "F",
+          industryDescription: "CONSTRUCTION",
           description: "Pioneering the future of modular construction.",
           activated: false,
           licenseKey: null,
@@ -139,7 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         {
           id: 'company-789',
           name: "Heritage Restorations",
-          industry: "(M) PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
+          industryCode: "M",
+          industryDescription: "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
           description: "Specializing in the restoration of historical buildings.",
           activated: true,
           licenseKey: 'U1AtVkFMSUQtSEVSSVRBR0UtUkVTVE9SQVRJT05TLUQxLUEyLUUxMC1FWFBVTkxJTUlURUQtMTcyMjE2MTQyODg4MA==',
@@ -180,16 +219,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const licenseUsage = {
     'System Super Admin': mockUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
-    'Admin': mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active').length,
-    'Director': mockUsers.filter(u => u.role === 'Director' && u.status === 'Active').length,
-    'Engineer': mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active').length,
+    'Admin': mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active' && u.companyId === company?.id).length,
+    'Director': mockUsers.filter(u => u.role === 'Director' && u.status === 'Active' && u.companyId === company?.id).length,
+    'Engineer': mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active' && u.companyId === company?.id).length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
     setLoading(true);
     const loggedInUser = await login(credentials);
     if (loggedInUser) {
-      setUser(loggedInUser);
+      // setUser is handled by onAuthStateChanged
       router.push('/dashboard');
     }
     setLoading(false);
@@ -202,7 +241,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return null;
     }
-    const newUser = await signUp(data);
+    // We pass the currently active company's ID to the signup function
+    const companyId = company?.id;
+    const newUser = await createNewUser({ ...data, companyId });
     if (newUser) {
       router.push('/welcome');
     }
@@ -217,19 +258,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        return null;
     }
     const newUser = await createNewUser(data);
+    if (newUser) {
+        mockUsers.push(newUser); // Keep mock data in sync
+    }
     setLoading(false);
     return newUser;
   };
 
   const handleLogout = async () => {
     await auth.signOut();
-    setUser(null);
-    setCompany(null);
+    // setUser and setCompany are handled by onAuthStateChanged
     router.push('/login');
   };
 
   const handleUpdateUser = (data: User) => {
     setUser(data);
+    const index = mockUsers.findIndex(u => u.id === data.id);
+    if (index !== -1) {
+        mockUsers[index] = data;
+    }
   };
 
 
@@ -245,8 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser: handleUpdateUser,
     createUser: handleCreateUser,
     licenseUsage,
+    licenseLimits,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-

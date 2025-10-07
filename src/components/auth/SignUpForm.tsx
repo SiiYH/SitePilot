@@ -13,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { licenseLimits } from '@/lib/license';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
@@ -39,7 +38,7 @@ export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp, licenseUsage } = useAuth();
+  const { signUp, licenseUsage, licenseLimits } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -82,7 +81,7 @@ export default function SignUpForm() {
     }
 
     // Role is defaulted to 'Engineer' on signup now.
-    const user = await signUp({ ...values, role: 'Engineer', password });
+    const user = await signUp({ ...values, role: 'Engineer' });
     if (!user) {
       toast({
         variant: 'destructive',
