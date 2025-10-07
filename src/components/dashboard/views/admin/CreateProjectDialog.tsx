@@ -50,7 +50,6 @@ const formSchema = z.object({
   assignedEngineers: z.array(z.string()),
   progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual', 'task-milestone-driven']),
   progress: z.number().min(0).max(100).optional(),
-  jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
   jobLocation: z.string().optional(),
@@ -103,7 +102,6 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
       assignedEngineers: [],
       progressTrackingMode: 'task-driven',
       progress: 0,
-      jobNo: '',
       orderNo: '',
       siteName: '',
       jobLocation: '',
@@ -135,9 +133,11 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
     }
     
     const projectId = `proj-${Date.now()}`;
+    const jobNo = `JB-${Date.now()}`;
 
     const newProject: Project = {
       id: projectId,
+      jobNo: jobNo,
       companyId: companyId,
       slug: createSlug(values.name),
       name: values.name,
@@ -246,17 +246,6 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
               <h4 className="text-sm font-semibold">Site Information</h4>
               
                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
-                    name="jobNo"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Job No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., JB-001" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
                     <FormField
                     control={form.control}
                     name="orderNo"
@@ -268,18 +257,18 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                         </FormItem>
                     )}
                     />
+                     <FormField
+                        control={form.control}
+                        name="siteName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Site Name</FormLabel>
+                            <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                </div>
-                <FormField
-                    control={form.control}
-                    name="siteName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Site Name</FormLabel>
-                        <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="jobLocation"

@@ -11,6 +11,10 @@
           "type": "string",
           "description": "Unique identifier for the Project entity."
         },
+        "jobNo": {
+          "type": "string",
+          "description": "Auto-generated unique identifier for the project, acting as a job number."
+        },
         "name": {
           "type": "string",
           "description": "Name of the project."
@@ -36,6 +40,7 @@
       },
       "required": [
         "id",
+        "jobNo",
         "name",
         "description",
         "startDate",
@@ -310,5 +315,3 @@
     "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored similarly at `/projects/{projectId}/documents/{documentId}` with denormalized access roles. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations (QAPs) by ensuring each collection has a homogeneous security posture. Since engineers might not have emails we will store the user data in `/users/{userId}` with phone number for password recovery by SMS verification."
   }
 }
-
-    

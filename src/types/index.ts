@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director' | 'System Super Admin';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -82,7 +83,7 @@ export interface Project {
   documents: Document[];
   milestones: Milestone[];
   companyId?: string;
-  jobNo?: string;
+  jobNo: string;
   orderNo?: string;
   siteName?: string;
   jobLocation?: string;

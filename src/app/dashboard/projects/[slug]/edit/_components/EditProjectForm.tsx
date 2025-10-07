@@ -37,7 +37,6 @@ const formSchema = z.object({
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
   assignedEngineers: z.array(z.string()),
-  jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
   jobLocation: z.string().optional(),
@@ -78,7 +77,6 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       startDate: parseISO(project.startDate),
       endDate: parseISO(project.endDate),
       assignedEngineers: project.assignedEngineers,
-      jobNo: project.jobNo || '',
       orderNo: project.orderNo || '',
       siteName: project.siteName || '',
       jobLocation: project.jobLocation || '',
@@ -182,17 +180,10 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
               <h4 className="text-sm font-semibold">Site Information</h4>
               
                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
-                    name="jobNo"
-                    render={({ field }) => (
-                        <FormItem>
+                    <FormItem>
                         <FormLabel>Job No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., JB-001" {...field} value={field.value || ''} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+                        <FormControl><Input value={project.jobNo} disabled /></FormControl>
+                    </FormItem>
                     <FormField
                     control={form.control}
                     name="orderNo"
