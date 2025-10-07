@@ -358,9 +358,9 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                 <Label className="text-sm font-medium">Your License Key</Label>
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <div className="flex-1 rounded-lg border-2 bg-muted/50 p-3 sm:p-4">
-                                        <p className="select-all break-all font-mono text-xs sm:text-sm leading-relaxed">
+                                        <div className="select-all break-all whitespace-pre-wrap font-mono text-xs sm:text-sm leading-relaxed">
                                             {generatedKey}
-                                        </p>
+                                        </div>
                                     </div>
                                     <Button 
                                         type="button" 
@@ -390,5 +390,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         </Card>
     );
 }
+
+    
 
     
