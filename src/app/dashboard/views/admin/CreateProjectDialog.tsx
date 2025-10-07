@@ -32,10 +32,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/use-auth';
 import { defaultProjectStatuses } from '@/lib/data';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 interface CreateProjectDialogProps {
   engineers: User[];
   onProjectCreated: (project: Project) => void;
+  companyId: string;
 }
 
 const formSchema = z.object({
@@ -47,7 +50,6 @@ const formSchema = z.object({
   assignedEngineers: z.array(z.string()),
   progressTrackingMode: z.enum(['task-driven', 'milestone-driven', 'manual', 'task-milestone-driven']),
   progress: z.number().min(0).max(100).optional(),
-  jobNo: z.string().optional(),
   orderNo: z.string().optional(),
   siteName: z.string().optional(),
   jobLocation: z.string().optional(),
@@ -72,11 +74,12 @@ const createSlug = (name: string) => {
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
-export default function CreateProjectDialog({ engineers, onProjectCreated }: CreateProjectDialogProps) {
+export default function CreateProjectDialog({ engineers, onProjectCreated, companyId }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const firestore = useFirestore();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   useEffect(() => {
@@ -99,7 +102,6 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
       assignedEngineers: [],
       progressTrackingMode: 'task-driven',
       progress: 0,
-      jobNo: '',
       orderNo: '',
       siteName: '',
       jobLocation: '',
@@ -129,17 +131,18 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
         setIsLoading(false);
         return;
     }
+    
+    const projectId = `proj-${Date.now()}`;
+    const jobNo = `JB-${Date.now()}`;
 
-    // Mock project creation
     const newProject: Project = {
-      id: `proj-${Date.now()}`,
+      ...values,
+      id: projectId,
+      jobNo: jobNo,
+      companyId: companyId,
       slug: createSlug(values.name),
-      name: values.name,
-      description: values.description,
-      status: values.status,
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
-      assignedEngineers: values.assignedEngineers,
       progress: values.progress || 0,
       progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
       progressTrackingModeHistory: [{
@@ -147,15 +150,17 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
         date: new Date().toISOString(),
         changedBy: user.id,
       }],
-      imageUrl: `https://picsum.photos/seed/proj${Date.now()}/600/400`,
+      imageUrl: `https://picsum.photos/seed/${projectId}/600/400`,
       imageHint: 'construction site',
       tasks: [],
       documents: [],
       milestones: [],
-      ...values,
     };
     
-    // Simulate API call
+    const projectDocRef = doc(firestore, 'projects', projectId);
+    setDocumentNonBlocking(projectDocRef, newProject, {});
+    
+    // Simulate API call delay for UI feedback
     setTimeout(() => {
       onProjectCreated(newProject);
       setIsLoading(false);
@@ -237,17 +242,6 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
               <h4 className="text-sm font-semibold">Site Information</h4>
               
                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                 <FormField
-                    control={form.control}
-                    name="jobNo"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Job No.</FormLabel>
-                        <FormControl><Input placeholder="e.g., JB-001" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
                     <FormField
                     control={form.control}
                     name="orderNo"
@@ -259,18 +253,18 @@ export default function CreateProjectDialog({ engineers, onProjectCreated }: Cre
                         </FormItem>
                     )}
                     />
+                     <FormField
+                        control={form.control}
+                        name="siteName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Site Name</FormLabel>
+                            <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                </div>
-                <FormField
-                    control={form.control}
-                    name="siteName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Site Name</FormLabel>
-                        <FormControl><Input placeholder="e.g., Apex Tower Site" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="jobLocation"
