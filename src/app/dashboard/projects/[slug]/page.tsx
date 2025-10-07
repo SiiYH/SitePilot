@@ -5,7 +5,7 @@
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockProjects, mockClaims, mockUsers, defaultProjectStatuses } from '@/lib/data';
+import { mockClaims, mockUsers, defaultProjectStatuses } from '@/lib/data';
 import { Project, User, Claim, Task, ProjectStatus } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,11 +23,20 @@ import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 
-async function getProject(slug: string): Promise<Project | undefined> {
-  // In a real app, this would be a database query.
-  return mockProjects.find(p => p.slug === slug);
+async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
+  if (!firestore) return undefined;
+  const projectsRef = collection(firestore, 'projects');
+  const q = query(projectsRef, where('slug', '==', slug), limit(1));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const projectDoc = querySnapshot.docs[0];
+    return { id: projectDoc.id, ...projectDoc.data() } as Project;
+  }
+  return undefined;
 }
 
 async function getClaimsForProject(projectId: string): Promise<Claim[]> {
@@ -43,6 +52,7 @@ export default function ProjectDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
   const { user, loading: authLoading } = useAuth();
+  const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [project, setProject] = useState<Project | undefined>(undefined);
@@ -65,17 +75,18 @@ export default function ProjectDetailsPage() {
 
   const updateProjectState = (updatedProject: Project) => {
     setProject(updatedProject);
-    const projectIndex = mockProjects.findIndex(p => p.id === updatedProject.id);
-    if (projectIndex !== -1) {
-      mockProjects[projectIndex] = updatedProject;
-    }
+    // This is a temporary solution for mock data. With Firestore, this would be a write operation.
+    // const projectIndex = mockProjects.findIndex(p => p.id === updatedProject.id);
+    // if (projectIndex !== -1) {
+    //   mockProjects[projectIndex] = updatedProject;
+    // }
   };
 
   useEffect(() => {
-    if (slug && user) {
+    if (slug && user && firestore) {
       const fetchData = async () => {
         setLoading(true);
-        const projectData = await getProject(slug);
+        const projectData = await getProject(slug, firestore);
         if (projectData) {
           setProject(projectData);
           let claimsData = await getClaimsForProject(projectData.id);
@@ -92,7 +103,7 @@ export default function ProjectDetailsPage() {
       };
       fetchData();
     }
-  }, [slug, user]);
+  }, [slug, user, firestore]);
 
   const handleClaimCreated = (newClaim: Claim) => {
     setClaims(prevClaims => [newClaim, ...prevClaims]);
