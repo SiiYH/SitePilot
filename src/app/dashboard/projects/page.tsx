@@ -12,33 +12,42 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const engineers = mockUsers.filter(u => u.role === 'Engineer');
+  
+  const engineers = mockUsers.filter(u => u.role === 'Engineer' && u.companyId === company?.id);
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
 
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
+      const companyProjects = mockProjects.filter(p => p.companyId === company.id);
+
       if (user.role === 'Engineer') {
-        const engineerProjects = mockProjects.filter(p => p.assignedEngineers.includes(user.id));
+        const engineerProjects = companyProjects.filter(p => p.assignedEngineers.includes(user.id));
         setProjects(engineerProjects);
       } else {
-        setProjects(mockProjects);
+        setProjects(companyProjects);
       }
       setLoading(false);
+    } else if (!company) {
+      // If there's a user but no company, they shouldn't see any projects
+      setLoading(false);
+      setProjects([]);
     }
-  }, [user]);
+  }, [user, company]);
 
   const handleProjectCreated = (newProject: Project) => {
-    // Check if the new project should be visible before adding it
-    if (user?.role === 'Engineer') {
-      if (newProject.assignedEngineers.includes(user.id)) {
-        setProjects(prevProjects => [newProject, ...prevProjects]);
-      }
-    } else {
-      setProjects(prevProjects => [newProject, ...prevProjects]);
+    // Only add project if it belongs to the current company
+    if (newProject.companyId === company?.id) {
+        if (user?.role === 'Engineer') {
+          if (newProject.assignedEngineers.includes(user.id)) {
+            setProjects(prevProjects => [newProject, ...prevProjects]);
+          }
+        } else {
+          setProjects(prevProjects => [newProject, ...prevProjects]);
+        }
     }
   };
 
@@ -62,8 +71,8 @@ export default function ProjectsPage() {
             </p>
         </div>
         <div className='flex gap-2'>
-            {user?.role !== 'Engineer' && (
-                <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
+            {user?.role !== 'Engineer' && company && (
+                <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />
             )}
             {canManageSettings && (
                 <Button variant="outline" asChild>

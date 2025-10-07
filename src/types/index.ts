@@ -81,6 +81,7 @@ export interface Project {
   tasks: Task[];
   documents: Document[];
   milestones: Milestone[];
+  companyId?: string;
   jobNo?: string;
   orderNo?: string;
   siteName?: string;
@@ -130,4 +131,3 @@ export interface CreateWorkItemDialogProps {
     engineers: User[];
     onWorkItemCreated: (task: Task) => void;
 }
-

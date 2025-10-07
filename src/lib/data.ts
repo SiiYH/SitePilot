@@ -22,6 +22,7 @@ export const mockUsers: User[] = [
     status: 'Active',
     createdAt: '2023-01-10T10:00:00Z',
     history: [{ status: 'Active', date: '2023-01-10T10:00:00Z' }],
+    companyId: 'company-demo-123'
   },
   {
     id: 'user-director',
@@ -32,6 +33,7 @@ export const mockUsers: User[] = [
     status: 'Active',
     createdAt: '2023-01-10T10:00:00Z',
     history: [{ status: 'Active', date: '2023-01-10T10:00:00Z' }],
+    companyId: 'company-demo-123'
   },
   {
     id: 'user-engineer-1',
@@ -42,6 +44,7 @@ export const mockUsers: User[] = [
     status: 'Active',
     createdAt: '2023-01-15T11:30:00Z',
     history: [{ status: 'Active', date: '2023-01-15T11:30:00Z' }],
+    companyId: 'company-demo-123'
   },
   {
     id: 'user-engineer-2',
@@ -52,6 +55,7 @@ export const mockUsers: User[] = [
     status: 'Active',
     createdAt: '2023-02-01T09:00:00Z',
     history: [{ status: 'Active', date: '2023-02-01T09:00:00Z' }],
+    companyId: 'company-demo-123'
   },
   {
     id: 'user-engineer-3',
@@ -62,6 +66,7 @@ export const mockUsers: User[] = [
     status: 'Active',
     createdAt: '2023-03-20T14:00:00Z',
     history: [{ status: 'Active', date: '2023-03-20T14:00:00Z' }],
+    companyId: 'company-demo-123'
   },
 ];
 
@@ -79,6 +84,7 @@ export const mockProjects: Project[] = [
     imageUrl: 'https://picsum.photos/seed/proj1/600/400',
     imageHint: 'modern architecture',
     assignedEngineers: ['user-engineer-1', 'user-engineer-2', 'user-engineer-3'],
+    companyId: 'company-demo-123',
     jobNo: 'JB-001',
     orderNo: 'ORD-2024-001',
     siteName: 'Apex Tower Site',
@@ -120,6 +126,7 @@ export const mockProjects: Project[] = [
     imageUrl: 'https://picsum.photos/seed/proj2/600/400',
     imageHint: 'bridge construction',
     assignedEngineers: ['user-engineer-1'],
+    companyId: 'company-demo-123',
     jobNo: 'JB-002',
     orderNo: 'ORD-2024-002',
     siteName: 'Golden Gate Bridge',
@@ -154,6 +161,7 @@ export const mockProjects: Project[] = [
     imageUrl: 'https://picsum.photos/seed/proj3/600/400',
     imageHint: 'residential building',
     assignedEngineers: ['user-engineer-2', 'user-engineer-3'],
+    companyId: 'company-789',
     jobNo: 'JB-003',
     orderNo: 'ORD-2024-003',
     siteName: 'Maple Creek Community',
