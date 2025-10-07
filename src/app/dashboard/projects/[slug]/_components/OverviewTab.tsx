@@ -3,7 +3,7 @@ import { Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, CheckCircle, Clock, Users, SlidersHorizontal } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -101,10 +101,24 @@ export default function OverviewTab({ project, engineers, user, onProjectUpdate 
     const handleManualProgressChange = (value: number) => {
         onProjectUpdate({ ...project, progress: value });
     };
+    
+    const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
+        if (!dateValue) return null;
+        if (dateValue instanceof Date) return dateValue;
+        try {
+        return parseISO(dateValue);
+        } catch (error) {
+        return null;
+        }
+    };
+
+    const startDate = getSafeDate(project.startDate);
+    const endDate = getSafeDate(project.endDate);
+
 
     return (
-        <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Project Details</CardTitle>
                 </CardHeader>
@@ -150,11 +164,11 @@ export default function OverviewTab({ project, engineers, user, onProjectUpdate 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="mr-2 h-4 w-4"/>
-                          Start Date: {format(new Date(project.startDate), 'PPP')}
+                          Start Date: {startDate ? format(startDate, 'PPP') : 'N/A'}
                       </div>
                        <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="mr-2 h-4 w-4"/>
-                          End Date: {format(new Date(project.endDate), 'PPP')}
+                          End Date: {endDate ? format(endDate, 'PPP') : 'N/A'}
                       </div>
                     </div>
                      <Separator/>
