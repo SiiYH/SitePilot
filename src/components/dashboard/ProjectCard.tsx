@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Project } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -16,6 +15,18 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project }: ProjectCardProps) {
   const calculatedProgress = getProjectProgress(project);
+
+  const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    try {
+      return parseISO(dateValue);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const endDate = getSafeDate(project.endDate);
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
@@ -49,7 +60,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span>{format(parseISO(project.endDate), 'MMM dd, yyyy')}</span>
+            <span>{endDate ? format(endDate, 'MMM dd, yyyy') : 'N/A'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
