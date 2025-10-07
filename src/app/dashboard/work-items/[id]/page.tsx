@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, CheckCircle, FolderKanban, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
@@ -92,6 +92,18 @@ export default function WorkItemDetailsPage() {
   const owner = mockUsers.find(u => u.id === workItem.owner);
   const contributors = mockUsers.filter(u => workItem.contributors?.includes(u.id));
   const Icon = typeIcon[workItem.type] || GanttChartSquare;
+  
+  const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    try {
+      return parseISO(dateValue);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const dueDate = getSafeDate(workItem.dueDate);
 
   const handleStatusChange = (newStatus: Task['status']) => {
     if (!canManageWorkItem) return;
@@ -157,7 +169,7 @@ export default function WorkItemDetailsPage() {
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <InfoField icon={Calendar} label="Due Date">
-                           <p className="font-medium">{format(new Date(workItem.dueDate), 'PPP')}</p>
+                           <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
                         </InfoField>
 
                         {project && (
@@ -231,5 +243,3 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-
-    

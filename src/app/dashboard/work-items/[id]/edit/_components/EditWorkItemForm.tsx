@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Check, ChevronsUpDown, CalendarIcon, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Task, User, Project } from '@/types';
@@ -41,13 +41,23 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const getSafeDate = (dateValue: string | Date | undefined): Date | undefined => {
+    if (!dateValue) return undefined;
+    if (dateValue instanceof Date) return dateValue;
+    try {
+      return parseISO(dateValue);
+    } catch (error) {
+      return undefined;
+    }
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: workItem.title,
       owner: workItem.owner,
       contributors: workItem.contributors || [],
-      dueDate: parseISO(workItem.dueDate),
+      dueDate: getSafeDate(workItem.dueDate),
       status: workItem.status,
       type: workItem.type,
     },
@@ -270,5 +280,3 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     </Card>
   );
 }
-
-    

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -29,6 +29,16 @@ const typeIcon: { [key: string]: React.ElementType } = {
     'Task': GanttChartSquare,
     'Milestone': Milestone
 }
+
+const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
+    if (!dateValue) return null;
+    if (dateValue instanceof Date) return dateValue;
+    try {
+      return parseISO(dateValue);
+    } catch (error) {
+      return null;
+    }
+  };
 
 export default function TasksTable({ tasks: initialTasks, user }: TasksTableProps) {
   const router = useRouter();
@@ -70,6 +80,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
         <div className="space-y-4 md:hidden">
             {tasks.map(task => {
                 const Icon = typeIcon[task.type] || GanttChartSquare;
+                const dueDate = getSafeDate(task.dueDate);
                 return (
                     <Card key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer transition-shadow hover:shadow-md">
                         <CardHeader>
@@ -98,7 +109,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                             )}
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">{format(new Date(task.dueDate), 'MMM dd, yyyy')}</span>
+                                <span className="text-muted-foreground">{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</span>
                             </div>
                              <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                                 {canEdit ? (
@@ -138,6 +149,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
             <TableBody>
                 {tasks.map(task => {
                     const Icon = typeIcon[task.type] || GanttChartSquare;
+                    const dueDate = getSafeDate(task.dueDate);
                     return (
                     <TableRow key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer">
                         <TableCell>
@@ -159,7 +171,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                         </TableCell>
                         )}
                         {showAssignedToColumn && <TableCell>{getUserName(task.owner)}</TableCell>}
-                        <TableCell>{format(new Date(task.dueDate), 'MMM dd, yyyy')}</TableCell>
+                        <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canEdit ? (
                             <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
@@ -185,5 +197,3 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     </>
   );
 }
-
-    
