@@ -25,6 +25,40 @@ const phoneSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const PasswordField = ({ form, showPassword, setShowPassword }: { form: any, showPassword: boolean, setShowPassword: (show: boolean) => void }) => (
+    <FormField
+      control={form.control}
+      name="password"
+      render={({ field }) => (
+        <FormItem>
+          <div className="flex items-center justify-between">
+            <FormLabel>Password</FormLabel>
+            <Link href="/forgot-password" passHref>
+              <Button variant="link" className="h-auto p-0 text-sm">Forgot password?</Button>
+            </Link>
+          </div>
+          <FormControl>
+            <div className="relative">
+              <Input type={showPassword ? 'text' : 'password'} {...field} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <Eye /> : <EyeOff />}
+                <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+              </Button>
+            </div>
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+
 export default function LoginForm() {
   const [activeTab, setActiveTab] = useState('email');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,39 +102,6 @@ export default function LoginForm() {
     setIsLoading(false);
   };
   
-  const PasswordField = ({ form }: { form: any }) => (
-    <FormField
-      control={form.control}
-      name="password"
-      render={({ field }) => (
-        <FormItem>
-          <div className="flex items-center justify-between">
-            <FormLabel>Password</FormLabel>
-            <Link href="/forgot-password" passHref>
-              <Button variant="link" className="h-auto p-0 text-sm">Forgot password?</Button>
-            </Link>
-          </div>
-          <FormControl>
-            <div className="relative">
-              <Input type={showPassword ? 'text' : 'password'} {...field} />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
-                onClick={() => setShowPassword(prev => !prev)}
-              >
-                {showPassword ? <Eye /> : <EyeOff />}
-                <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
-              </Button>
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -128,7 +129,7 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <PasswordField form={formEmail} />
+            <PasswordField form={formEmail} showPassword={showPassword} setShowPassword={setShowPassword} />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
@@ -152,7 +153,7 @@ export default function LoginForm() {
                 </FormItem>
               )}
             />
-            <PasswordField form={formPhone} />
+            <PasswordField form={formPhone} showPassword={showPassword} setShowPassword={setShowPassword} />
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Log In
