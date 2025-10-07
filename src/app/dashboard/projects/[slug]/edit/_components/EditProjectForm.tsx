@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,6 +58,13 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
   const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
+  const getSafeDate = (dateValue: string | Date): Date => {
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    return parseISO(dateValue);
+  };
+
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
     if (storedStatuses) {
@@ -74,8 +80,8 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
       name: project.name,
       description: project.description,
       status: project.status,
-      startDate: parseISO(project.startDate),
-      endDate: parseISO(project.endDate),
+      startDate: getSafeDate(project.startDate),
+      endDate: getSafeDate(project.endDate),
       assignedEngineers: project.assignedEngineers,
       orderNo: project.orderNo || '',
       siteName: project.siteName || '',
@@ -458,3 +464,5 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
     </Card>
   );
 }
+
+    
