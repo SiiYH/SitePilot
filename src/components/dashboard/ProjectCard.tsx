@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
 
 interface ProjectCardProps {
@@ -49,7 +49,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span>{format(new Date(project.endDate), 'MMM dd, yyyy')}</span>
+            <span>{format(parseISO(project.endDate), 'MMM dd, yyyy')}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
