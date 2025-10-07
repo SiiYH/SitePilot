@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
 import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
-import { createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
+import { login, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { mockUsers } from '@/lib/data';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
