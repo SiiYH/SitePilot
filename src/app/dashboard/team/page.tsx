@@ -10,24 +10,36 @@ import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialo
 import { Loader2 } from 'lucide-react';
 
 export default function TeamPage() {
-  const { user } = useAuth();
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const { user, company } = useAuth();
+  const [teamUsers, setTeamUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulating data fetch
-    setUsers(mockUsers);
-    setProjects(mockProjects);
+    if (company) {
+      const companyUsers = mockUsers.filter(u => u.companyId === company.id);
+      setTeamUsers(companyUsers);
+    }
     setLoading(false);
-  }, []);
+  }, [company]);
 
   const handleUserCreated = (newUser: User) => {
-    setUsers(prevUsers => [newUser, ...prevUsers]);
+    if (newUser.companyId === company?.id) {
+        setTeamUsers(prevUsers => [newUser, ...prevUsers]);
+    }
+     // Also update the global mock data so other components are aware
+    const userIndex = mockUsers.findIndex(u => u.id === newUser.id);
+    if (userIndex === -1) {
+        mockUsers.push(newUser);
+    }
   };
   
   const handleUserUpdated = (updatedUser: User) => {
-     setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+     setTeamUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+     const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
+    if (userIndex !== -1) {
+        mockUsers[userIndex] = updatedUser;
+    }
   };
 
 
@@ -50,11 +62,11 @@ export default function TeamPage() {
             Oversee team members, their roles, and assigned workload.
             </p>
         </div>
-        {canManageUsers && (
-            <CreateUserDialog onUserCreated={handleUserCreated} />
+        {canManageUsers && company && (
+            <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
         )}
       </div>
-      <TeamWorkload users={users} projects={projects} onUserUpdated={handleUserUpdated} />
+      <TeamWorkload users={teamUsers} projects={projects} onUserUpdated={handleUserUpdated} />
     </div>
   );
 }
