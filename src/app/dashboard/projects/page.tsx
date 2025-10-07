@@ -1,52 +1,46 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { mockProjects, mockUsers } from '@/lib/data';
+import { useAuth } from '@/hooks/use-auth';
+import { mockUsers } from '@/lib/data';
 import { Project, User } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { useAuth } from '@/hooks/use-auth';
 import { Loader2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+
 
 export default function ProjectsPage() {
   const { user, company } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
+  const [localProjects, setLocalProjects] = useState<Project[]>([]);
+  
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+
+  const { data: firestoreProjects, isLoading: loading } = useCollection<Project>(projectsQuery);
+
+  const projects = firestoreProjects || localProjects;
   
   const engineers = mockUsers.filter(u => u.role === 'Engineer' && u.companyId === company?.id);
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
 
-
-  useEffect(() => {
-    if (user && company) {
-      const companyProjects = mockProjects.filter(p => p.companyId === company.id);
-
-      if (user.role === 'Engineer') {
-        const engineerProjects = companyProjects.filter(p => p.assignedEngineers.includes(user.id));
-        setProjects(engineerProjects);
-      } else {
-        setProjects(companyProjects);
-      }
-      setLoading(false);
-    } else if (!company) {
-      // If there's a user but no company, they shouldn't see any projects
-      setLoading(false);
-      setProjects([]);
-    }
-  }, [user, company]);
-
   const handleProjectCreated = (newProject: Project) => {
-    // Only add project if it belongs to the current company
+    // Optimistically add the new project to the local state
     if (newProject.companyId === company?.id) {
         if (user?.role === 'Engineer') {
           if (newProject.assignedEngineers.includes(user.id)) {
-            setProjects(prevProjects => [newProject, ...prevProjects]);
+            setLocalProjects(prevProjects => [newProject, ...prevProjects]);
           }
         } else {
-          setProjects(prevProjects => [newProject, ...prevProjects]);
+          setLocalProjects(prevProjects => [newProject, ...prevProjects]);
         }
     }
   };
@@ -58,6 +52,10 @@ export default function ProjectsPage() {
       </div>
     );
   }
+
+  const userProjects = user?.role === 'Engineer'
+    ? projects.filter(p => p.assignedEngineers.includes(user.id))
+    : projects;
 
   return (
     <div className="space-y-6">
@@ -85,9 +83,9 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {projects.length > 0 ? (
+      {userProjects.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {projects.map(project => (
+          {userProjects.map(project => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>

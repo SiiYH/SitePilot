@@ -32,6 +32,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/use-auth';
 import { defaultProjectStatuses } from '@/lib/data';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 interface CreateProjectDialogProps {
   engineers: User[];
@@ -78,6 +80,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const firestore = useFirestore();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   useEffect(() => {
@@ -130,10 +133,11 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
         setIsLoading(false);
         return;
     }
+    
+    const projectId = `proj-${Date.now()}`;
 
-    // Mock project creation
     const newProject: Project = {
-      id: `proj-${Date.now()}`,
+      id: projectId,
       companyId: companyId,
       slug: createSlug(values.name),
       name: values.name,
@@ -149,7 +153,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
         date: new Date().toISOString(),
         changedBy: user.id,
       }],
-      imageUrl: `https://picsum.photos/seed/proj${Date.now()}/600/400`,
+      imageUrl: `https://picsum.photos/seed/${projectId}/600/400`,
       imageHint: 'construction site',
       tasks: [],
       documents: [],
@@ -157,7 +161,10 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
       ...values,
     };
     
-    // Simulate API call
+    const projectDocRef = doc(firestore, 'projects', projectId);
+    setDocumentNonBlocking(projectDocRef, newProject, {});
+    
+    // Simulate API call delay for UI feedback
     setTimeout(() => {
       onProjectCreated(newProject);
       setIsLoading(false);
