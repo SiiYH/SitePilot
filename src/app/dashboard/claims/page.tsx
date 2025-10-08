@@ -16,7 +16,7 @@ export default function ClaimsPage() {
   const firestore = useFirestore();
 
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id || !user) return null;
+    if (!firestore || !company?.id || !user?.id) return null;
     let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
     if (user.role === 'Engineer') {
       q = query(q, where('submittedBy', '==', user.id));
@@ -43,7 +43,7 @@ export default function ClaimsPage() {
     // This function can be kept for optimistic updates if desired, but is not strictly necessary.
   };
   
-  const loading = claimsLoading || authLoading || !company;
+  const loading = authLoading || (claimsQuery !== null && claimsLoading) || !company;
 
   if (loading) {
     return (
@@ -79,3 +79,4 @@ export default function ClaimsPage() {
     </div>
   );
 }
+
