@@ -10,10 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DateInput } from '@/components/ui/date-input';
 import { cn } from '@/lib/utils';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { CalendarIcon, Copy, Check, ShieldCheck, Building2, Users, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -74,8 +73,6 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
     });
 
     const duration = form.watch('duration');
-    const [dateInput, setDateInput] = useState('');
-     const [calendarOpen, setCalendarOpen] = useState(false);
 
     const onSubmit = (values: FormValues) => {
         const expiryDate = values.duration === 'specific' && values.expiresAt 
@@ -117,23 +114,6 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         setHasCopied(true);
         setTimeout(() => setHasCopied(false), 2000);
     }
-    
-    const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setDateInput(value);
-        const parsedDate = parse(value, 'yyyy-MM-dd', new Date());
-        if (!isNaN(parsedDate.getTime())) {
-            form.setValue('expiresAt', parsedDate, { shouldValidate: true });
-        }
-    };
-    
-    const handleDateSelect = (date: Date | undefined) => {
-        if (date) {
-            form.setValue('expiresAt', date, { shouldValidate: true });
-            setDateInput(format(date, 'yyyy-MM-dd'));
-            setCalendarOpen(false);
-        }
-    };
 
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-lg">
@@ -301,30 +281,13 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
                                             <FormLabel className="text-base">Expiry Date</FormLabel>
-                                             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                                                <PopoverTrigger asChild>
-                                                     <FormControl>
-                                                        <div className="relative">
-                                                             <Input
-                                                                placeholder="YYYY-MM-DD"
-                                                                value={dateInput}
-                                                                onChange={handleDateInputChange}
-                                                                className="w-full h-11 pl-3 pr-10 text-left font-normal"
-                                                            />
-                                                            <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                        </div>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={handleDateSelect}
+                                                <FormControl>
+                                                    <DateInput 
+                                                        value={field.value}
+                                                        onChange={field.onChange}
                                                         disabled={(date) => date < new Date()}
-                                                        initialFocus
                                                     />
-                                                </PopoverContent>
-                                            </Popover>
+                                                </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
