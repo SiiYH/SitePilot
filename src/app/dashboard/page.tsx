@@ -15,6 +15,8 @@ import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
 export default function DashboardPage() {
   const { user, company } = useAuth();
   const firestore = useFirestore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -41,6 +43,29 @@ export default function DashboardPage() {
     // setAttendance(mockAttendance); // This data is not company-specific yet
   }, [company]);
 
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    
+    let userProjects = user?.role === 'Engineer'
+      ? projects.filter(p => p.assignedEngineers.includes(user.id))
+      : projects;
+    
+    if (statusFilter !== 'all') {
+      userProjects = userProjects.filter(p => p.status === statusFilter);
+    }
+
+    if (searchQuery) {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        userProjects = userProjects.filter(p => 
+            p.name.toLowerCase().includes(lowercasedQuery) ||
+            p.description.toLowerCase().includes(lowercasedQuery) ||
+            p.jobNo.toLowerCase().includes(lowercasedQuery)
+        );
+    }
+
+    return userProjects;
+  }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
+
 
   const loading = projectsLoading || !company;
 
@@ -63,9 +88,27 @@ export default function DashboardPage() {
   const renderDashboard = () => {
     switch (user.role) {
       case 'Admin':
-        return <AdminDashboard projects={projects || []} claims={claims} attendance={attendance} users={users} />;
+        return <AdminDashboard 
+                  projects={filteredProjects || []} 
+                  claims={claims} 
+                  attendance={attendance} 
+                  users={users} 
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                />;
       case 'Director':
-        return <DirectorDashboard projects={projects || []} claims={claims} attendance={attendance} users={users} />;
+        return <DirectorDashboard 
+                  projects={filteredProjects || []} 
+                  claims={claims} 
+                  attendance={attendance} 
+                  users={users} 
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                />;
       case 'Engineer':
         return <EngineerDashboard projects={engineerProjects} tasks={engineerTasks} user={user} />;
       default:
