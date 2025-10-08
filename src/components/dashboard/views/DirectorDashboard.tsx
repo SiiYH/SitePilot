@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from './admin/CreateProjectDialog';
 import { Project, User, Claim, AttendanceRecord, ProjectStatus } from '@/types';
@@ -13,7 +14,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultProjectStatuses } from '@/lib/data';
-import { Search, Activity } from 'lucide-react';
+import { Search, Activity, ShieldAlert } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 
 interface DirectorDashboardProps {
   projects: Project[];
@@ -63,6 +66,18 @@ export default function DirectorDashboard({
 
   return (
     <div className="space-y-6">
+      {!company?.activated && (
+         <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>License Not Active</AlertTitle>
+          <AlertDescription className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
+            <span>Your company's license is inactive. Some features may be disabled.</span>
+             <Button asChild variant="link" className="p-0 h-auto text-destructive-foreground">
+              <Link href="/dashboard/company">Activate License</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
