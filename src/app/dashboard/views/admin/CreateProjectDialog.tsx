@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,11 +19,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Check, ChevronsUpDown, PlusCircle, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown, PlusCircle, Loader2 } from 'lucide-react';
 import { User, Project, ProgressTrackingMode, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +30,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { defaultProjectStatuses } from '@/lib/data';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { DateInput } from '@/components/ui/date-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CreateProjectDialogProps {
   engineers: User[];
@@ -380,73 +379,37 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
               <h4 className="text-sm font-semibold">Schedule, Team & Progress</h4>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-full pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
+                 <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                           <DateInput 
+                            value={field.value}
+                            onChange={field.onChange}
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
                 <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>End Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-full pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                            <DateInput 
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
                 />
               </div>
 

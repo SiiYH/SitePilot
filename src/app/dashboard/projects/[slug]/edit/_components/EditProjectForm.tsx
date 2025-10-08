@@ -10,10 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Check, ChevronsUpDown, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { User, Project, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -24,6 +22,9 @@ import { mockProjects, defaultProjectStatuses } from '@/lib/data'; // to update 
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
+import { DateInput } from '@/components/ui/date-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 interface EditProjectFormProps {
   project: Project;
@@ -335,30 +336,12 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <DateInput 
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -369,30 +352,12 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>End Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
+                     <FormControl>
+                        <DateInput 
+                          value={field.value}
+                          onChange={field.onChange}
                         />
-                      </PopoverContent>
-                    </Popover>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
