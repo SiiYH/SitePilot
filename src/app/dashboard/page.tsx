@@ -10,6 +10,7 @@ import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
 
 export default function DashboardPage() {
   const { user, company } = useAuth();
@@ -20,34 +21,28 @@ export default function DashboardPage() {
     return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
-  }, [firestore, company?.id]);
-
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
-  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
   
-  // For now, we will continue to use mock claims and attendance as they are not in firestore yet
+  // Replaced firestore query with mock data to fix permissions error
+  const [users, setUsers] = useState<User[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-
+  const [tasks, setTasks] = useState<Task[]>([]);
+  
   useEffect(() => {
-    // This is where you would fetch claims and attendance from Firestore if they were stored there.
-    // For now, we'll use the mock data as a placeholder.
-    // setClaims(mockClaims);
-    // setAttendance(mockAttendance);
-  }, []);
-
-  const tasks = useMemo(() => {
-    if (!projects) return [];
-    return projects.flatMap(p => 
-      (p.tasks || []).map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
-    );
-  }, [projects]);
+    if (company) {
+      setUsers(mockUsers.filter(u => u.companyId === company.id));
+      setClaims(mockClaims.filter(c => mockProjects.some(p => p.id === c.projectId && p.companyId === company.id)));
+      const allTasks = mockProjects.flatMap(p => 
+        p.companyId === company.id ? p.tasks.map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id})) : []
+      );
+      setTasks(allTasks);
+    }
+    // setAttendance(mockAttendance); // This data is not company-specific yet
+  }, [company]);
 
 
-  const loading = projectsLoading || usersLoading;
+  const loading = projectsLoading || !company;
 
   if (loading || !user) {
     return (
@@ -68,9 +63,9 @@ export default function DashboardPage() {
   const renderDashboard = () => {
     switch (user.role) {
       case 'Admin':
-        return <AdminDashboard projects={projects || []} claims={claims} attendance={attendance} users={users || []} />;
+        return <AdminDashboard projects={projects || []} claims={claims} attendance={attendance} users={users} />;
       case 'Director':
-        return <DirectorDashboard projects={projects || []} claims={claims} attendance={attendance} users={users || []} />;
+        return <DirectorDashboard projects={projects || []} claims={claims} attendance={attendance} users={users} />;
       case 'Engineer':
         return <EngineerDashboard projects={engineerProjects} tasks={engineerTasks} user={user} />;
       default:
