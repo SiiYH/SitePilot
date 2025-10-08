@@ -12,13 +12,13 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
 export default function ClaimsPage() {
-  const { user, company } = useAuth();
+  const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
 
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
+    if (!firestore || !company?.id || !user) return null;
     let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
-    if (user?.role === 'Engineer') {
+    if (user.role === 'Engineer') {
       q = query(q, where('submittedBy', '==', user.id));
     }
     return q;
@@ -43,7 +43,7 @@ export default function ClaimsPage() {
     // This function can be kept for optimistic updates if desired, but is not strictly necessary.
   };
   
-  const loading = claimsLoading || !user || !company;
+  const loading = claimsLoading || authLoading || !company;
 
   if (loading) {
     return (
