@@ -32,7 +32,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
       <Link href={`/dashboard/projects/${project.slug}`} className="block">
-        <div className="relative h-48 w-full">
+        <div className="relative h-32 w-full sm:h-48">
           <Image
             src={project.imageUrl}
             alt={project.name}
