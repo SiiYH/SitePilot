@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import ProjectList from '@/components/dashboard/ProjectList';
+import { cn } from '@/lib/utils';
 
 type ViewMode = 'grid' | 'list';
 
@@ -73,20 +74,20 @@ export default function ProjectsPage() {
         <div className='flex items-center gap-2'>
             <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
                 <Button
-                    variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     size="icon"
                     onClick={() => setViewMode('grid')}
                     aria-label="Grid view"
-                    className='h-8 w-8'
+                    className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
                 >
                     <LayoutGrid className="h-4 w-4" />
                 </Button>
                 <Button
-                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     size="icon"
                     onClick={() => setViewMode('list')}
                     aria-label="List view"
-                    className='h-8 w-8'
+                    className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
                 >
                     <List className="h-4 w-4" />
                 </Button>
