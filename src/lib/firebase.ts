@@ -1,6 +1,7 @@
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 
+//old database
 const firebaseConfig = {
   apiKey: "AIzaSyDJqCw3nIQQHAQtWRi-T2UL3QlCCVhywPQ",
   authDomain: "sitepilot-29e80.firebaseapp.com",
