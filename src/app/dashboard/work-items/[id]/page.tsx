@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -134,7 +133,7 @@ export default function WorkItemDetailsPage() {
     <div className="space-y-6">
        <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Work Items
+          Back
         </Button>
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
