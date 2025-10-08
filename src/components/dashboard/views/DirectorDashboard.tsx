@@ -5,11 +5,11 @@ import { useState } from 'react';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from './admin/CreateProjectDialog';
 import { Project, User, Claim, AttendanceRecord } from '@/types';
-import { mockUsers } from '@/lib/data';
 import ProgressOverview from './admin/ProgressOverview';
 import ClaimsOverview from './admin/ClaimsOverview';
 import AttendanceSummary from './admin/AttendanceSummary';
 import AdminAlerts from './admin/AdminAlerts';
+import { useAuth } from '@/hooks/use-auth';
 
 interface DirectorDashboardProps {
   projects: Project[];
@@ -20,13 +20,14 @@ interface DirectorDashboardProps {
 
 export default function DirectorDashboard({ projects: initialProjects, claims, attendance, users }: DirectorDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const engineers = mockUsers.filter(u => u.role === 'Engineer');
+  const { company } = useAuth();
+  const engineers = users.filter(u => u.role === 'Engineer');
 
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
 
-  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.owner));
+  const unassignedTasks = projects.flatMap(p => (p.tasks || []).filter(t => !t.owner));
 
   const latestProjects = [...projects]
     .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
@@ -52,7 +53,7 @@ export default function DirectorDashboard({ projects: initialProjects, claims, a
             <h3 className="text-xl font-semibold">Active Projects</h3>
             <p className="text-sm text-muted-foreground">Showing the 5 most recent projects.</p>
           </div>
-          <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
+          {company && <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />}
         </div>
         {latestProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -70,5 +71,3 @@ export default function DirectorDashboard({ projects: initialProjects, claims, a
     </div>
   );
 }
-
-    

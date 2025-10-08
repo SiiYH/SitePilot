@@ -158,7 +158,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
       tasks: [],
       documents: [],
       milestones: [],
-      ...values,
+      // ...values,
     };
     
     const projectDocRef = doc(firestore, 'projects', projectId);
