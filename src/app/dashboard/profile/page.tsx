@@ -10,6 +10,11 @@ import { Mail, Phone, Building, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useStorage, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 const getInitials = (name: string) => {
   if (!name) return '';
@@ -41,21 +46,47 @@ const InfoField = ({ icon, label, value }: { icon: React.ElementType; label: str
 export default function ProfilePage() {
   const { user, company, loading, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const storage = useStorage();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
   
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && user) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newAvatarUrl = e.target?.result as string;
-        updateUser({ ...user, avatarUrl: newAvatarUrl });
-        // Here you would also upload to a backend/Firebase storage and save the URL
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      toast({ title: "Uploading Avatar...", description: "Please wait." });
+      
+      const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
+      
+      try {
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        const userDocRef = doc(firestore, "users", user.id);
+        updateDocumentNonBlocking(userDocRef, { avatarUrl: downloadURL });
+
+        updateUser({ ...user, avatarUrl: downloadURL });
+
+        toast({
+          title: "Avatar Updated!",
+          description: "Your new profile picture has been saved.",
+        });
+
+      } catch (error) {
+        console.error("Error uploading avatar:", error);
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Could not upload your new avatar. Please try again.",
+        });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -82,6 +113,11 @@ export default function ProfilePage() {
                             <Avatar className="h-24 w-24">
                                 <AvatarImage src={user.avatarUrl} alt={user.name} />
                                 <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                {isUploading && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                                    <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                  </div>
+                                )}
                             </Avatar>
                              <input
                                 type="file"
@@ -89,8 +125,9 @@ export default function ProfilePage() {
                                 onChange={handleFileChange}
                                 className="hidden"
                                 accept="image/*"
+                                disabled={isUploading}
                             />
-                             <Button size="icon" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-2 border-background" onClick={handleAvatarClick}>
+                             <Button size="icon" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-2 border-background" onClick={handleAvatarClick} disabled={isUploading}>
                                 <Upload className="h-4 w-4" />
                                 <span className="sr-only">Change profile picture</span>
                             </Button>
@@ -139,4 +176,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
