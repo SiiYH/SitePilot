@@ -211,6 +211,91 @@
         }
       },
       "required": ["id", "name", "industryCode", "industryDescription"]
+    },
+    "Claim": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Claim",
+      "type": "object",
+      "description": "Represents a payment claim for a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Claim entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Claim)"
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to Company. (Relationship: Company 1:N Claim)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the claim."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the claim."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount being claimed."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the claim amount."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the claim (e.g., 'Pending', 'Paid', 'Overdue')."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date the claim was submitted.",
+          "format": "date-time"
+        },
+        "submittedBy": {
+          "type": "string",
+          "description": "Reference to the User who submitted the claim. (Relationship: User 1:N Claim)"
+        },
+        "receiptImageUrls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Array of URLs for receipt images."
+        },
+        "remark": {
+          "type": "string",
+          "description": "A remark or note from a director."
+        },
+        "approvedBy": {
+          "type": "string",
+          "description": "Reference to the User who approved the claim."
+        },
+        "approvedAt": {
+          "type": "string",
+          "description": "The date the claim was approved.",
+          "format": "date-time"
+        },
+        "eInvoiceNo": {
+          "type": "string",
+          "description": "The e-invoice number associated with the claim."
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "companyId",
+        "title",
+        "amount",
+        "currency",
+        "status",
+        "date",
+        "submittedBy"
+      ]
     }
   },
   "auth": {
@@ -270,6 +355,22 @@
         }
       },
       {
+        "path": "/claims/{claimId}",
+        "definition": {
+          "entityName": "Claim",
+          "schema": {
+            "$ref": "#/backend/entities/Claim"
+          },
+          "description": "Stores payment claims. Each claim is linked to a company and a project. This top-level collection allows for efficient querying of all claims across the system or per company.",
+          "params": [
+            {
+              "name": "claimId",
+              "description": "Unique identifier for the claim."
+            }
+          ]
+        }
+      },
+      {
         "path": "/projects/{projectId}/tasks/{taskId}",
         "definition": {
           "entityName": "Task",
@@ -310,6 +411,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored similarly at `/projects/{projectId}/documents/{documentId}` with denormalized access roles. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations (QAPs) by ensuring each collection has a homogeneous security posture. Since engineers might not have emails we will store the user data in `/users/{userId}` with phone number for password recovery by SMS verification."
+    "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Claims are in a top-level collection `/claims/{claimId}` for easy querying across all projects and companies, with `companyId` and `projectId` for filtering. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored similarly at `/projects/{projectId}/documents/{documentId}` with denormalized access roles. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations (QAPs) by ensuring each collection has a homogeneous security posture. Since engineers might not have emails we will store the user data in `/users/{userId}` with phone number for password recovery by SMS verification."
   }
 }

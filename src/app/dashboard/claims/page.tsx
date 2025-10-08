@@ -2,44 +2,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { mockProjects, mockClaims, mockUsers } from '@/lib/data';
+import { mockProjects, mockUsers } from '@/lib/data';
 import { Project, Claim, User } from '@/types';
 import ClaimsOverview from '@/components/dashboard/views/admin/ClaimsOverview';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function ClaimsPage() {
-  const { user } = useAuth();
-  const [claims, setClaims] = useState<Claim[]>([]);
+  const { user, company } = useAuth();
+  const firestore = useFirestore();
+
+  const claimsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
+    if (user?.role === 'Engineer') {
+      q = query(q, where('submittedBy', '==', user.id));
+    }
+    return q;
+  }, [firestore, company?.id, user?.id, user?.role]);
+
+  const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+  
+  // For now, projects and users are still from mock data as we focus on claims.
+  // This can be updated later to fetch from Firestore as well.
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      const allClaims = mockClaims;
-      const allProjects = mockProjects;
-      const allUsers = mockUsers;
-
-      if (user.role === 'Engineer') {
-        const engineerClaims = allClaims.filter(c => c.submittedBy === user.id);
-        setClaims(engineerClaims);
-      } else {
-        setClaims(allClaims);
-      }
-      
-      setProjects(allProjects);
-      setUsers(allUsers);
-      setLoading(false);
+    if (company) {
+      setProjects(mockProjects.filter(p => p.companyId === company.id));
+      setUsers(mockUsers.filter(u => u.companyId === company.id));
     }
-  }, [user]);
+  }, [company]);
 
   const handleClaimCreated = (newClaim: Claim) => {
-    setClaims(prevClaims => [newClaim, ...prevClaims]);
+    // With useCollection, the list will update automatically.
+    // This function can be kept for optimistic updates if desired, but is not strictly necessary.
   };
+  
+  const loading = claimsLoading || !user || !company;
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -48,7 +54,7 @@ export default function ClaimsPage() {
   }
 
   const isEngineer = user?.role === 'Engineer';
-  const engineerProjects = isEngineer ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
+  const engineerProjects = isEngineer && projects ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
 
   return (
     <div className="space-y-6">
@@ -61,7 +67,7 @@ export default function ClaimsPage() {
             {isEngineer ? 'View the status of all your submitted payment claims.' : 'View and manage all payment claims.'}
             </p>
         </div>
-        {isEngineer && (
+        {isEngineer && user && (
             <CreateClaimDialog
                 projects={engineerProjects}
                 onClaimCreated={handleClaimCreated}
@@ -69,7 +75,7 @@ export default function ClaimsPage() {
             />
         )}
       </div>
-      <ClaimsOverview claims={claims} projects={projects} users={users} />
+      <ClaimsOverview claims={claims || []} projects={projects} users={users} />
     </div>
   );
 }
