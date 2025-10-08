@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Users } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
+import ProjectStatusBadge from './ProjectStatusBadge';
 
 interface ProjectCardProps {
   project: Project;
@@ -42,11 +43,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </Link>
       <CardHeader>
-        <CardTitle>
-            <Link href={`/dashboard/projects/${project.slug}`} className="hover:underline">
-                {project.name}
-            </Link>
-        </CardTitle>
+        <div className='flex items-center justify-between'>
+            <CardTitle>
+                <Link href={`/dashboard/projects/${project.slug}`} className="hover:underline">
+                    {project.name}
+                </Link>
+            </CardTitle>
+            <ProjectStatusBadge statusId={project.status} />
+        </div>
         <CardDescription className="line-clamp-2">{project.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
