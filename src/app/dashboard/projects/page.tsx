@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { mockUsers, defaultProjectStatuses } from '@/lib/data';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity } from 'lucide-react';
+import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -14,6 +15,7 @@ import { collection, query, where } from 'firebase/firestore';
 import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 
 type ViewMode = 'grid' | 'list';
@@ -25,6 +27,7 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
@@ -61,15 +64,25 @@ export default function ProjectsPage() {
   };
 
   const filteredProjects = useMemo(() => {
-    const userProjects = user?.role === 'Engineer'
+    let userProjects = user?.role === 'Engineer'
       ? projects.filter(p => p.assignedEngineers.includes(user.id))
       : projects;
     
-    if (statusFilter === 'all') {
-      return userProjects;
+    if (statusFilter !== 'all') {
+      userProjects = userProjects.filter(p => p.status === statusFilter);
     }
-    return userProjects.filter(p => p.status === statusFilter);
-  }, [projects, user?.role, user?.id, statusFilter]);
+
+    if (searchQuery) {
+        const lowercasedQuery = searchQuery.toLowerCase();
+        userProjects = userProjects.filter(p => 
+            p.name.toLowerCase().includes(lowercasedQuery) ||
+            p.description.toLowerCase().includes(lowercasedQuery) ||
+            p.jobNo.toLowerCase().includes(lowercasedQuery)
+        );
+    }
+
+    return userProjects;
+  }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
 
   if (loading) {
      return (
@@ -91,6 +104,16 @@ export default function ProjectsPage() {
             </p>
         </div>
         <div className='flex items-center gap-2 flex-wrap'>
+             <div className="relative w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search projects..."
+                    className="pl-9 w-full sm:w-64"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
              <div className="w-full sm:w-48">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
@@ -155,7 +178,7 @@ export default function ProjectsPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
           <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {user?.role === 'Engineer' ? "You have no projects matching the filter." : "Get started by creating your first project."}
+            {searchQuery ? "No projects match your search." : (user?.role === 'Engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
           </p>
         </div>
       )}
