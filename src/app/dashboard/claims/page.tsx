@@ -16,9 +16,13 @@ export default function ClaimsPage() {
   const firestore = useFirestore();
 
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id || !user?.id) return null;
+    // Only construct the query if we have a company ID.
+    if (!firestore || !company?.id) return null;
+    
     let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
-    if (user.role === 'Engineer') {
+    
+    // Further filter for engineers
+    if (user?.role === 'Engineer' && user.id) {
       q = query(q, where('submittedBy', '==', user.id));
     }
     return q;
@@ -43,7 +47,8 @@ export default function ClaimsPage() {
     // This function can be kept for optimistic updates if desired, but is not strictly necessary.
   };
   
-  const loading = authLoading || (claimsQuery !== null && claimsLoading) || !company;
+  // The page is loading if auth is loading, OR if we have a query but claims are still loading.
+  const loading = authLoading || !company || (claimsQuery && claimsLoading);
 
   if (loading) {
     return (
@@ -54,7 +59,7 @@ export default function ClaimsPage() {
   }
 
   const isEngineer = user?.role === 'Engineer';
-  const engineerProjects = isEngineer && projects ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
+  const engineerProjects = isEngineer && projects && user ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
 
   return (
     <div className="space-y-6">
@@ -79,4 +84,3 @@ export default function ClaimsPage() {
     </div>
   );
 }
-
