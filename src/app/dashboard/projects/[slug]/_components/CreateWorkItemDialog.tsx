@@ -75,14 +75,17 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
     setIsLoading(true);
 
     const newTaskId = `task-${Date.now()}`;
-    const newTask: Omit<Task, 'id'> = {
+    const newTask: Omit<Task, 'id'> & { owner?: string } = {
       title: values.title,
-      owner: values.owner === 'unassigned' ? undefined : values.owner,
       contributors: values.contributors,
       status: values.status,
       dueDate: values.dueDate.toISOString(),
       type: values.type,
     };
+
+    if (values.owner && values.owner !== 'unassigned') {
+      newTask.owner = values.owner;
+    }
     
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
