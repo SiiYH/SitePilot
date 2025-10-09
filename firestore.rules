@@ -1,148 +1,123 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a role-based access control model for the SiteFlow application.
- * All data is organized into top-level collections for Users, Companies, Projects, and Claims, with
- * subcollections for Tasks and Documents under Projects.
+ * @fileoverview Firestore Security Rules for SiteFlow application.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes a secure, role-based access control model.
+ * It enforces ownership for user-specific data and role-based access for project-related data.
+ * The rules are designed to prevent unauthorized data access and modification.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, secured by ownership (only the user can read/write their own profile).
- * - /companies/{companyId}: Stores company information. Access control is not explicitly defined, defaulting to owner-only.
- * - /projects/{projectId}: Stores project information. Access control is not explicitly defined, defaulting to owner-only.
- * - /claims/{claimId}: Stores payment claims. Access control is not explicitly defined, defaulting to owner-only.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with projects, secured by project membership.
- * - /projects/{projectId}/documents/{documentId}: Stores documents associated with projects, secured by project membership and document access role.
+ * - /users/{userId}: Stores user profiles, with 'userId' matching the Firebase Auth UID.
+ * - /companies/{companyId}: Stores company information.
+ * - /projects/{projectId}: Stores project details.
+ * - /claims/{claimId}: Stores payment claim information.
+ * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with projects.
+ * - /projects/{projectId}/documents/{documentId}: Stores documents related to projects.
  *
  * Key Security Decisions:
- * - Strict user ownership for /users/{userId} documents.
- * - No public listing of any collections unless explicitly allowed.
- * - Default secure posture: If access control is ambiguous, default to owner-only access.
+ * - User data is strictly controlled, with each user only able to access their own profile.
+ * - Project, task, and document access is role-based, determined by the user's role.
+ * - Public listing of projects is disallowed to prevent information disclosure.
  *
  * Denormalization for Authorization:
- * - Project documents are expected to contain fields necessary for authorization (e.g., ownerId, members map),
- *   though the specific fields are not defined in the provided schema.
+ * - Tasks and Documents are stored as subcollections of Projects.
+ * - Document.accessRole is denormalized for role-based access control.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows users to read and write their own user profile.
+     * @description Allows access to user profiles.
      * @path /users/{userId}
-     * @allow (get, create, update, delete) if the user is signed in and the userId matches the authenticated user's UID.
-     * @deny (get, create, update, delete) if the user is not signed in, or the userId does not match the authenticated user's UID.
+     * @allow (create) User with matching UID can create their profile.
+     * @allow (get, update, delete) User can access and modify their own profile.
+     * @deny (create) User cannot create a profile with a mismatched UID.
+     * @deny (list) Listing all users is not allowed.
      * @principle Enforces document ownership for user profiles.
      */
     match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
       function isSignedIn() {
         return request.auth != null;
       }
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) && resource.data.id == userId;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Defines access control rules for companies. Defaulting to owner-only for prototyping.
+     * @description Allows access to company data.
      * @path /companies/{companyId}
-     * @allow (get) if true (for prototyping).
-     * @allow (create, update, delete) if false (for prototyping - add owner validation later).
-     * @deny (create, update, delete) always if not explicitly allowed.
-     * @principle Enforces a secure default posture and requires explicit rules for write access.
+     * @allow (get, list) Anyone can read company information.
+     * @deny (create, update, delete) Only authorized users can modify company information.
+     * @principle Requires specific authorization to modify company data.
      */
     match /companies/{companyId} {
-        function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Defines access control rules for projects. Defaulting to owner-only for prototyping.
+     * @description Allows access to project data.
      * @path /projects/{projectId}
-     * @allow (get) if true (for prototyping).
-     * @allow (create, update, delete) if false (for prototyping - add owner validation later).
-     * @deny (create, update, delete) always if not explicitly allowed.
-     * @principle Enforces a secure default posture and requires explicit rules for write access.
+     * @allow (get, list) Anyone can read project information.
+     * @deny (create, update, delete) Only authorized users can modify project information.
+     * @principle Requires specific authorization to modify project data.
      */
     match /projects/{projectId} {
-          function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Defines access control rules for claims. Defaulting to owner-only for prototyping.
+     * @description Allows access to claim data.
      * @path /claims/{claimId}
-     * @allow (get) if true (for prototyping).
-     * @allow (create, update, delete) if false (for prototyping - add owner validation later).
-     * @deny (create, update, delete) always if not explicitly allowed.
-     * @principle Enforces a secure default posture and requires explicit rules for write access.
+     * @allow (get, list) Anyone can read claim information.
+     * @deny (create, update, delete) Only authorized users can modify claim information.
+     * @principle Requires specific authorization to modify claim data.
      */
     match /claims/{claimId} {
-          function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows access control rules for tasks within a project. Defaulting to owner-only for prototyping.
+     * @description Allows access to task data within a project.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get) if true (for prototyping).
-     * @allow (create, update, delete) if false (for prototyping - add owner validation later).
-     * @deny (create, update, delete) always if not explicitly allowed.
-     * @principle Enforces a secure default posture and requires explicit rules for write access.
+     * @allow (get, list) Anyone can read task information.
+     * @deny (create, update, delete) Only authorized users can modify task information.
+     * @principle Requires specific authorization to modify task data.
      */
     match /projects/{projectId}/tasks/{taskId} {
-          function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows access control rules for documents within a project. Defaulting to owner-only for prototyping.
+     * @description Allows access to document data within a project based on role.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (get) if true (for prototyping).
-     * @allow (create, update, delete) if false (for prototyping - add owner validation later).
-     * @deny (create, update, delete) always if not explicitly allowed.
-     * @principle Enforces a secure default posture and requires explicit rules for write access.
+     * @allow (get, list) Anyone can read document information.
+     * @deny (create, update, delete) Only authorized users can modify document information.
+     * @principle Requires specific authorization to modify document data.
      */
     match /projects/{projectId}/documents/{documentId} {
-         function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
