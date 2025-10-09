@@ -58,8 +58,10 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
   }
 
-  const handleRowClick = (taskId: string) => {
-    router.push(`/dashboard/work-items/${taskId}`);
+  const handleRowClick = (task: Task) => {
+    if (!task.projectId) return;
+    const fullId = `${task.projectId}/tasks/${task.id}`;
+    router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
   };
 
   const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
@@ -83,7 +85,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 const dueDate = getSafeDate(task.dueDate);
                 return (
-                    <Card key={task.id} onClick={() => handleRowClick(task.id)} className={cn("cursor-pointer transition-shadow hover:shadow-md", !task.owner && "bg-yellow-500/5 border-yellow-500/20")}>
+                    <Card key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer transition-shadow hover:shadow-md", !task.owner && "bg-yellow-500/5 border-yellow-500/20")}>
                         <CardHeader>
                             <div className="flex items-start justify-between gap-4">
                                 <CardTitle className="text-lg">{task.title}</CardTitle>
@@ -152,7 +154,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     const dueDate = getSafeDate(task.dueDate);
                     return (
-                    <TableRow key={task.id} onClick={() => handleRowClick(task.id)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
+                    <TableRow key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
                         <TableCell>
                             <Badge variant="outline" className='h-8'>
                                 <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -199,3 +201,4 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   );
 }
 
+    

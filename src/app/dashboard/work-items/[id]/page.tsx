@@ -3,28 +3,20 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockProjects, mockUsers } from '@/lib/data';
+import { mockUsers } from '@/lib/data';
 import { Task, Project, User } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, CheckCircle, FolderKanban, Users, FileText } from 'lucide-react';
+import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-
-async function getWorkItem(id: string): Promise<{ workItem: Task; project: Project } | undefined> {
-  for (const project of mockProjects) {
-    const workItem = project.tasks.find(t => t.id === id);
-    if (workItem) {
-      return { workItem, project };
-    }
-  }
-  return undefined;
-}
+import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -66,28 +58,56 @@ export default function WorkItemDetailsPage() {
   const id = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
-  const [itemData, setItemData] = useState<{ workItem: Task; project: Project } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<Project | null>(null);
+  const [workItemRef, setWorkItemRef] = useState<any>(null);
+
+  // Use useDoc for real-time updates on the work item
+  const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
+  const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
 
   useEffect(() => {
-    if (id) {
-        getWorkItem(id).then(data => {
-            if (data) {
-                setItemData(data);
-            } else {
-                notFound();
-            }
-            setLoading(false);
-        });
-    }
-  }, [id]);
+    const findWorkItem = async () => {
+      if (!firestore || !id) return;
+      
+      const projectsQuery = await getDoc(doc(firestore, `projects/${id.split('/tasks/')[0]}`));
+      if(projectsQuery.exists()){
+        const projectData = projectsQuery.data() as Project;
+        const workItemPath = id.replace('/', '/tasks/');
+        const workItemDocRef = doc(firestore, workItemPath);
+        setWorkItemRef(workItemDocRef);
+        setProject(projectData);
+      }
+    };
+    findWorkItem();
+  }, [id, firestore]);
 
-  if (loading || !itemData || !user) {
-    return null; // Or a loading spinner
+  const handleStatusChange = (newStatus: Task['status']) => {
+    if (!workItem || !workItemRef) return;
+    
+    updateDocumentNonBlocking(workItemRef, { status: newStatus });
+
+    toast({
+        title: "Status Updated",
+        description: `The status for "${workItem.title}" has been set to ${newStatus}.`
+    });
+  };
+
+  const loading = workItemLoading || projectLoading;
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  const { workItem, project } = itemData;
+  if (!workItem || !parentProject) {
+    notFound();
+  }
+
   const canManageWorkItem = user.role === 'Admin' || user.role === 'Director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
   const owner = mockUsers.find(u => u.id === workItem.owner);
   const contributors = mockUsers.filter(u => workItem.contributors?.includes(u.id));
@@ -105,31 +125,6 @@ export default function WorkItemDetailsPage() {
 
   const dueDate = getSafeDate(workItem.dueDate);
 
-  const handleStatusChange = (newStatus: Task['status']) => {
-    if (!canManageWorkItem) return;
-    
-    // In a real app, this would be an API call. For this mock, we update the mock data.
-    const projectIndex = mockProjects.findIndex(p => p.id === project.id);
-    if(projectIndex !== -1) {
-        const taskIndex = mockProjects[projectIndex].tasks.findIndex(t => t.id === workItem.id);
-        if (taskIndex !== -1) {
-            mockProjects[projectIndex].tasks[taskIndex].status = newStatus;
-        }
-    }
-    
-    // Update local state to re-render
-    setItemData(prevData => {
-        if (!prevData) return null;
-        const updatedWorkItem = { ...prevData.workItem, status: newStatus };
-        return { ...prevData, workItem: updatedWorkItem };
-    });
-
-    toast({
-        title: "Status Updated",
-        description: `The status for "${workItem.title}" has been set to ${newStatus}.`
-    });
-  };
-
   return (
     <div className="space-y-6">
        <Button variant="outline" onClick={() => router.back()}>
@@ -138,7 +133,7 @@ export default function WorkItemDetailsPage() {
         </Button>
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
-        <p className="text-muted-foreground">Details for work item #{workItem.id.split('-')[1]}</p>
+        <p className="text-muted-foreground">Details for work item #{id.split('/tasks/')[1]}</p>
       </div>
       
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -150,7 +145,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${workItem.id}/edit`}>
+                                    <Link href={`/dashboard/work-items/${encodeURIComponent(id)}/edit`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>
@@ -177,10 +172,10 @@ export default function WorkItemDetailsPage() {
                            <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
                         </InfoField>
 
-                        {project && (
+                        {parentProject && (
                             <InfoField icon={FolderKanban} label="Associated Project">
-                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
-                                    {project.name}
+                                <Link href={`/dashboard/projects/${parentProject.slug}`} className="text-primary hover:underline font-medium">
+                                    {parentProject.name}
                                 </Link>
                             </InfoField>
                         )}
@@ -252,3 +247,5 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
+
+    
