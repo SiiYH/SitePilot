@@ -134,8 +134,7 @@ export default function ProjectDetailsPage() {
     setIsUploading(true);
     toast({ title: "Uploading Image...", description: "Please wait." });
     
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `header-image.${fileExtension}`;
+    const fileName = `header-image`;
     const storageRef = ref(storage, `projects/${project.id}/${fileName}`);
     
     try {

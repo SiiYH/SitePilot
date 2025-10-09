@@ -63,8 +63,7 @@ export default function ProfilePage() {
     setIsUploading(true);
     toast({ title: "Uploading Avatar...", description: "Please wait." });
     
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `avatar.${fileExtension}`;
+    const fileName = `avatar`;
     const storageRef = ref(storage, `avatars/${user.id}/${fileName}`);
     
     try {
