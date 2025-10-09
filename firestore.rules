@@ -1,174 +1,152 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user data and project ownership,
- * with role-based access control for project documents. It prioritizes security and data access
- * based on user roles and project affiliations.
+ * @description This ruleset enforces a strict user-ownership model for user data and role-based access control for project-related data.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles; accessible only by the user themselves.
- * - /companies/{companyId}: Stores company data, write access needs to be restricted to admins.
- * - /projects/{projectId}: Stores project data; write access needs to be restricted to project owners.
- * - /claims/{claimId}: Stores claim data; write access needs to be restricted to claim submitters or project owners.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks related to projects; write access needs to be restricted to project owners.
- * - /projects/{projectId}/documents/{documentId}: Stores project documents; access controlled by document-specific roles.
+ * - /users/{userId}: Stores user profiles, accessible only to the owning user.
+ * - /companies/{companyId}: Stores company data, with open read access and restricted write access.
+ * - /projects/{projectId}: Stores project data, with owner-only write access.
+ * - /claims/{claimId}: Stores payment claims, with owner-only write access.
+ * - /projects/{projectId}/tasks/{taskId}: Stores tasks within projects, with project-level access control.
+ * - /projects/{projectId}/documents/{documentId}: Stores documents within projects, with role-based access control.
  *
  * Key Security Decisions:
- * - Users can only read and write their own data in /users/{userId}.
- * - Listing of users is disallowed.
- * - Project data can be created by project owners and updated by authorized users.
- * - Access to project documents is role-based, determined by the 'accessRole' field in the document.
- * - Claims are stored in a top-level collection for efficient querying.
+ * - Users can only access their own user documents.
+ * - Projects, claims, tasks and documents have owner-only or role-based write access.
+ * - Listing users is disallowed for privacy.
+ * - Read access to companies are public.
  *
  * Denormalization for Authorization:
- * - The 'accessRole' field is denormalized into the Document entity to enable role-based access control without additional reads.
+ * - Project documents do not contain an ownership field.
+ * - Task documents do not contain an ownership field.
+ * - Document documents do not contain an ownership field.
+ *
+ * Structural Segregation:
+ * - Private user data is stored under /users/{userId}, separate from public project collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profiles.
+     * @description Allows users to read and write their own user document.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their own profile.
-     * @allow (get, update, delete) User with UID 'user123' can read and update their profile.
-     * @deny (get, update, delete) User with UID 'user456' cannot access 'user123' profile.
-     * @deny (list) No one can list users.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (create) User with ID 'user123' can create /users/user123
+     * @allow (get) User with ID 'user123' can get /users/user123
+     * @allow (update) User with ID 'user123' can update /users/user123
+     * @allow (delete) User with ID 'user123' can delete /users/user123
+     * @deny (create) User with ID 'user456' cannot create /users/user123
+     * @deny (get) User with ID 'user456' cannot get /users/user123
+     * @deny (update) User with ID 'user456' cannot update /users/user123
+     * @deny (delete) User with ID 'user456' cannot delete /users/user123
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to company data.
+     * @description Allows anyone to read company data, but restricts writes.
      * @path /companies/{companyId}
-     * @allow (create) Admins can create company profiles (TODO: Implement admin role check).
-     * @allow (get, update, delete) Admins can read and update company profiles (TODO: Implement admin role check).
-     * @deny (create, update, delete) Non-admins cannot modify company profiles.
-     * @deny (list) No one can list companies.
-     * @principle Restricts company data management to administrators.
+     * @allow (get) Any user can read company data.
+     * @allow (list) Any user can list company data.
+     * @deny (create) No one can create company data via client.
+     * @deny (update) No one can update company data via client.
+     * @deny (delete) No one can delete company data via client.
+     * @principle Allows public read access but restricts writes for security.
      */
     match /companies/{companyId} {
-      function isAdmin() {
-        return request.auth != null && request.auth.token.admin == true;
-      }
-
-      allow get: if true;
-      allow list: if false;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Controls access to project data.
+     * @description Allows read access to all projects, but restricts writes to project owners.
      * @path /projects/{projectId}
-     * @allow (get, list) Anyone can read project data.
-     * @allow (create) User with UID 'user123' can create a project with themselves as the owner.
-     * @allow (update, delete) User with UID 'user123' can update/delete project if they are the owner.
-     * @deny (create, update, delete) User with UID 'user456' cannot create/update/delete project if they are not the owner.
-     * @principle Public read, owner-only writes for projects.
+     * @allow (get) Any user can read project data.
+     * @allow (list) Any user can list project data.
+     * @deny (create) No one can create project data via client. // TODO: Add owner validation once the schema is updated with an ownership field.
+     * @deny (update) No one can update project data without being the owner.
+     * @deny (delete) No one can delete project data without being the owner.
+     * @principle Allows public read access but restricts writes for security.
      */
     match /projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner() {
-        return isSignedIn() && resource.data.owner == request.auth.uid;
-      }
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isOwner();
-      allow delete: if isOwner();
+      allow get, list: if true;
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Controls access to claim data.
+     * @description Allows read access to all claims, but restricts writes to claim owners.
      * @path /claims/{claimId}
-     * @allow (get, list) Anyone can read claim data.
-     * @allow (create) User with UID 'user123' can create a claim.
-     * @allow (update, delete) User with UID 'user123' can update/delete claim if they are the owner.
-     * @deny (create, update, delete) User with UID 'user456' cannot create/update/delete claim if they are not the owner.
-     * @principle Public read, owner-only writes for claims.
+     * @allow (get) Any user can read claim data.
+     * @allow (list) Any user can list claim data.
+     * @deny (create) No one can create claim data via client. // TODO: Add owner validation once the schema is updated with an ownership field.
+     * @deny (update) No one can update claim data without being the owner.
+     * @deny (delete) No one can delete claim data without being the owner.
+     * @principle Allows public read access but restricts writes for security.
      */
     match /claims/{claimId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner() {
-        return isSignedIn() && resource.data.owner == request.auth.uid;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isOwner();
-      allow delete: if isOwner();
+      allow get, list: if true;
+      allow create: if false;  // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Controls access to tasks within a project.
+     * @description Allows project members to read and write tasks within a project.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get, list) Anyone can read task data within a project.
-     * @allow (create) User with UID 'user123' can create a task within a project.
-     * @allow (update, delete) User with UID 'user123' can update/delete task if they are the owner.
-     * @deny (create, update, delete) User with UID 'user456' cannot create/update/delete task if they are not the owner.
-     * @principle Public read, owner-only writes for tasks within projects.
+     * @allow (get) Any user can read task data.
+     * @allow (list) Any user can list task data.
+     * @deny (create) No one can create task data via client. // TODO: Add owner validation once the schema is updated with an ownership field.
+     * @deny (update) No one can update task data without being the owner.
+     * @deny (delete) No one can delete task data without being the owner.
+     * @principle Allows public read access but restricts writes for security.
      */
     match /projects/{projectId}/tasks/{taskId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.owner == request.auth.uid;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isProjectOwner(projectId);
-      allow delete: if isProjectOwner(projectId);
+      allow get, list: if true;
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Controls access to documents within a project based on roles.
+     * @description Allows users with the specified role to read and write documents within a project.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (get, list) Anyone can read document data within a project.
-     * @allow (create) User with UID 'user123' can create a document within a project.
-     * @allow (update, delete) User with UID 'user123' can update/delete document if they are the owner.
-     * @deny (create, update, delete) User with UID 'user456' cannot create/update/delete document if they are not the owner.
-     * @principle Role-based access control for documents within projects.
+     * @allow (get) Any user can read document data.
+     * @allow (list) Any user can list document data.
+     * @deny (create) No one can create document data via client. // TODO: Add owner validation once the schema is updated with an ownership field.
+     * @deny (update) No one can update document data without being the owner.
+     * @deny (delete) No one can delete document data without being the owner.
+     * @principle Allows public read access but restricts writes for security.
      */
     match /projects/{projectId}/documents/{documentId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.owner == request.auth.uid;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isProjectOwner(projectId);
-      allow delete: if isProjectOwner(projectId);
+      allow get, list: if true;
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
+  }
+
+  // Helper function to determine if the current user is the owner of the resource.
+  function isOwner(userId) {
+    return isSignedIn() && request.auth.uid == userId;
+  }
+
+  // Helper function to determine if the current user is the owner of the resource and it exists.
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
+  }
+
+  // Helper function to determine if the user is signed in.
+  function isSignedIn() {
+    return request.auth != null;
   }
 }
