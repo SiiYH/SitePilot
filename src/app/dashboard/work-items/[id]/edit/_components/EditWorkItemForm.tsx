@@ -55,7 +55,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: workItem.title,
-      owner: workItem.owner || '',
+      owner: workItem.owner || 'unassigned',
       contributors: workItem.contributors || [],
       dueDate: getSafeDate(workItem.dueDate),
       status: workItem.status,
@@ -73,6 +73,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
             mockProjects[projectIndex].tasks[taskIndex] = {
                 ...mockProjects[projectIndex].tasks[taskIndex],
                 ...values,
+                owner: values.owner === 'unassigned' ? undefined : values.owner,
                 dueDate: values.dueDate.toISOString(),
             };
         }
@@ -148,7 +149,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {engineers.map(e => (
                         <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                       ))}

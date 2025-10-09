@@ -75,7 +75,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
     const newTask: Task = {
       id: `task-${Date.now()}`,
       title: values.title,
-      owner: values.owner,
+      owner: values.owner === 'unassigned' ? undefined : values.owner,
       contributors: values.contributors,
       status: values.status,
       dueDate: values.dueDate.toISOString(),
@@ -173,7 +173,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {engineers.map(e => (
                         <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                       ))}
