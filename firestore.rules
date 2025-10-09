@@ -1,114 +1,104 @@
-/**
- * @fileoverview Firestore Security Rules for SiteFlow application.
- *
- * Core Philosophy:
- * This ruleset enforces a combination of ownership-based and role-based access control.
- * User data is private and only accessible to the user themselves.
- * Projects, tasks, documents and claims are secured based on project and company association.
- *
- * Data Structure:
- * - /users/{userId}: Stores individual user profiles, accessible only to the user.
- * - /companies/{companyId}: Stores company information.
- * - /projects/{projectId}: Stores project information.
- * - /claims/{claimId}: Stores claim information.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks related to specific projects.
- * - /projects/{projectId}/documents/{documentId}: Stores project-related documents.
- *
- * Key Security Decisions:
- * - Users can only access their own user documents.
- * - Listing of users is disallowed for privacy.
- * - Claims can be accessed by companyId and projectId with correct roles.
- * - Project documents are accessible to users with the appropriate role within the related project.
- *
- * Denormalization for Authorization:
- *  - Access roles for Documents are stored directly on the document (`accessRole`) to avoid extra reads and enable simpler rules.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants access to user documents only to the authenticated user.
+     * @description Manages access to user documents.
      * @path /users/{userId}
-     * @allow (get, create, update, delete, list) if the authenticated user's ID matches the 'userId'.
-     * @deny (get, create, update, delete, list) if the authenticated user's ID does not match the 'userId'.
-     * @principle Enforces document ownership for reads and writes.
+     * @allow (create) User with matching UID can create their own document.
+     * @allow (get, update, delete) User with matching UID can read, update, and delete their own document.
+     * @deny (create) User cannot create a document with a different UID.
+     * @deny (get, update, delete) User cannot read, update, or delete another user's document.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
+
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return isSignedIn() && isOwner(userId) && exists(resource);
       }
 
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == request.auth.uid;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows read access to companies collection. Write access is not permitted.
+     * @description Manages access to company documents.
      * @path /companies/{companyId}
-     * @allow (get, list) to anyone.
-     * @deny (create, update, delete) to everyone.
-     * @principle Provides public read access while restricting write access.
+     * @allow (get, list, create, update, delete) All authenticated users can read, list, create, update, and delete company documents.
+     * @principle Allows access to company documents for all authenticated users.
      */
     match /companies/{companyId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Allows read access to projects collection. Write access is not permitted.
+     * @description Manages access to project documents.
      * @path /projects/{projectId}
-     * @allow (get, list) to anyone.
-     * @deny (create, update, delete) to everyone.
-     * @principle Provides public read access while restricting write access.
+     * @allow (get, list, create, update, delete) All authenticated users can read, list, create, update, and delete project documents.
+     * @principle Allows access to project documents for all authenticated users.
      */
     match /projects/{projectId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Allows read access to claims collection. Write access is not permitted.
+     * @description Manages access to claim documents.
      * @path /claims/{claimId}
-     * @allow (get, list) to anyone.
-     * @deny (create, update, delete) to everyone.
-     * @principle Provides public read access while restricting write access.
+     * @allow (get, list, create, update, delete) All authenticated users can read, list, create, update, and delete claim documents.
+     * @principle Allows access to claim documents for all authenticated users.
      */
     match /claims/{claimId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Grants access to tasks within a project based on project membership.
+     * @description Manages access to task documents within a project.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get, list) to project members.
-     * @allow (create, update, delete) to project owners.
-     * @deny (get, create, update, delete, list) to non-project members.
-     * @principle Enforces project-based access control for tasks.
+     * @allow (get, list, create, update, delete) All authenticated users can read, list, create, update, and delete task documents.
+     * @principle Allows access to task documents for all authenticated users.
      */
     match /projects/{projectId}/tasks/{taskId} {
-       allow get, list: if true;
-       allow create, update, delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
     /**
-     * @description Grants access to documents within a project based on the document's access role.
+     * @description Manages access to document documents within a project, based on role.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (get, list) to users with the required role.
-     * @allow (create, update, delete) to project owners.
-     * @deny (get, create, update, delete, list) to users without the required role.
-     * @principle Enforces role-based access control for project documents.
+     * @allow (get, list, create, update, delete) All authenticated users can read, list, create, update, and delete document documents.
+     * @principle Allows access to document documents for all authenticated users.
      */
     match /projects/{projectId}/documents/{documentId} {
-       allow get, list: if true;
-       allow create, update, delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list, create, update, delete: if isSignedIn();
     }
   }
 }
