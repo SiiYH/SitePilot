@@ -20,11 +20,12 @@ import {FirestorePermissionError} from '@/firebase/errors';
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
   const op = options ? setDoc(docRef, data, options) : setDoc(docRef, data);
   op.catch(error => {
+    const operation = options && 'merge' in options ? 'update' : 'create';
     errorEmitter.emit(
       'permission-error',
       new FirestorePermissionError({
         path: docRef.path,
-        operation: 'write', // or 'create'/'update' based on options
+        operation: operation,
         requestResourceData: data,
       })
     )
@@ -89,3 +90,4 @@ export function deleteDocumentNonBlocking(docRef: DocumentReference) {
       )
     });
 }
+
