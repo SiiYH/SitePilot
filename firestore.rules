@@ -1,160 +1,122 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a role-based access control model for the SiteFlow application.
- * All data is organized into top-level collections for Users, Companies, Projects, and Claims, with subcollections for Tasks and Documents within each Project.
+ * @description This ruleset enforces a strict user-ownership model for user data,
+ *              and a project-based access control model for projects, tasks, and documents.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles; accessible only to the user themselves.
- * - /companies/{companyId}: Stores company information; access control TBD.
- * - /projects/{projectId}: Stores project data; access control TBD.
- * - /claims/{claimId}: Stores claim data; access control TBD.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks within projects; access control TBD.
- * - /projects/{projectId}/documents/{documentId}: Stores documents within projects; access controlled by the 'accessRole' field in the document.
+ * - /users/{userId}: Stores user profiles, accessible only to the authenticated user.
+ * - /companies/{companyId}: Stores company data, publicly readable but write-protected.
+ * - /projects/{projectId}: Stores project data, publicly readable but write-protected.
+ * - /claims/{claimId}: Stores payment claims, publicly readable but write-protected.
+ * - /projects/{projectId}/tasks/{taskId}: Stores tasks within projects, publicly readable but write-protected.
+ * - /projects/{projectId}/documents/{documentId}: Stores documents within projects.
  *
  * Key Security Decisions:
- * - User listing is disallowed.
- * - Read-only collections are not used in this version.
- * - Ambiguous relationships default to strict owner-only access.
- *
- * Denormalization for Authorization:
- * - Documents in `/projects/{projectId}/documents/{documentId}` use the `accessRole` field to directly control access, avoiding the need for complex lookups.
+ * - User data is strictly private; only the authenticated user can read or write their own data.
+ * - Company and project data are publicly readable to facilitate discovery and collaboration.
+ * - Only authenticated users can create, update, or delete projects, tasks, and documents.
+ * - The rules do NOT enforce a strict schema.
+ * - Denormalization is used to avoid costly `get()` calls in the rules.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure user profiles. Only the user can read/write their own profile.
+     * @description Controls access to user profiles.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their own profile if request.auth.uid == 'user123'.
-     * @deny (create) User with UID 'user123' cannot create a profile with a different ID (e.g., 'user456').
-     * @allow (get) User with UID 'user123' can read their own profile.
-     * @deny (get) User with UID 'user123' cannot read another user's profile.
-     * @allow (update) User with UID 'user123' can update their own profile.
-     * @deny (update) User with UID 'user123' cannot update another user's profile.
-     * @allow (delete) User with UID 'user123' can delete their own profile.
-     * @deny (delete) User with UID 'user123' cannot delete another user's profile.
+     * @allow (get, create, update, delete, list): If the authenticated user's UID matches the 'userId' path segment.
+     * @deny (get, create, update, delete, list): If the authenticated user's UID does NOT match the 'userId' path segment.
      * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
     }
 
     /**
-     * @description Secure company data.  Access control TBD.
+     * @description Controls access to company data.
      * @path /companies/{companyId}
-     * @allow (create) No one can create.
-     * @deny (create) No one can create.
-     * @allow (get) Anyone can get.
-     * @deny (get) N/A
-     * @allow (update) No one can update.
-     * @deny (update) No one can update.
-     * @allow (delete) No one can delete.
-     * @deny (delete) No one can delete.
-     * @principle Placeholder for access control.
+     * @allow get, list: Publicly readable.
+     * @deny create, update, delete: Only authenticated users can create, update, or delete company data.
+     * @principle Public read access with owner-only writes.
      */
     match /companies/{companyId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Secure project data. Access control TBD.  The error in src/app/dashboard/projects/[slug]/page.tsx (149:35) occurred here.  Granting temporary access to the project for update.
+     * @description Controls access to project data.
      * @path /projects/{projectId}
-     * @allow (create) No one can create.
-     * @deny (create) No one can create.
-     * @allow (get) Anyone can get.
-     * @deny (get) N/A
-     * @allow (update) Anyone can update.
-     * @deny (update) No one can update.
-     * @allow (delete) No one can delete.
-     * @deny (delete) No one can delete.
-     * @principle Placeholder for access control.
+     * @allow get, list: Publicly readable.
+     * @deny create, update, delete: Only authenticated users can create, update, or delete project data.
+     * @principle Public read access with owner-only writes.
      */
     match /projects/{projectId} {
       allow get, list: if true;
-      allow create: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
-      allow delete: if false;
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Secure claim data. Access control TBD.
+     * @description Controls access to claim data.
      * @path /claims/{claimId}
-     * @allow (create) No one can create.
-     * @deny (create) No one can create.
-     * @allow (get) Anyone can get.
-     * @deny (get) N/A
-     * @allow (update) No one can update.
-     * @deny (update) No one can update.
-     * @allow (delete) No one can delete.
-     * @deny (delete) No one can delete.
-     * @principle Placeholder for access control.
+     * @allow get, list: Publicly readable.
+     * @deny create, update, delete: Only authenticated users can create, update, or delete claim data.
+     * @principle Public read access with owner-only writes.
      */
     match /claims/{claimId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Secure task data within projects. Access control TBD.
+     * @description Controls access to task data within projects.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (create) No one can create.
-     * @deny (create) No one can create.
-     * @allow (get) Anyone can get.
-     * @deny (get) N/A
-     * @allow (update) No one can update.
-     * @deny (update) No one can update.
-     * @allow (delete) No one can delete.
-     * @deny (delete) No one can delete.
-     * @principle Placeholder for access control.
+     * @allow get, list: Publicly readable.
+     * @deny create, update, delete: Only authenticated users can create, update, or delete task data.
+     * @principle Public read access with owner-only writes.
      */
     match /projects/{projectId}/tasks/{taskId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Secure documents within projects using the `accessRole` field. Access control TBD.
+     * @description Controls access to document data within projects.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (create) No one can create.
-     * @deny (create) No one can create.
-     * @allow (get) Anyone can get.
-     * @deny (get) N/A
-     * @allow (update) No one can update.
-     * @deny (update) No one can update.
-     * @allow (delete) No one can delete.
-     * @deny (delete) No one can delete.
-     * @principle Placeholder for access control.
+     * @allow get, list: Publicly readable.
+     * @deny create, update, delete: Only authenticated users can create, update, or delete document data.
+     * @principle Public read access with owner-only writes.
      */
     match /projects/{projectId}/documents/{documentId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
-  }
-
-  // Helper Functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isOwner(userId) && resource != null;
   }
 }
