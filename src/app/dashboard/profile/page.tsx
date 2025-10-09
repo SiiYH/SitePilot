@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -10,7 +9,7 @@ import { Mail, Phone, Building, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useStorage, useFirestore } from '@/firebase';
+import { useStorage, useFirestore, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -56,64 +55,64 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  /* const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && user) {
-      setIsUploading(true);
-      toast({ title: "Uploading Avatar...", description: "Please wait." });
-      
-      const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
-      
-      try {
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
-        const userDocRef = doc(firestore, "users", user.id);
-        await updateDoc(userDocRef, { avatarUrl: downloadURL });
-
-        // Update the local user state for immediate UI feedback
-        setUser(prevUser => prevUser ? { ...prevUser, avatarUrl: downloadURL } : null);
-
-        toast({
-          title: "Avatar Updated!",
-          description: "Your new profile picture has been saved.",
-        });
-
-      } catch (error) {
-        console.error("Error uploading avatar:", error);
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: "Could not upload your new avatar. Please try again.",
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  }; */
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
   
+    setIsUploading(true);
+    toast({ title: "Uploading Avatar...", description: "Please wait." });
+    
+    const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
+    
     try {
-      setIsUploading(true);
-      toast({ title: "Uploading Avatar...", description: "Please wait." });
-  
-      console.log("Firebase Auth UID:", getAuth().currentUser?.uid);
-
-      const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
-  
-      await updateDoc(doc(firestore, "users", user.id), { avatarUrl: downloadURL });
-  
-      // Update local UI
-      setUser(prev => prev ? { ...prev, avatarUrl: downloadURL } : prev);
-  
-      toast({ title: "Avatar Updated!", description: "Your new profile picture has been saved." });
+
+      const userDocRef = doc(firestore, "users", user.id);
+      const updateData = { avatarUrl: downloadURL };
+      
+      await updateDoc(userDocRef, updateData)
+        .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'update',
+              requestResourceData: updateData,
+            } satisfies SecurityRuleContext);
+
+            // This will be caught by the FirebaseErrorListener and shown in the dev overlay
+            errorEmitter.emit('permission-error', permissionError);
+
+            // Also show a toast to the user
+            toast({
+                variant: "destructive",
+                title: "Permission Denied",
+                description: "You do not have permission to update your profile.",
+            });
+            
+            // We still re-throw to ensure the promise chain is broken
+            throw permissionError;
+        });
+
+      // Update the local user state for immediate UI feedback ONLY on success
+      setUser(prevUser => prevUser ? { ...prevUser, avatarUrl: downloadURL } : null);
+
+      toast({
+        title: "Avatar Updated!",
+        description: "Your new profile picture has been saved.",
+      });
+
     } catch (error) {
-      console.error("Avatar upload error:", error);
-      toast({ variant: "destructive", title: "Upload Failed", description: "Please try again." });
+      // Catch any error (upload or Firestore update)
+      // The specific permission error is already handled above
+      // This is a fallback for other issues (e.g., network, storage rules)
+      if (!(error instanceof FirestorePermissionError)) {
+          console.error("Error during avatar upload process:", error);
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not upload your new avatar. Please try again.",
+          });
+      }
     } finally {
       setIsUploading(false);
     }
