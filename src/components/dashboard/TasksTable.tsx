@@ -53,7 +53,8 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     );
   };
 
-  const getUserName = (userId: string) => {
+  const getUserName = (userId: string | undefined) => {
+    if (!userId) return 'Unassigned';
     return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
   }
 
@@ -82,7 +83,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 const dueDate = getSafeDate(task.dueDate);
                 return (
-                    <Card key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer transition-shadow hover:shadow-md">
+                    <Card key={task.id} onClick={() => handleRowClick(task.id)} className={cn("cursor-pointer transition-shadow hover:shadow-md", !task.owner && "bg-yellow-500/5 border-yellow-500/20")}>
                         <CardHeader>
                             <div className="flex items-start justify-between gap-4">
                                 <CardTitle className="text-lg">{task.title}</CardTitle>
@@ -101,10 +102,10 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                                     </Link>
                                 </div>
                             )}
-                            {showAssignedToColumn && (
+                            {(showAssignedToColumn || !task.owner) && (
                                 <div className="flex items-center gap-2">
                                     <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-muted-foreground">{getUserName(task.owner)}</span>
+                                    <span className={cn("text-muted-foreground", !task.owner && "font-bold text-yellow-600 dark:text-yellow-400")}>{getUserName(task.owner)}</span>
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
@@ -151,7 +152,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     const dueDate = getSafeDate(task.dueDate);
                     return (
-                    <TableRow key={task.id} onClick={() => handleRowClick(task.id)} className="cursor-pointer">
+                    <TableRow key={task.id} onClick={() => handleRowClick(task.id)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
                         <TableCell>
                             <Badge variant="outline" className='h-8'>
                                 <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -170,7 +171,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                             )}
                         </TableCell>
                         )}
-                        {showAssignedToColumn && <TableCell>{getUserName(task.owner)}</TableCell>}
+                        {showAssignedToColumn && <TableCell className={cn(!task.owner && "font-bold text-yellow-600 dark:text-yellow-400")}>{getUserName(task.owner)}</TableCell>}
                         <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canEdit ? (

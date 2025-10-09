@@ -29,7 +29,7 @@ interface EditWorkItemFormProps {
 
 const formSchema = z.object({
   title: z.string().min(3, 'Work item title must be at least 3 characters.'),
-  owner: z.string().min(1, 'An owner is required.'),
+  owner: z.string().optional(),
   contributors: z.array(z.string()).optional(),
   dueDate: z.date({ required_error: 'A due date is required.' }),
   status: z.enum(['Not Started', 'In Progress', 'Completed']),
@@ -55,7 +55,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: workItem.title,
-      owner: workItem.owner,
+      owner: workItem.owner || '',
       contributors: workItem.contributors || [],
       dueDate: getSafeDate(workItem.dueDate),
       status: workItem.status,
@@ -140,7 +140,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
               name="owner"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Owner</FormLabel>
+                  <FormLabel>Owner (Optional)</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -148,6 +148,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">Unassigned</SelectItem>
                       {engineers.map(e => (
                         <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                       ))}
