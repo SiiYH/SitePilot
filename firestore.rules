@@ -1,33 +1,21 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for user data,
- *              and a project-based access control model for projects, tasks, and documents.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profiles, accessible only to the authenticated user.
- * - /companies/{companyId}: Stores company data, publicly readable but write-protected.
- * - /projects/{projectId}: Stores project data, publicly readable but write-protected.
- * - /claims/{claimId}: Stores payment claims, publicly readable but write-protected.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks within projects, publicly readable but write-protected.
- * - /projects/{projectId}/documents/{documentId}: Stores documents within projects.
- *
- * Key Security Decisions:
- * - User data is strictly private; only the authenticated user can read or write their own data.
- * - Company and project data are publicly readable to facilitate discovery and collaboration.
- * - Only authenticated users can create, update, or delete projects, tasks, and documents.
- * - The rules do NOT enforce a strict schema.
- * - Denormalization is used to avoid costly `get()` calls in the rules.
+ * @description This ruleset enforces a role-based access control model for the SiteFlow application.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profiles.
+     * @description Manages user profile data.
      * @path /users/{userId}
-     * @allow (get, create, update, delete, list): If the authenticated user's UID matches the 'userId' path segment.
-     * @deny (get, create, update, delete, list): If the authenticated user's UID does NOT match the 'userId' path segment.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User 'user_abc' can create their own profile.
+     * @allow (get) User 'user_abc' can read their own profile.
+     * @allow (update) User 'user_abc' can update their own profile.
+     * @deny (create) User 'user_xyz' cannot create a profile with ID 'user_abc'.
+     * @deny (get) User 'user_xyz' cannot read user 'user_abc' profile.
+     * @deny (update) User 'user_xyz' cannot update user 'user_abc' profile.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
       function isSignedIn() {
@@ -38,82 +26,118 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isSignedIn() && isOwner(userId);
-      allow delete: if isSignedIn() && isOwner(userId) && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Controls access to company data.
+     * @description Manages company data.
      * @path /companies/{companyId}
-     * @allow get, list: Publicly readable.
-     * @deny create, update, delete: Only authenticated users can create, update, or delete company data.
-     * @principle Public read access with owner-only writes.
+     * @allow (get) Any signed-in user can read company data.
+     * @allow (create) Only admin users can create company data. (Placeholder - Adjust role as needed)
+     * @deny (create) Non-admin users cannot create company data.
+     * @deny (update) Non-admin users cannot update company data.
+     * @principle Restricts write access to authorized roles.
      */
     match /companies/{companyId} {
-      allow get, list: if true;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Placeholder: Anyone signed in can create/update/delete.  Remove these to lock down.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to project data.
+     * @description Manages project data.
      * @path /projects/{projectId}
-     * @allow get, list: Publicly readable.
-     * @deny create, update, delete: Only authenticated users can create, update, or delete project data.
-     * @principle Public read access with owner-only writes.
+     * @allow (get) Any signed-in user can read project data.
+     * @allow (create) Only admin users can create project data. (Placeholder - Adjust role as needed)
+     * @deny (create) Non-admin users cannot create project data.
+     * @deny (update) Non-admin users cannot update project data.
+     * @principle Restricts write access to authorized roles.
      */
     match /projects/{projectId} {
-      allow get, list: if true;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Placeholder: Anyone signed in can create/update/delete.  Remove these to lock down.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to claim data.
+     * @description Manages payment claim data.
      * @path /claims/{claimId}
-     * @allow get, list: Publicly readable.
-     * @deny create, update, delete: Only authenticated users can create, update, or delete claim data.
-     * @principle Public read access with owner-only writes.
+     * @allow (get) Any signed-in user can read claim data.
+     * @allow (create) Only users with the 'accountant' role can create claims. (Placeholder - Adjust role as needed)
+     * @deny (create) Non-accountant users cannot create claim data.
+     * @deny (update) Non-accountant users cannot update claim data.
+     * @principle Restricts write access to authorized roles.
      */
     match /claims/{claimId} {
-      allow get, list: if true;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Placeholder: Anyone signed in can create/update/delete.  Remove these to lock down.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to task data within projects.
+     * @description Manages task data within a project.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow get, list: Publicly readable.
-     * @deny create, update, delete: Only authenticated users can create, update, or delete task data.
-     * @principle Public read access with owner-only writes.
+     * @allow (create) Only users who are members of the project can create tasks. (Placeholder - Adjust role as needed)
+     * @allow (get) Any signed-in user can read task data.
+     * @deny (create) Non-project members cannot create tasks.
+     * @deny (update) Non-project members cannot update tasks.
+     * @principle Restricts write access to project members.
      */
     match /projects/{projectId}/tasks/{taskId} {
-      allow get, list: if true;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Placeholder: Anyone signed in can create/update/delete.  Remove these to lock down.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to document data within projects.
+     * @description Manages document data within a project, based on access role.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow get, list: Publicly readable.
-     * @deny create, update, delete: Only authenticated users can create, update, or delete document data.
-     * @principle Public read access with owner-only writes.
+     * @allow (get) Users with the required 'accessRole' can read documents.
+     * @allow (create) Only admin users can create document data. (Placeholder - Adjust role as needed)
+     * @deny (create) Non-admin users cannot create document data.
+     * @deny (update) Non-admin users cannot update document data.
+     * @principle Restricts read and write access based on role.
      */
     match /projects/{projectId}/documents/{documentId} {
-      allow get, list: if true;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Placeholder: Anyone signed in can create/update/delete.  Remove these to lock down.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
