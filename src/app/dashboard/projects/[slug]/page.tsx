@@ -23,8 +23,10 @@ import { useEffect, useState, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useToast } from '@/hooks/use-toast';
 
 
 async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
@@ -53,12 +55,15 @@ export default function ProjectDetailsPage() {
   const slug = params.slug as string;
   const { user, loading: authLoading } = useAuth();
   const firestore = useFirestore();
+  const storage = useStorage();
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [project, setProject] = useState<Project | undefined>(undefined);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [assignedEngineers, setAssignedEngineers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
@@ -75,11 +80,8 @@ export default function ProjectDetailsPage() {
 
   const updateProjectState = (updatedProject: Project) => {
     setProject(updatedProject);
-    // This is a temporary solution for mock data. With Firestore, this would be a write operation.
-    // const projectIndex = mockProjects.findIndex(p => p.id === updatedProject.id);
-    // if (projectIndex !== -1) {
-    //   mockProjects[projectIndex] = updatedProject;
-    // }
+    // In a real app with Firestore listeners, this manual update would not be needed
+    // as the onSnapshot listener would handle it. For now, we update the mock data if needed.
   };
 
   useEffect(() => {
@@ -125,17 +127,56 @@ export default function ProjectDetailsPage() {
     fileInputRef.current?.click();
   };
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && project) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImageUrl = e.target?.result as string;
-        updateProjectState({ ...project, imageUrl: newImageUrl });
-      };
-      reader.readAsDataURL(file);
+    if (!file || !project) return;
+  
+    setIsUploading(true);
+    toast({ title: "Uploading Image...", description: "Please wait." });
+    
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `header-image.${fileExtension}`;
+    const storageRef = ref(storage, `projects/${project.id}/${fileName}`);
+    
+    try {
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      const projectDocRef = doc(firestore, "projects", project.id);
+      const updateData = { imageUrl: downloadURL };
+      
+      await updateDoc(projectDocRef, updateData).catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: projectDocRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          throw permissionError;
+      });
+
+      // Update local state for immediate UI feedback
+      updateProjectState({ ...project, imageUrl: downloadURL });
+
+      toast({
+        title: "Project Image Updated!",
+        description: "Your new project image has been saved.",
+      });
+
+    } catch (error) {
+      if (!(error instanceof FirestorePermissionError)) {
+          console.error("Error during image upload process:", error);
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not upload the new image. Please try again.",
+          });
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
+
 
   if (loading || authLoading) {
      return (
@@ -167,6 +208,11 @@ export default function ProjectDetailsPage() {
                 className="object-cover"
                 data-ai-hint={project.imageHint}
               />
+               {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <Loader2 className="h-10 w-10 animate-spin text-white" />
+                  </div>
+                )}
           </div>
         </DialogTrigger>
 
@@ -179,9 +225,10 @@ export default function ProjectDetailsPage() {
               onChange={handleFileChange}
               className="hidden"
               accept="image/*"
+              disabled={isUploading}
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button onClick={handleImageUploadClick} variant="secondary">
+              <Button onClick={handleImageUploadClick} variant="secondary" disabled={isUploading}>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Image
               </Button>
