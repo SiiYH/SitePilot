@@ -129,16 +129,8 @@ export default function ProjectDetailsPage() {
   };
   
   const handleWorkItemCreated = (newTask: Task) => {
-    if (project) {
-        // Optimistically update the UI. The real-time listener will correct this if needed.
-        setProject(prevProject => {
-            if (!prevProject) return prevProject;
-            return {
-                ...prevProject,
-                tasks: [newTask, ...prevProject.tasks],
-            };
-        });
-    }
+    // The useCollection hook will automatically update the task list.
+    // No optimistic update is needed here.
   };
 
   const handleImageUploadClick = () => {
@@ -314,7 +306,7 @@ export default function ProjectDetailsPage() {
               )}
             </CardHeader>
             <CardContent>
-              <TasksTable tasks={projectWithTasks.tasks} user={user} />
+              <TasksTable tasks={tasks || []} user={user} />
             </CardContent>
           </Card>
         </TabsContent>
