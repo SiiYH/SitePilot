@@ -228,7 +228,7 @@ export default function ProjectDetailsPage() {
               disabled={isUploading}
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button onClick={handleImageUploadClick} variant="secondary" disabled={isUploading}>
+              <Button onClick={handleImageUploadClick} disabled={isUploading}>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Image
               </Button>
