@@ -272,7 +272,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const handleUpdateUser = (data: User) => {
+    // Update the live user state for immediate UI feedback
     setUser(data);
+
+    // Also update the mockUsers array for consistency across the app
     const index = mockUsers.findIndex(u => u.id === data.id);
     if (index !== -1) {
         mockUsers[index] = data;
@@ -297,3 +300,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+    
