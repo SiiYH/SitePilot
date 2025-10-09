@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, CheckCircle, FolderKanban, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, CheckCircle, FolderKanban, Users, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -166,6 +167,11 @@ export default function WorkItemDetailsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {workItem.description && (
+                        <InfoField icon={FileText} label="Description">
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{workItem.description}</p>
+                        </InfoField>
+                    )}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <InfoField icon={Calendar} label="Due Date">
                            <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
@@ -178,7 +184,7 @@ export default function WorkItemDetailsPage() {
                                 </Link>
                             </InfoField>
                         )}
-                        {owner && (
+                        {owner ? (
                             <InfoField icon={UserIcon} label="Owner">
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-8 w-8">
@@ -187,6 +193,10 @@ export default function WorkItemDetailsPage() {
                                     </Avatar>
                                     <p className="font-medium">{owner.name}</p>
                                 </div>
+                            </InfoField>
+                        ) : (
+                             <InfoField icon={UserIcon} label="Owner">
+                                <Badge variant="destructive">Unassigned</Badge>
                             </InfoField>
                         )}
                         {contributors && contributors.length > 0 && (

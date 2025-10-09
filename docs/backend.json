@@ -86,9 +86,7 @@
         "id",
         "projectId",
         "name",
-        "description",
         "status",
-        "assigneeId",
         "dueDate"
       ]
     },

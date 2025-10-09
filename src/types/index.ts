@@ -24,6 +24,7 @@ export interface User {
 export interface Task {
   id: string;
   title: string;
+  description?: string;
   type: 'Task' | 'Milestone';
   owner?: string; // User ID - now optional
   contributors?: string[]; // User IDs

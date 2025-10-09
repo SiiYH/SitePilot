@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
@@ -23,8 +21,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
-import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
+import { useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
@@ -65,13 +63,10 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
-
-  const tasksQuery = useMemoFirebase(() => {
-    if (!firestore || !project?.id) return null;
-    return collection(firestore, 'projects', project.id, 'tasks');
-  }, [firestore, project?.id]);
-
-  const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
+  
+  // Tasks state with real-time updates
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
   const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
@@ -87,40 +82,93 @@ export default function ProjectDetailsPage() {
 
   const updateProjectState = (updatedProject: Project) => {
     setProject(updatedProject);
-    // In a real app with Firestore listeners, this manual update would not be needed
-    // as the onSnapshot listener would handle it. For now, we update the mock data if needed.
   };
 
+  // Real-time listener for project data
   useEffect(() => {
-    if (slug && user && firestore) {
-      const fetchData = async () => {
-        setLoading(true);
-        const projectData = await getProject(slug, firestore);
-        if (projectData) {
-          setProject(projectData);
-          let claimsData = await getClaimsForProject(projectData.id);
+    if (!slug || !user || !firestore) return;
 
+    setLoading(true);
+    
+    const projectsRef = collection(firestore, 'projects');
+    const q = query(projectsRef, where('slug', '==', slug), limit(1));
+    
+    const unsubscribe = onSnapshot(
+      q,
+      async (snapshot) => {
+        if (!snapshot.empty) {
+          const projectDoc = snapshot.docs[0];
+          const projectData = { id: projectDoc.id, ...projectDoc.data() } as Project;
+          setProject(projectData);
+          
+          // Fetch claims
+          let claimsData = await getClaimsForProject(projectData.id);
           if (user.role === 'Engineer') {
             claimsData = claimsData.filter(claim => claim.submittedBy === user.id);
           }
-
           setClaims(claimsData);
+          
+          // Fetch assigned engineers
           const engineersData = await getAssignedEngineers(projectData.assignedEngineers);
           setAssignedEngineers(engineersData);
         } else {
           notFound();
         }
         setLoading(false);
-      };
-      fetchData();
+      },
+      (error) => {
+        console.error("Error fetching project:", error);
+        toast({
+          variant: "destructive",
+          title: "Error Loading Project",
+          description: "Could not load project data. Please refresh the page.",
+        });
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [slug, user, firestore, toast]);
+
+  // Real-time listener for tasks
+  useEffect(() => {
+    if (!firestore || !project?.id) {
+      setTasksLoading(false);
+      return;
     }
-  }, [slug, user, firestore]);
+    
+    setTasksLoading(true);
+    const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
+    
+    const unsubscribe = onSnapshot(
+      tasksRef,
+      (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Task[];
+        setTasks(tasksData);
+        setTasksLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching tasks:", error);
+        toast({
+          variant: "destructive",
+          title: "Error Loading Tasks",
+          description: "Could not load work items. Please refresh the page.",
+        });
+        setTasksLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [firestore, project?.id, toast]);
   
   const projectWithTasks = useMemo(() => {
     if (!project) return null;
     return {
       ...project,
-      tasks: tasks || project.tasks || [],
+      tasks: tasks || [],
     };
   }, [project, tasks]);
 
@@ -129,8 +177,11 @@ export default function ProjectDetailsPage() {
   };
   
   const handleWorkItemCreated = (newTask: Task) => {
-    // The useCollection hook will automatically update the task list.
-    // No optimistic update is needed here.
+    // Real-time listener will automatically update the task list
+    toast({
+      title: "Work Item Created",
+      description: "The new work item has been added successfully.",
+    });
   };
 
   const handleImageUploadClick = () => {
@@ -306,7 +357,13 @@ export default function ProjectDetailsPage() {
               )}
             </CardHeader>
             <CardContent>
-              <TasksTable tasks={tasks || []} user={user} />
+              {tasksLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <TasksTable tasks={tasks} user={user} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

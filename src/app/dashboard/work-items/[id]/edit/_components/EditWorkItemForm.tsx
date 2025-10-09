@@ -21,6 +21,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Textarea } from '@/components/ui/textarea';
 
 
 interface EditWorkItemFormProps {
@@ -31,6 +32,7 @@ interface EditWorkItemFormProps {
 
 const formSchema = z.object({
   title: z.string().min(3, 'Work item title must be at least 3 characters.'),
+  description: z.string().optional(),
   owner: z.string().optional(),
   contributors: z.array(z.string()).optional(),
   dueDate: z.date({ required_error: 'A due date is required.' }),
@@ -58,6 +60,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: workItem.title,
+      description: workItem.description || '',
       owner: workItem.owner || 'unassigned',
       contributors: workItem.contributors || [],
       dueDate: getSafeDate(workItem.dueDate),
@@ -132,6 +135,19 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
                   <FormLabel>Title</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Finalize plumbing" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Add more details about this work item..." {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
