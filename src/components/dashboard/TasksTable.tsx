@@ -12,6 +12,9 @@ import { format, parseISO } from 'date-fns';
 import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface TasksTableProps {
   tasks: Task[];
@@ -42,15 +45,25 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
 
 export default function TasksTable({ tasks: initialTasks, user }: TasksTableProps) {
   const router = useRouter();
+  const firestore = useFirestore();
+  const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
 
-  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
-    setTasks(currentTasks => 
-      currentTasks.map(task => 
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+  React.useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  const handleStatusChange = (taskId: string, projectId: string | undefined, newStatus: Task['status']) => {
+    if (!projectId) return;
+    
+    const taskDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
+    updateDocumentNonBlocking(taskDocRef, { status: newStatus });
+
+    toast({
+        title: "Status Updated",
+        description: `The work item status has been set to ${newStatus}.`
+    });
   };
 
   const getUserName = (userId: string | undefined) => {
@@ -60,13 +73,14 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
 
   const handleRowClick = (task: Task) => {
     if (!task.projectId) return;
-    const fullId = `${task.projectId}/tasks/${task.id}`;
+    // Construct the path that matches what the details page expects
+    const fullId = `projects/${task.projectId}/tasks/${task.id}`;
     router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
   };
 
   const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
   
-  const showAssignedToColumn = new Set(tasks.map(t => t.owner)).size > 1;
+  const showAssignedToColumn = new Set(tasks.map(t => t.owner)).size > 1 || tasks.some(t => !t.owner);
 
   if (tasks.length === 0) {
     return (
@@ -116,7 +130,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                             </div>
                              <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                                 {canEdit ? (
-                                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
+                                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Set status" />
                                     </SelectTrigger>
@@ -177,7 +191,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                         <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canEdit ? (
-                            <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}>
+                            <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
                             <SelectTrigger className="w-[150px] ml-auto">
                                 <SelectValue placeholder="Set status" />
                             </SelectTrigger>
@@ -200,5 +214,3 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     </>
   );
 }
-
-    
