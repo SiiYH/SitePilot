@@ -18,8 +18,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockProjects } from '@/lib/data'; // to update mock data
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 interface EditWorkItemFormProps {
   workItem: Task;
@@ -40,6 +42,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const getSafeDate = (dateValue: string | Date | undefined): Date | undefined => {
     if (!dateValue) return undefined;
@@ -66,17 +69,15 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    const projectIndex = mockProjects.findIndex(p => p.id === project.id);
-    if (projectIndex !== -1) {
-        const taskIndex = mockProjects[projectIndex].tasks.findIndex(t => t.id === workItem.id);
-        if (taskIndex !== -1) {
-            mockProjects[projectIndex].tasks[taskIndex] = {
-                ...mockProjects[projectIndex].tasks[taskIndex],
-                ...values,
-                owner: values.owner === 'unassigned' ? undefined : values.owner,
-                dueDate: values.dueDate.toISOString(),
-            };
-        }
+    const updatedData = {
+      ...values,
+      owner: values.owner === 'unassigned' ? '' : values.owner, // Firestore expects null or undefined for deletion, but empty string works too
+      dueDate: values.dueDate.toISOString(),
+    };
+    
+    if (firestore) {
+      const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', workItem.id);
+      updateDocumentNonBlocking(taskDocRef, updatedData);
     }
     
     setTimeout(() => {

@@ -19,11 +19,11 @@ import { Edit, Upload, Settings } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
 import SettingsTab from './_components/SettingsTab';
 import { useAuth } from '@/hooks/use-auth';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
-import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
@@ -65,6 +65,13 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+
+  const tasksQuery = useMemoFirebase(() => {
+    if (!firestore || !project?.id) return null;
+    return collection(firestore, 'projects', project.id, 'tasks');
+  }, [firestore, project?.id]);
+
+  const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
   const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
@@ -108,6 +115,14 @@ export default function ProjectDetailsPage() {
       fetchData();
     }
   }, [slug, user, firestore]);
+  
+  const projectWithTasks = useMemo(() => {
+    if (!project) return null;
+    return {
+      ...project,
+      tasks: tasks || project.tasks || [],
+    };
+  }, [project, tasks]);
 
   const handleClaimCreated = (newClaim: Claim) => {
     setClaims(prevClaims => [newClaim, ...prevClaims]);
@@ -115,11 +130,8 @@ export default function ProjectDetailsPage() {
   
   const handleWorkItemCreated = (newTask: Task) => {
     if (project) {
-        const updatedProject = {
-            ...project,
-            tasks: [...project.tasks, newTask]
-        };
-        updateProjectState(updatedProject);
+        // With useCollection, this optimistic update is not strictly necessary
+        // but can make the UI feel faster.
     }
   };
 
@@ -177,7 +189,7 @@ export default function ProjectDetailsPage() {
   };
 
 
-  if (loading || authLoading) {
+  if (loading || authLoading || !projectWithTasks) {
      return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -185,13 +197,13 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  if (!project || !user) {
+  if (!user) {
     notFound();
   }
   
   const canEditProject = user.role === 'Admin' || user.role === 'Director';
   const canUploadImage = user.role === 'Director' || user.role === 'Admin';
-  const currentStatus = projectStatuses.find(s => s.id === project.status);
+  const currentStatus = projectStatuses.find(s => s.id === projectWithTasks.status);
 
 
   return (
@@ -201,11 +213,11 @@ export default function ProjectDetailsPage() {
         <DialogTrigger asChild>
           <div className="absolute inset-0 cursor-pointer">
               <Image
-                src={project.imageUrl}
-                alt={project.name}
+                src={projectWithTasks.imageUrl}
+                alt={projectWithTasks.name}
                 fill
                 className="object-cover"
-                data-ai-hint={project.imageHint}
+                data-ai-hint={projectWithTasks.imageHint}
               />
                {isUploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">
@@ -236,11 +248,11 @@ export default function ProjectDetailsPage() {
         )}
       </div>
       <DialogContent className="p-0 sm:max-w-4xl border-0 bg-transparent shadow-none">
-          <DialogTitle className="sr-only">{project.name} - Site Image</DialogTitle>
+          <DialogTitle className="sr-only">{projectWithTasks.name} - Site Image</DialogTitle>
           <div className="relative aspect-video w-full">
               <Image
-                  src={project.imageUrl}
-                  alt={project.name}
+                  src={projectWithTasks.imageUrl}
+                  alt={projectWithTasks.name}
                   fill
                   className="object-contain"
               />
@@ -251,17 +263,17 @@ export default function ProjectDetailsPage() {
       <div className="space-y-2">
           {currentStatus && <Badge>{currentStatus.name}</Badge>}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-             <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+             <h1 className="text-3xl font-bold tracking-tight">{projectWithTasks.name}</h1>
              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 {canEditProject && (
                   <Button variant="outline" asChild className="w-full sm:w-auto">
-                      <Link href={`/dashboard/projects/${project.slug}/edit`}>
+                      <Link href={`/dashboard/projects/${projectWithTasks.slug}/edit`}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Project
                       </Link>
                   </Button>
                 )}
-                <GenerateReportButton project={project} />
+                <GenerateReportButton project={projectWithTasks} />
              </div>
           </div>
       </div>
@@ -275,10 +287,10 @@ export default function ProjectDetailsPage() {
           {canManageSettings && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab project={project} engineers={assignedEngineers} user={user} onProjectUpdate={updateProjectState} />
+          <OverviewTab project={projectWithTasks} engineers={assignedEngineers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
-          <ClaimsTab claims={claims} project={project} onClaimCreated={handleClaimCreated} />
+          <ClaimsTab claims={claims} project={projectWithTasks} onClaimCreated={handleClaimCreated} />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
@@ -289,14 +301,14 @@ export default function ProjectDetailsPage() {
               </div>
               {canManageWorkItems && (
                 <CreateWorkItemDialog 
-                  project={project}
+                  project={projectWithTasks}
                   engineers={assignedEngineers} 
                   onWorkItemCreated={handleWorkItemCreated} 
                 />
               )}
             </CardHeader>
             <CardContent>
-              <TasksTable tasks={project.tasks} user={user} />
+              <TasksTable tasks={tasks || []} user={user} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -307,13 +319,13 @@ export default function ProjectDetailsPage() {
               <CardDescription>All documents related to this project.</CardDescription>
             </CardHeader>
             <CardContent>
-              <DocumentsList documents={project.documents} user={user} />
+              <DocumentsList documents={projectWithTasks.documents} user={user} />
             </CardContent>
           </Card>
         </TabsContent>
          {canManageSettings && (
             <TabsContent value="settings" className="mt-6">
-                <SettingsTab project={project} onProjectUpdate={updateProjectState} user={user} />
+                <SettingsTab project={projectWithTasks} onProjectUpdate={updateProjectState} user={user} />
             </TabsContent>
         )}
       </Tabs>

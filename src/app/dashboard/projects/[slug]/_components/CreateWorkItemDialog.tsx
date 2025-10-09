@@ -21,12 +21,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { PlusCircle, Loader2, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { Task, User, CreateWorkItemDialogProps } from '@/types';
-import { mockProjects } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 
 const formSchema = z.object({
@@ -42,12 +43,13 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      owner: '',
+      owner: 'unassigned',
       contributors: [],
       status: 'Not Started',
       type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
@@ -72,8 +74,8 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
+    const newTaskId = `task-${Date.now()}`;
+    const newTask: Omit<Task, 'id'> = {
       title: values.title,
       owner: values.owner === 'unassigned' ? undefined : values.owner,
       contributors: values.contributors,
@@ -82,20 +84,18 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       type: values.type,
     };
     
-    // In a real app, you would make an API call here.
-    // For this mock data setup, we find the project and add the task.
-    const projectIndex = mockProjects.findIndex(p => p.id === project.id);
-    if(projectIndex !== -1) {
-        mockProjects[projectIndex].tasks.push(newTask);
+    if (firestore) {
+      const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
+      setDocumentNonBlocking(taskDocRef, newTask);
     }
 
     setTimeout(() => {
-      onWorkItemCreated(newTask);
+      onWorkItemCreated({ ...newTask, id: newTaskId }); // Optimistic update
       setIsLoading(false);
       setOpen(false);
       form.reset({
         title: '',
-        owner: '',
+        owner: 'unassigned',
         contributors: [],
         status: 'Not Started',
         type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
