@@ -14,6 +14,7 @@ import { useStorage, useFirestore } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { getAuth } from 'firebase/auth';
 
 
 const getInitials = (name: string) => {
@@ -55,7 +56,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  /* const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && user) {
       setIsUploading(true);
@@ -89,7 +90,36 @@ export default function ProfilePage() {
         setIsUploading(false);
       }
     }
+  }; */
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+  
+    try {
+      setIsUploading(true);
+      toast({ title: "Uploading Avatar...", description: "Please wait." });
+  
+      console.log("Firebase Auth UID:", getAuth().currentUser?.uid);
+
+      const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+  
+      await updateDoc(doc(firestore, "users", user.id), { avatarUrl: downloadURL });
+  
+      // Update local UI
+      setUser(prev => prev ? { ...prev, avatarUrl: downloadURL } : prev);
+  
+      toast({ title: "Avatar Updated!", description: "Your new profile picture has been saved." });
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast({ variant: "destructive", title: "Upload Failed", description: "Please try again." });
+    } finally {
+      setIsUploading(false);
+    }
   };
+  
+  
 
   if (loading || !user) {
     return (
