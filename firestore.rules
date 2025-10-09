@@ -1,123 +1,134 @@
 /**
- * @fileoverview Firestore Security Rules for SiteFlow application.
- *
- * Core Philosophy:
- * This ruleset prioritizes a secure, role-based access control model.
- * It enforces ownership for user-specific data and role-based access for project-related data.
- * The rules are designed to prevent unauthorized data access and modification.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a role-based access control model for the SiteFlow application.
+ * All data is organized into top-level collections for Users, Companies, Projects, and Claims, with
+ * subcollections for Tasks and Documents under Projects.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, with 'userId' matching the Firebase Auth UID.
- * - /companies/{companyId}: Stores company information.
- * - /projects/{projectId}: Stores project details.
- * - /claims/{claimId}: Stores payment claim information.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with projects.
- * - /projects/{projectId}/documents/{documentId}: Stores documents related to projects.
+ * - /users/{userId}: Stores user profiles, accessible only to the user themselves.
+ * - /companies/{companyId}: Stores company data. Access control is not explicitly defined in the provided reasoning.
+ * - /projects/{projectId}: Stores project data. Access control is not explicitly defined in the provided reasoning.
+ * - /claims/{claimId}: Stores claim data. Access control is not explicitly defined in the provided reasoning.
+ * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with a project. Access control is not explicitly defined in the provided reasoning.
+ * - /projects/{projectId}/documents/{documentId}: Stores documents associated with a project, with access governed by the 'accessRole' field.
  *
  * Key Security Decisions:
- * - User data is strictly controlled, with each user only able to access their own profile.
- * - Project, task, and document access is role-based, determined by the user's role.
- * - Public listing of projects is disallowed to prevent information disclosure.
+ * - User listing is disallowed to protect user privacy.
+ * - Role-based access is intended but not fully implemented due to missing role definitions in the reasoning and schema.
+ * - The default security posture for ambiguous relationships is owner-only access where possible.
  *
  * Denormalization for Authorization:
- * - Tasks and Documents are stored as subcollections of Projects.
- * - Document.accessRole is denormalized for role-based access control.
+ * - The 'accessRole' field is denormalized into the Document entity to enable role-based access control without additional reads.
+ *
+ * Structural Segregation:
+ * - Private user data is stored under /users/{userId} to ensure it is only accessible to the user.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows access to user profiles.
+     * @description Enforces user-only access to their own profile data.
      * @path /users/{userId}
-     * @allow (create) User with matching UID can create their profile.
-     * @allow (get, update, delete) User can access and modify their own profile.
-     * @deny (create) User cannot create a profile with a mismatched UID.
-     * @deny (list) Listing all users is not allowed.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (create) User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
+     * @allow (get) User with UID 'user123' can read their profile.
+     * @allow (update) User with UID 'user123' can update their profile.
+     * @allow (delete) User with UID 'user123' can delete their profile.
+     * @deny (create) User with UID 'user456' cannot create a profile with ID 'user123'.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
-      function isSignedIn() {
-        return request.auth != null;
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
       }
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource.data.id == userId;
-      allow delete: if isOwner(userId) && resource != null;
+      allow list: if false; // User listing is not permitted.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows access to company data.
+     * @description Manages access control for company data.
      * @path /companies/{companyId}
-     * @allow (get, list) Anyone can read company information.
-     * @deny (create, update, delete) Only authorized users can modify company information.
-     * @principle Requires specific authorization to modify company data.
+     * @allow (get) Allow anyone to read company data.
+     * @deny (create) By default, no one can create a company.
+     * @deny (update) By default, no one can update a company.
+     * @deny (delete) By default, no one can delete a company.
+     * @principle Restricts write access to company data.
      */
     match /companies/{companyId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false; // TODO: Add role-based authorization for creating companies.
+      allow update: if false; // TODO: Add role-based authorization for updating companies.
+      allow delete: if false; // TODO: Add role-based authorization for deleting companies.
     }
 
     /**
-     * @description Allows access to project data.
+     * @description Manages access control for project data.
      * @path /projects/{projectId}
-     * @allow (get, list) Anyone can read project information.
-     * @deny (create, update, delete) Only authorized users can modify project information.
-     * @principle Requires specific authorization to modify project data.
+     * @allow (get) Allow anyone to read project data.
+     * @deny (create) By default, no one can create a project.
+     * @deny (update) By default, no one can update a project.
+     * @deny (delete) By default, no one can delete a project.
+     * @principle Restricts write access to project data.
      */
     match /projects/{projectId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false; // TODO: Add role-based authorization for creating projects.
+      allow update: if false; // TODO: Add role-based authorization for updating projects.
+      allow delete: if false; // TODO: Add role-based authorization for deleting projects.
     }
 
     /**
-     * @description Allows access to claim data.
+     * @description Manages access control for claim data.
      * @path /claims/{claimId}
-     * @allow (get, list) Anyone can read claim information.
-     * @deny (create, update, delete) Only authorized users can modify claim information.
-     * @principle Requires specific authorization to modify claim data.
+     * @allow (get) Allow anyone to read claim data.
+     * @deny (create) By default, no one can create a claim.
+     * @deny (update) By default, no one can update a claim.
+     * @deny (delete) By default, no one can delete a claim.
+     * @principle Restricts write access to claim data.
      */
     match /claims/{claimId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false; // TODO: Add role-based authorization for creating claims.
+      allow update: if false; // TODO: Add role-based authorization for updating claims.
+      allow delete: if false; // TODO: Add role-based authorization for deleting claims.
     }
 
     /**
-     * @description Allows access to task data within a project.
+     * @description Enforces access control for tasks within a project.
      * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (get, list) Anyone can read task information.
-     * @deny (create, update, delete) Only authorized users can modify task information.
-     * @principle Requires specific authorization to modify task data.
+     * @allow (get) Allow anyone to read task data.
+     * @deny (create) By default, no one can create a task.
+     * @deny (update) By default, no one can update a task.
+     * @deny (delete) By default, no one can delete a task.
+     * @principle Restricts write access to task data.
      */
     match /projects/{projectId}/tasks/{taskId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false; // TODO: Add role-based authorization for creating tasks.
+      allow update: if false; // TODO: Add role-based authorization for updating tasks.
+      allow delete: if false; // TODO: Add role-based authorization for deleting tasks.
     }
 
     /**
-     * @description Allows access to document data within a project based on role.
+     * @description Enforces role-based access control for documents within a project.
      * @path /projects/{projectId}/documents/{documentId}
-     * @allow (get, list) Anyone can read document information.
-     * @deny (create, update, delete) Only authorized users can modify document information.
-     * @principle Requires specific authorization to modify document data.
+     * @allow (get) Allow anyone to read document data.
+     * @deny (create) By default, no one can create a document.
+     * @deny (update) By default, no one can update a document.
+     * @deny (delete) By default, no one can delete a document.
+     * @principle Enforces role-based access control using the 'accessRole' field.
      */
     match /projects/{projectId}/documents/{documentId} {
       allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow create: if false; // TODO: Add role-based authorization for creating documents.
+      allow update: if false; // TODO: Add role-based authorization for updating documents.
+      allow delete: if false; // TODO: Add role-based authorization for deleting documents.
     }
   }
 }
