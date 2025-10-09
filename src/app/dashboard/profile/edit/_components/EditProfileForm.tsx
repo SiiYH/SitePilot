@@ -179,7 +179,7 @@ export default function EditProfileForm() {
                         control={form.control}
                         name="phoneAreaCode"
                         render={({ field }) => (
-                            <FormItem className="w-28">
+                            <FormItem className="w-40">
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                 <SelectTrigger>
@@ -188,7 +188,9 @@ export default function EditProfileForm() {
                                 </FormControl>
                                 <SelectContent>
                                 {areaCodes.map(c => (
-                                    <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>
+                                    <SelectItem key={c.code} value={c.code}>
+                                      {c.code} ({c.country})
+                                    </SelectItem>
                                 ))}
                                 </SelectContent>
                             </Select>
