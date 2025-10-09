@@ -314,7 +314,7 @@ export default function ProjectDetailsPage() {
               )}
             </CardHeader>
             <CardContent>
-              <TasksTable tasks={tasks || []} user={user} />
+              <TasksTable tasks={projectWithTasks.tasks} user={user} />
             </CardContent>
           </Card>
         </TabsContent>
