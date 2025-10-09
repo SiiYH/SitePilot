@@ -10,9 +10,9 @@ import { Mail, Phone, Building, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useStorage, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useStorage, useFirestore } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -68,7 +68,7 @@ export default function ProfilePage() {
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         const userDocRef = doc(firestore, "users", user.id);
-        updateDocumentNonBlocking(userDocRef, { avatarUrl: downloadURL });
+        await updateDoc(userDocRef, { avatarUrl: downloadURL });
 
         updateUser({ ...user, avatarUrl: downloadURL });
 
