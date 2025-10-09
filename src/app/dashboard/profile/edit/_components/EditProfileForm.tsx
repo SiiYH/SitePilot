@@ -15,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -26,7 +28,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function EditProfileForm() {
   const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, setUser } = useAuth();
+  const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -39,23 +42,45 @@ export default function EditProfileForm() {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     
     if (user) {
-        const updatedUserData = { ...user, ...values };
-        updateUser(updatedUserData);
-    }
-    
-    toast({
-      title: 'Profile Updated',
-      description: 'Your changes have been saved successfully.',
-    });
+        const userDocRef = doc(firestore, 'users', user.id);
+        try {
+            await updateDoc(userDocRef, values);
+            
+            // Optimistically update local state for immediate UI feedback
+            const updatedUserData = { ...user, ...values };
+            setUser(updatedUserData);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/dashboard/profile');
-    }, 1000);
+            toast({
+              title: 'Profile Updated',
+              description: 'Your changes have been saved successfully.',
+            });
+
+            setTimeout(() => {
+              setIsLoading(false);
+              router.push('/dashboard/profile');
+            }, 1000);
+
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            toast({
+                variant: "destructive",
+                title: "Update Failed",
+                description: "Could not save your changes. Please try again.",
+            });
+            setIsLoading(false);
+        }
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "You must be logged in to edit your profile.",
+        });
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -88,7 +113,7 @@ export default function EditProfileForm() {
                     <FormItem>
                     <FormLabel>Email Address</FormLabel>
                     <FormControl>
-                        <Input type="email" placeholder="you@company.com" {...field} />
+                        <Input type="email" placeholder="you@company.com" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -102,7 +127,7 @@ export default function EditProfileForm() {
                     <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                        <Input placeholder="+1 555-123-4567" {...field} />
+                        <Input placeholder="+1 555-123-4567" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
