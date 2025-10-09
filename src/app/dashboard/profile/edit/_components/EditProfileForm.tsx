@@ -21,10 +21,39 @@ import { doc, updateDoc } from 'firebase/firestore';
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().min(10, 'Invalid phone number').optional().or(z.literal('')),
+  phoneAreaCode: z.string().optional(),
+  phoneNumber: z.string().optional(),
+}).refine(data => {
+    if (data.phoneAreaCode && !data.phoneNumber) {
+        return false;
+    }
+    if (!data.phoneAreaCode && data.phoneNumber) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Both area code and phone number must be provided.',
+    path: ['phoneNumber'],
 });
 
+
 type FormValues = z.infer<typeof formSchema>;
+
+const splitPhoneNumber = (phone: string | undefined) => {
+    if (!phone) return { areaCode: '', number: '' };
+    const match = phone.match(/(\+\d+)\s*(.*)/);
+    if (match) {
+        return { areaCode: match[1], number: match[2] };
+    }
+    // Simple split for numbers without explicit country code format
+    const parts = phone.split(' ');
+    if (parts.length > 1 && parts[0].startsWith('+')) {
+        return { areaCode: parts[0], number: parts.slice(1).join(' ') };
+    }
+    // Fallback for numbers that don't fit expected formats
+    return { areaCode: '', number: phone };
+};
+
 
 export default function EditProfileForm() {
   const router = useRouter();
@@ -33,12 +62,15 @@ export default function EditProfileForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const { areaCode, number } = splitPhoneNumber(user?.phone);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      phone: user?.phone || '',
+      phoneAreaCode: areaCode,
+      phoneNumber: number,
     },
   });
 
@@ -47,11 +79,20 @@ export default function EditProfileForm() {
     
     if (user) {
         const userDocRef = doc(firestore, 'users', user.id);
-        try {
-            await updateDoc(userDocRef, values);
+        const fullPhoneNumber = values.phoneAreaCode && values.phoneNumber 
+            ? `${values.phoneAreaCode.trim()} ${values.phoneNumber.trim()}` 
+            : '';
             
-            // Optimistically update local state for immediate UI feedback
-            const updatedUserData = { ...user, ...values };
+        const updateData = {
+            name: values.name,
+            email: values.email || '',
+            phone: fullPhoneNumber,
+        };
+
+        try {
+            await updateDoc(userDocRef, updateData);
+            
+            const updatedUserData = { ...user, ...updateData };
             setUser(updatedUserData);
 
             toast({
@@ -120,19 +161,35 @@ export default function EditProfileForm() {
                 )}
                 />
 
-                <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                    <FormItem>
+                <div>
                     <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                        <Input placeholder="+1 555-123-4567" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                    <div className="flex gap-2 mt-2">
+                        <FormField
+                        control={form.control}
+                        name="phoneAreaCode"
+                        render={({ field }) => (
+                            <FormItem className="w-24">
+                            <FormControl>
+                                <Input placeholder="+60" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                             <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                         <FormField
+                        control={form.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                            <FormControl>
+                                <Input placeholder="12-345 6789" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                             <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                </div>
                 
                 <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
                     <Button type="button" variant="outline" asChild>
