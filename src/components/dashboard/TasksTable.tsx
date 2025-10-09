@@ -198,3 +198,4 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     </>
   );
 }
+
