@@ -130,8 +130,14 @@ export default function ProjectDetailsPage() {
   
   const handleWorkItemCreated = (newTask: Task) => {
     if (project) {
-        // With useCollection, this optimistic update is not strictly necessary
-        // but can make the UI feel faster.
+        // Optimistically update the UI. The real-time listener will correct this if needed.
+        setProject(prevProject => {
+            if (!prevProject) return prevProject;
+            return {
+                ...prevProject,
+                tasks: [newTask, ...prevProject.tasks],
+            };
+        });
     }
   };
 
