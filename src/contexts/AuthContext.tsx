@@ -20,7 +20,6 @@ interface AuthContextType {
   login: (credentials: UserCredentials) => Promise<User | null>;
   signUp: (data: SignUpData) => Promise<User | null>;
   logout: () => void;
-  updateUser: (data: User) => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
   licenseUsage: Record<UserRole, number>;
   licenseLimits: Record<UserRole, number>;
@@ -271,18 +270,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const handleUpdateUser = (data: User) => {
-    // Update the live user state for immediate UI feedback
-    setUser(data);
-
-    // Also update the mockUsers array for consistency across the app
-    const index = mockUsers.findIndex(u => u.id === data.id);
-    if (index !== -1) {
-        mockUsers[index] = data;
-    }
-  };
-
-
   const value = {
     user,
     setUser,
@@ -292,7 +279,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login: handleLogin,
     signUp: handleSignUp,
     logout: handleLogout,
-    updateUser: handleUpdateUser,
     createUser: handleCreateUser,
     licenseUsage,
     licenseLimits,
@@ -300,5 +286,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-    

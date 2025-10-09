@@ -44,7 +44,7 @@ const InfoField = ({ icon, label, value }: { icon: React.ElementType; label: str
 };
 
 export default function ProfilePage() {
-  const { user, company, loading, updateUser } = useAuth();
+  const { user, setUser, company, loading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const storage = useStorage();
   const firestore = useFirestore();
@@ -70,7 +70,8 @@ export default function ProfilePage() {
         const userDocRef = doc(firestore, "users", user.id);
         await updateDoc(userDocRef, { avatarUrl: downloadURL });
 
-        updateUser({ ...user, avatarUrl: downloadURL });
+        // Update the local user state for immediate UI feedback
+        setUser(prevUser => prevUser ? { ...prevUser, avatarUrl: downloadURL } : null);
 
         toast({
           title: "Avatar Updated!",
