@@ -1,6 +1,6 @@
-{[
+[
   {
-    "origin": ["https://9000-firebase-studio-1758432771679.cluster-isls3qj2gbd5qs4jkjqvhahfv6.cloudworkstations.dev"],
+    "origin": ["*"],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "x-goog-meta-*"]
