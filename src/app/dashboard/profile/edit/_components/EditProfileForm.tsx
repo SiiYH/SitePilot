@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -40,7 +41,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const splitPhoneNumber = (phone: string | undefined) => {
-    if (!phone) return { areaCode: '', number: '' };
+    if (!phone) return { areaCode: '+60', number: '' };
     const match = phone.match(/(\+\d+)\s*(.*)/);
     if (match) {
         return { areaCode: match[1], number: match[2] };
@@ -51,8 +52,18 @@ const splitPhoneNumber = (phone: string | undefined) => {
         return { areaCode: parts[0], number: parts.slice(1).join(' ') };
     }
     // Fallback for numbers that don't fit expected formats
-    return { areaCode: '', number: phone };
+    return { areaCode: '+60', number: phone };
 };
+
+const areaCodes = [
+    { code: "+60", country: "Malaysia" },
+    { code: "+65", country: "Singapore" },
+    { code: "+62", country: "Indonesia" },
+    { code: "+66", country: "Thailand" },
+    { code: "+84", country: "Vietnam" },
+    { code: "+1", country: "United States" },
+    { code: "+44", country: "United Kingdom" },
+];
 
 
 export default function EditProfileForm() {
@@ -168,11 +179,20 @@ export default function EditProfileForm() {
                         control={form.control}
                         name="phoneAreaCode"
                         render={({ field }) => (
-                            <FormItem className="w-24">
-                            <FormControl>
-                                <Input placeholder="+60" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                             <FormMessage />
+                            <FormItem className="w-28">
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Area Code" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {areaCodes.map(c => (
+                                    <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
                             </FormItem>
                         )}
                         />
