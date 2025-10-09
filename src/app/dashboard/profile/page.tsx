@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -62,7 +63,9 @@ export default function ProfilePage() {
     setIsUploading(true);
     toast({ title: "Uploading Avatar...", description: "Please wait." });
     
-    const storageRef = ref(storage, `avatars/${user.id}/${file.name}`);
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `avatar.${fileExtension}`;
+    const storageRef = ref(storage, `avatars/${user.id}/${fileName}`);
     
     try {
       const snapshot = await uploadBytes(storageRef, file);
