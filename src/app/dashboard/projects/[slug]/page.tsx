@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { mockClaims, mockUsers, defaultProjectStatuses } from '@/lib/data';
-import { Project, User, Claim, Task, ProjectStatus } from '@/types';
+import { Project, User, Claim, Task, ProjectStatus, Document as DocType } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
-import { Edit, Upload, Settings, PlusCircle } from 'lucide-react';
+import { Edit, Upload, Settings } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
 import SettingsTab from './_components/SettingsTab';
 import { useAuth } from '@/hooks/use-auth';
@@ -26,6 +26,7 @@ import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, useCo
 import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
+import UploadDocumentDialog from './_components/UploadDocumentDialog';
 
 
 async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
@@ -153,6 +154,13 @@ export default function ProjectDetailsPage() {
       title: "Work Item Created",
       description: "The new work item has been added successfully.",
     });
+  };
+
+  const handleDocumentUploaded = (newDocument: DocType) => {
+    if (!project) return;
+    const updatedDocuments = [...(project.documents || []), newDocument];
+    const updatedProject = { ...project, documents: updatedDocuments };
+    setProject(updatedProject);
   };
 
   const handleImageUploadClick = () => {
@@ -345,10 +353,7 @@ export default function ProjectDetailsPage() {
                 <CardTitle>Document Repository</CardTitle>
                 <CardDescription>All documents related to this project.</CardDescription>
               </div>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Upload Document
-              </Button>
+               <UploadDocumentDialog project={projectWithTasks} onDocumentUploaded={handleDocumentUploaded} />
             </CardHeader>
             <CardContent>
               <DocumentsList documents={projectWithTasks.documents} user={user} />
