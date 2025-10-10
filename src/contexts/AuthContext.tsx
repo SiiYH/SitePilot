@@ -9,7 +9,7 @@ import type { User, UserRole } from '@/types';
 import { login, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { mockUsers } from '@/lib/data';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
 
@@ -250,15 +250,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
+    const creatingUser = auth.currentUser;
+    if (!creatingUser) {
+        return null;
+    }
+
     setLoading(true);
     if (licenseUsage[data.role] >= licenseLimits[data.role]) {
        setLoading(false);
        return null;
     }
     const newUser = await createNewUser(data);
+    
+    // After creating the user, Firebase automatically signs in the new user.
+    // We must now sign the original admin/director back in.
+    await auth.updateCurrentUser(creatingUser);
+    
     if (newUser) {
         mockUsers.push(newUser); // Keep mock data in sync
     }
+    
     setLoading(false);
     return newUser;
   };

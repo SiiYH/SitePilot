@@ -109,11 +109,18 @@ export async function signUp(data: SignUpData): Promise<User | null> {
 }
 
 export async function createNewUser(data: CreateUserData): Promise<User | null> {
+    const creatingUser = auth.currentUser;
+    if (!creatingUser || !creatingUser.email) {
+        console.error("No admin user is currently logged in to perform this action.");
+        return null;
+    }
+
     if (!data.email || !data.password) {
         return null;
     }
 
     try {
+        // This will sign in the new user automatically
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         const { user: firebaseUser } = userCredential;
 
@@ -134,23 +141,39 @@ export async function createNewUser(data: CreateUserData): Promise<User | null> 
 
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
 
-        setDoc(userDocRef, newUser).catch(error => {
+        // This operation will likely succeed because the new user is now signed in.
+        await setDoc(userDocRef, newUser).catch(error => {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: 'create',
                 requestResourceData: newUser,
             });
             errorEmitter.emit('permission-error', permissionError);
+             // Re-throw to be caught in the main try-catch
+            throw permissionError;
         });
+        
+        // IMPORTANT: Re-authenticate the original admin user.
+        // This is a simplified approach. A real-world app would use a backend function.
+        // For now, we assume we can re-sign-in the admin.
+        // This is a placeholder for re-authentication and might need a password prompt in a real app.
+        // Since we don't have the admin's password, we rely on the auth state change to handle UI correctly.
+        // We will force a re-login of the creating user to restore their session.
+        await auth.updateCurrentUser(creatingUser);
+
 
         return { id: firebaseUser.uid, ...newUser } as User;
 
     } catch (error: any) {
-        // This will catch auth errors like 'email-already-in-use'
-        if (error.code === 'auth/email-already-in-use') {
-          return null;
+        // If user creation failed (e.g., email exists), log it.
+        console.error("Error creating new user:", error.message);
+        
+        // Ensure the original admin is still logged in if something went wrong.
+        if (auth.currentUser?.uid !== creatingUser.uid) {
+            await auth.updateCurrentUser(creatingUser);
         }
-        throw error;
+        
+        return null;
     }
 }
 

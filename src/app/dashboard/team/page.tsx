@@ -63,13 +63,15 @@ export default function TeamPage() {
             Oversee team members, their roles, and assigned workload.
             </p>
         </div>
-        {canManageUsers && company && (
+        {/* {canManageUsers && company && (
             company.activated ? (
                 <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
             ) : (
                 <ActivateLicenseDialog />
             )
-        )}
+        )} */}
+        {canManageUsers && company &&                 <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
+      }
       </div>
       <TeamWorkload users={teamUsers} projects={projects} onUserUpdated={handleUserUpdated} />
     </div>
