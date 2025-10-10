@@ -43,7 +43,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </Link>
       <CardHeader>
-        <div className='flex items-center justify-between'>
+        <div className='flex items-start justify-between gap-4'>
             <CardTitle>
                 <Link href={`/dashboard/projects/${project.slug}`} className="hover:underline">
                     {project.name}
