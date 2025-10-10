@@ -22,7 +22,8 @@ interface ProjectListProps {
   projects: Project[];
 }
 
-type SortOrder = 'asc' | 'desc' | 'none';
+type SortKey = 'startDate' | 'endDate';
+type SortDirection = 'asc' | 'desc';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -45,41 +46,48 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
 
 export default function ProjectList({ projects }: ProjectListProps) {
   const router = useRouter();
-  const [sortOrder, setSortOrder] = useState<SortOrder>('none');
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const handleRowClick = (slug: string) => {
     router.push(`/dashboard/projects/${slug}`);
   };
 
-  const handleSort = () => {
-    if (sortOrder === 'none') {
-      setSortOrder('desc');
-    } else if (sortOrder === 'desc') {
-      setSortOrder('asc');
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDirection === 'desc') {
+        setSortDirection('asc');
+      } else {
+        setSortKey(null);
+      }
     } else {
-      setSortOrder('none');
+      setSortKey(key);
+      setSortDirection('desc');
     }
   };
 
   const sortedProjects = useMemo(() => {
     const sortableProjects = [...projects];
-    if (sortOrder === 'none') {
+    if (!sortKey) {
       return sortableProjects;
     }
     sortableProjects.sort((a, b) => {
-      const dateA = getSafeDate(a.startDate)?.getTime() || 0;
-      const dateB = getSafeDate(b.startDate)?.getTime() || 0;
-      if (sortOrder === 'asc') {
-        return dateA - dateB;
-      } else {
-        return dateB - dateA;
-      }
+      const dateA = getSafeDate(a[sortKey])?.getTime() || 0;
+      const dateB = getSafeDate(b[sortKey])?.getTime() || 0;
+      
+      if (dateA === dateB) return 0;
+      
+      const result = dateA < dateB ? -1 : 1;
+      return sortDirection === 'asc' ? result : -result;
     });
     return sortableProjects;
-  }, [projects, sortOrder]);
+  }, [projects, sortKey, sortDirection]);
 
-  const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
-
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key) return ArrowUpDown;
+    if (sortDirection === 'asc') return ArrowUp;
+    return ArrowDown;
+  };
 
   return (
     <>
@@ -132,12 +140,17 @@ export default function ProjectList({ projects }: ProjectListProps) {
                       <TableHead>Status</TableHead>
                       <TableHead>Progress</TableHead>
                       <TableHead>
-                        <Button variant="ghost" onClick={handleSort} className="px-2">
+                        <Button variant="ghost" onClick={() => handleSort('startDate')} className="px-2">
                           Start Date
-                          <SortIcon className="ml-2 h-4 w-4" />
+                          {React.createElement(getSortIcon('startDate'), { className: "ml-2 h-4 w-4" })}
                         </Button>
                       </TableHead>
-                      <TableHead>End Date</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={() => handleSort('endDate')} className="px-2">
+                          End Date
+                          {React.createElement(getSortIcon('endDate'), { className: "ml-2 h-4 w-4" })}
+                        </Button>
+                      </TableHead>
                       <TableHead>Team</TableHead>
                   </TableRow>
               </TableHeader>
