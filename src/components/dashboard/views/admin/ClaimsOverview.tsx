@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,9 @@ import { Claim, Project, User } from "@/types";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DollarSign, User as UserIcon, Calendar, FolderKanban } from 'lucide-react';
+import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 
 interface ClaimsOverviewProps {
@@ -25,10 +27,14 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 type StatusFilter = Claim['status'] | 'All';
+type SortKey = 'amount' | 'date';
+type SortDirection = 'ascending' | 'descending';
 
 export default function ClaimsOverview({ claims, projects, users }: ClaimsOverviewProps) {
     const router = useRouter();
     const [filter, setFilter] = useState<StatusFilter>('All');
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
+
 
     const getProjectName = (projectId: string) => {
         return projects.find(p => p.id === projectId)?.name || 'N/A';
@@ -46,6 +52,30 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
         if (filter === 'All') return true;
         return claim.status === filter;
     });
+
+    const sortedClaims = useMemo(() => {
+        let sortableClaims = [...filteredClaims];
+        if (sortConfig !== null) {
+            sortableClaims.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableClaims;
+    }, [filteredClaims, sortConfig]);
+
+    const requestSort = (key: SortKey) => {
+        let direction: SortDirection = 'ascending';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
 
     return (
         <Card>
@@ -73,8 +103,8 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
             <CardContent>
                 {/* Mobile View */}
                 <div className="space-y-4 md:hidden">
-                    {filteredClaims.length > 0 ? (
-                        filteredClaims.map(claim => (
+                    {sortedClaims.length > 0 ? (
+                        sortedClaims.map(claim => (
                             <Card key={claim.id} onClick={() => handleRowClick(claim.id)} className="cursor-pointer transition-shadow hover:shadow-md">
                                 <CardHeader>
                                     <div className="flex items-start justify-between gap-4">
@@ -118,14 +148,24 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                                 <TableHead>e-Inv No.</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Submitted By</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Date</TableHead>
+                                <TableHead>
+                                    <Button variant="ghost" onClick={() => requestSort('amount')}>
+                                        Amount
+                                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </TableHead>
+                                <TableHead>
+                                     <Button variant="ghost" onClick={() => requestSort('date')}>
+                                        Date
+                                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredClaims.length > 0 ? (
-                                filteredClaims.map(claim => (
+                            {sortedClaims.length > 0 ? (
+                                sortedClaims.map(claim => (
                                     <TableRow 
                                         key={claim.id} 
                                         onClick={() => handleRowClick(claim.id)}
