@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Project } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,11 +13,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProjectStatusBadge from './ProjectStatusBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
 
 interface ProjectListProps {
   projects: Project[];
 }
+
+type SortOrder = 'asc' | 'desc' | 'none';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -39,16 +45,47 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
 
 export default function ProjectList({ projects }: ProjectListProps) {
   const router = useRouter();
+  const [sortOrder, setSortOrder] = useState<SortOrder>('none');
 
   const handleRowClick = (slug: string) => {
     router.push(`/dashboard/projects/${slug}`);
   };
 
+  const handleSort = () => {
+    if (sortOrder === 'none') {
+      setSortOrder('desc');
+    } else if (sortOrder === 'desc') {
+      setSortOrder('asc');
+    } else {
+      setSortOrder('none');
+    }
+  };
+
+  const sortedProjects = useMemo(() => {
+    const sortableProjects = [...projects];
+    if (sortOrder === 'none') {
+      return sortableProjects;
+    }
+    sortableProjects.sort((a, b) => {
+      const dateA = getSafeDate(a.startDate)?.getTime() || 0;
+      const dateB = getSafeDate(b.startDate)?.getTime() || 0;
+      if (sortOrder === 'asc') {
+        return dateA - dateB;
+      } else {
+        return dateB - dateA;
+      }
+    });
+    return sortableProjects;
+  }, [projects, sortOrder]);
+
+  const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
+
+
   return (
     <>
       {/* Mobile View */}
       <div className="space-y-4 md:hidden">
-        {projects.map(project => {
+        {sortedProjects.map(project => {
             const progress = getProjectProgress(project);
             const endDate = getSafeDate(project.endDate);
             const assignedEngineers = project.assignedEngineers
@@ -94,13 +131,18 @@ export default function ProjectList({ projects }: ProjectListProps) {
                       <TableHead>Project Name</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Progress</TableHead>
-                      <TableHead>Start Date</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" onClick={handleSort} className="px-2">
+                          Start Date
+                          <SortIcon className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
                       <TableHead>End Date</TableHead>
                       <TableHead>Team</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {projects.map(project => {
+                  {sortedProjects.map(project => {
                       const progress = getProjectProgress(project);
                       const startDate = getSafeDate(project.startDate);
                       const endDate = getSafeDate(project.endDate);
