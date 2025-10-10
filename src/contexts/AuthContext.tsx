@@ -44,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
+  const [allUsers, setAllUsers] = useState<User[]>(mockUsers);
+
 
   useEffect(() => {
     const seedUsers = async () => {
@@ -216,10 +218,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth, firestore]);
   
   const licenseUsage = {
-    'System Super Admin': mockUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
-    'Admin': mockUsers.filter(u => u.role === 'Admin' && u.status === 'Active' && u.companyId === company?.id).length,
-    'Director': mockUsers.filter(u => u.role === 'Director' && u.status === 'Active' && u.companyId === company?.id).length,
-    'Engineer': mockUsers.filter(u => u.role === 'Engineer' && u.status === 'Active' && u.companyId === company?.id).length,
+    'System Super Admin': allUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
+    'Admin': allUsers.filter(u => u.role === 'Admin' && u.status === 'Active' && u.companyId === company?.id).length,
+    'Director': allUsers.filter(u => u.role === 'Director' && u.status === 'Active' && u.companyId === company?.id).length,
+    'Engineer': allUsers.filter(u => u.role === 'Engineer' && u.status === 'Active' && u.companyId === company?.id).length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
@@ -267,7 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await auth.updateCurrentUser(creatingUser);
     
     if (newUser) {
-        mockUsers.push(newUser); // Keep mock data in sync
+        setAllUsers(prevUsers => [...prevUsers, newUser]);
     }
     
     setLoading(false);

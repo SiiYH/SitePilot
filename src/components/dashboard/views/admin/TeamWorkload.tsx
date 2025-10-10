@@ -13,7 +13,6 @@ import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { mockUsers } from '@/lib/data';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -109,29 +108,24 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       });
       return;
     }
-    const userIndex = mockUsers.findIndex(u => u.id === userId);
-    if(userIndex !== -1) {
-        const updatedUser = { ...mockUsers[userIndex], role: newRole };
-        mockUsers[userIndex] = updatedUser;
-        onUserUpdated(updatedUser);
-        toast({
-            title: "Role Updated",
-            description: `${updatedUser.name}'s role has been changed to ${newRole}.`
-        });
-    }
+    const updatedUser = { ...user, role: newRole };
+    onUserUpdated(updatedUser);
+    toast({
+        title: "Role Updated",
+        description: `${updatedUser.name}'s role has been changed to ${newRole}.`
+    });
   };
 
   const handleStatusChange = (userId: string, newStatus: boolean) => {
     const status: UserStatus = newStatus ? 'Active' : 'Inactive';
-    const userIndex = mockUsers.findIndex(u => u.id === userId);
-    if(userIndex !== -1) {
+    const user = users.find(u => u.id === userId);
+    if(user) {
         const now = new Date().toISOString();
         const updatedUser = { 
-            ...mockUsers[userIndex], 
+            ...user, 
             status,
-            history: [...(mockUsers[userIndex].history || []), { status, date: now }]
+            history: [...(user.history || []), { status, date: now }]
         };
-        mockUsers[userIndex] = updatedUser;
         onUserUpdated(updatedUser);
         toast({
             title: "Status Updated",
