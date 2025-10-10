@@ -14,7 +14,7 @@ import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
 import { Button } from '@/components/ui/button';
-import { Edit, Upload, Settings } from 'lucide-react';
+import { Edit, Upload, Settings, PlusCircle } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
 import SettingsTab from './_components/SettingsTab';
 import { useAuth } from '@/hooks/use-auth';
@@ -340,9 +340,15 @@ export default function ProjectDetailsPage() {
         </TabsContent>
         <TabsContent value="documents" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Document Repository</CardTitle>
-              <CardDescription>All documents related to this project.</CardDescription>
+             <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>Document Repository</CardTitle>
+                <CardDescription>All documents related to this project.</CardDescription>
+              </div>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Upload Document
+              </Button>
             </CardHeader>
             <CardContent>
               <DocumentsList documents={projectWithTasks.documents} user={user} />
