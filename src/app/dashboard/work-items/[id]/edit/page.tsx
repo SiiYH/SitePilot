@@ -6,7 +6,7 @@ import { mockUsers } from '@/lib/data';
 import { Project, Task } from '@/types';
 import EditWorkItemForm from './_components/EditWorkItemForm';
 import { useFirestore, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -23,13 +23,27 @@ export default function EditWorkItemPage() {
     useEffect(() => {
         const findWorkItem = async () => {
             if (!firestore || !id) return;
-            const projectId = id.split('/tasks/')[0];
-            const projectDoc = await getDoc(doc(firestore, 'projects', projectId));
-            if (projectDoc.exists()) {
-                const workItemDocRef = doc(firestore, `projects/${projectId}/tasks/${id.split('/tasks/')[1]}`);
-                setWorkItemRef(workItemDocRef);
-                setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
-            } else {
+
+            const pathParts = id.split('/tasks/');
+            if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
+                notFound();
+                return;
+            }
+            const projectId = pathParts[0].replace('projects/', '');
+            const taskId = pathParts[1];
+
+            try {
+                const projectDocRef = doc(firestore, 'projects', projectId);
+                const projectDoc = await getDoc(projectDocRef);
+                if (projectDoc.exists()) {
+                    const workItemDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
+                    setWorkItemRef(workItemDocRef);
+                    setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
+                } else {
+                    notFound();
+                }
+            } catch (error) {
+                console.error("Error fetching documents:", error);
                 notFound();
             }
         };

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -15,8 +14,8 @@ import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -55,7 +54,7 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const id = decodeURIComponent(params.id as string);
   const { user } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -71,13 +70,29 @@ export default function WorkItemDetailsPage() {
     const findWorkItem = async () => {
       if (!firestore || !id) return;
       
-      const projectsQuery = await getDoc(doc(firestore, `projects/${id.split('/tasks/')[0]}`));
-      if(projectsQuery.exists()){
-        const projectData = projectsQuery.data() as Project;
-        const workItemPath = id.replace('/', '/tasks/');
-        const workItemDocRef = doc(firestore, workItemPath);
-        setWorkItemRef(workItemDocRef);
-        setProject(projectData);
+      const pathParts = id.split('/tasks/');
+      if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
+        notFound();
+        return;
+      }
+      
+      const projectId = pathParts[0].replace('projects/', '');
+      const taskId = pathParts[1];
+
+      try {
+        const projectDocRef = doc(firestore, 'projects', projectId);
+        const projectDoc = await getDoc(projectDocRef);
+
+        if (projectDoc.exists()) {
+          const workItemDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
+          setWorkItemRef(workItemDocRef);
+          setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
+        } else {
+          notFound();
+        }
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+        notFound();
       }
     };
     findWorkItem();
@@ -94,7 +109,7 @@ export default function WorkItemDetailsPage() {
     });
   };
 
-  const loading = workItemLoading || projectLoading;
+  const loading = workItemLoading || projectLoading || !project;
 
   if (loading || !user) {
     return (
@@ -133,7 +148,7 @@ export default function WorkItemDetailsPage() {
         </Button>
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
-        <p className="text-muted-foreground">Details for work item #{id.split('/tasks/')[1]}</p>
+        <p className="text-muted-foreground">Details for work item #{workItem.id.slice(-6)}</p>
       </div>
       
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -247,5 +262,4 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-
     

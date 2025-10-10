@@ -72,11 +72,16 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    const updatedData = {
+    const updatedData: Partial<Task> = {
       ...values,
-      owner: values.owner === 'unassigned' ? '' : values.owner, // Firestore expects null or undefined for deletion, but empty string works too
       dueDate: values.dueDate.toISOString(),
     };
+
+    if (values.owner === 'unassigned') {
+        delete updatedData.owner;
+    } else {
+        updatedData.owner = values.owner;
+    }
     
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', workItem.id);
@@ -89,7 +94,7 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
         description: `${values.title} has been successfully updated.`,
       });
       setIsLoading(false);
-      router.replace(`/dashboard/work-items/${workItem.id}`);
+      router.replace(`/dashboard/work-items/${encodeURIComponent(`projects/${project.id}/tasks/${workItem.id}`)}`);
       router.refresh();
     }, 1000);
   };
@@ -299,3 +304,4 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     </Card>
   );
 }
+    
