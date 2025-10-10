@@ -37,7 +37,7 @@ export interface Task {
 }
 
 export interface Document {
-  id:string;
+  id: string;
   name: string;
   url: string;
   type: 'Blueprint' | 'Contract' | 'Permit' | 'Report';
@@ -81,8 +81,8 @@ export interface Project {
   imageUrl: string;
   imageHint: string;
   assignedEngineers: string[]; // User IDs
-  tasks: Task[];
-  documents: Document[];
+  tasks: Task[]; // This might be deprecated in favor of the subcollection
+  documents: Document[]; // This will be deprecated in favor of the subcollection
   milestones: Milestone[];
   companyId?: string;
   jobNo: string;

@@ -72,7 +72,13 @@ export default function ProjectDetailsPage() {
   }, [firestore, project?.id]);
 
   const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
+  
+  const documentsQuery = useMemoFirebase(() => {
+    if (!firestore || !project?.id) return null;
+    return query(collection(firestore, 'projects', project.id, 'documents'), orderBy('uploadedAt', 'desc'));
+  }, [firestore, project?.id]);
 
+  const { data: documents, isLoading: documentsLoading } = useCollection<DocType>(documentsQuery);
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
   const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
@@ -157,10 +163,11 @@ export default function ProjectDetailsPage() {
   };
 
   const handleDocumentUploaded = (newDocument: DocType) => {
-    if (!project) return;
-    const updatedDocuments = [...(project.documents || []), newDocument];
-    const updatedProject = { ...project, documents: updatedDocuments };
-    setProject(updatedProject);
+     // The real-time listener for the documents collection will handle the UI update.
+    toast({
+      title: "Document Uploaded",
+      description: "Your document has been successfully uploaded.",
+    });
   };
 
   const handleImageUploadClick = () => {
@@ -356,7 +363,13 @@ export default function ProjectDetailsPage() {
                <UploadDocumentDialog project={projectWithTasks} onDocumentUploaded={handleDocumentUploaded} />
             </CardHeader>
             <CardContent>
-              <DocumentsList documents={projectWithTasks.documents} user={user} />
+               {documentsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <DocumentsList documents={documents || []} user={user} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

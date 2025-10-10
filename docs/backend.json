@@ -100,35 +100,31 @@
           "type": "string",
           "description": "Unique identifier for the Document entity."
         },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Document)"
-        },
         "name": {
           "type": "string",
           "description": "Name of the document."
         },
-        "fileUrl": {
+        "url": {
           "type": "string",
           "description": "URL where the document is stored."
         },
-        "uploadDate": {
+        "type": {
+          "type": "string",
+          "enum": ["Blueprint", "Contract", "Permit", "Report"],
+          "description": "Type of the document."
+        },
+        "uploadedAt": {
           "type": "string",
           "description": "Date when the document was uploaded.",
           "format": "date-time"
-        },
-        "accessRole": {
-          "type": "string",
-          "description": "Role required to access the document (e.g., 'Engineer', 'Admin', 'Director')."
         }
       },
       "required": [
         "id",
-        "projectId",
         "name",
-        "fileUrl",
-        "uploadDate",
-        "accessRole"
+        "url",
+        "type",
+        "uploadedAt"
       ]
     },
     "User": {
@@ -395,7 +391,7 @@
           "schema": {
             "$ref": "#/backend/entities/Document"
           },
-          "description": "Stores documents related to a project. The 'accessRole' field is used for role-based access control, allowing only users with the specified role to view the document.  The 'projectId' links to the parent project, and 'documentId' is a unique identifier for each document.",
+          "description": "Stores documents related to a project, allowing for granular access control per document if needed in the future.",
           "params": [
             {
               "name": "projectId",
@@ -409,6 +405,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Claims are in a top-level collection `/claims/{claimId}` for easy querying across all projects and companies, with `companyId` and `projectId` for filtering. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored similarly at `/projects/{projectId}/documents/{documentId}` with denormalized access roles. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations (QAPs) by ensuring each collection has a homogeneous security posture. Since engineers might not have emails we will store the user data in `/users/{userId}` with phone number for password recovery by SMS verification."
+    "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Claims are in a top-level collection `/claims/{claimId}` for easy querying across all projects and companies, with `companyId` and `projectId` for filtering. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored in their own subcollection at `/projects/{projectId}/documents/{documentId}` to allow for more granular security rules, separating them from the main project document. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations by ensuring each collection has a homogeneous security posture."
   }
 }

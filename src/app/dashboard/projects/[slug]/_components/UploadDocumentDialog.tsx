@@ -17,11 +17,11 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Loader2, Upload, File as FileIcon } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Project, Document as DocType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface UploadDocumentDialogProps {
@@ -56,8 +56,8 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
     setIsLoading(true);
 
     const file = values.file;
-    if (!file) {
-        toast({ variant: 'destructive', title: 'No file selected' });
+    if (!file || !firestore) {
+        toast({ variant: 'destructive', title: 'No file selected or database not ready.' });
         setIsLoading(false);
         return;
     }
@@ -69,29 +69,19 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        const newDocument: DocType = {
-            id: documentId,
+        const newDocument: Omit<DocType, 'id'> = {
             name: values.name,
             url: downloadURL,
             type: values.type,
             uploadedAt: new Date().toISOString(),
         };
 
-        const projectDocRef = doc(firestore, 'projects', project.id);
+        const documentDocRef = doc(firestore, 'projects', project.id, 'documents', documentId);
         
-        await updateDoc(projectDocRef, {
-            documents: arrayUnion(newDocument)
-        }).catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: projectDocRef.path,
-              operation: 'update',
-              requestResourceData: { documents: '...' }, // Don't send full array
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            throw permissionError;
-        });
+        setDocumentNonBlocking(documentDocRef, newDocument);
 
-        onDocumentUploaded(newDocument);
+        // Optimistic update for the UI
+        onDocumentUploaded({ ...newDocument, id: documentId });
         
         toast({
             title: 'Document Uploaded',
@@ -176,7 +166,9 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                       type="file"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        onChange(file);
+                        if (file) {
+                            onChange(file);
+                        }
                       }}
                       {...rest}
                     />

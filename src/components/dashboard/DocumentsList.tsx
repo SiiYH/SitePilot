@@ -3,7 +3,7 @@ import { Document as DocType, User } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Download, FileText, EyeOff } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface DocumentsListProps {
   documents: DocType[];
@@ -12,11 +12,25 @@ interface DocumentsListProps {
 
 export default function DocumentsList({ documents, user }: DocumentsListProps) {
   const canView = (docType: DocType['type']) => {
-    if (docType === 'Contract' && user.role !== 'Director') {
+    // Director can see everything
+    if (user.role === 'Director' || user.role === 'Admin' || user.role === 'System Super Admin') {
+      return true;
+    }
+    // For now, Engineers can see everything except contracts
+    if (docType === 'Contract') {
       return false;
     }
     return true;
   };
+
+  if (!documents || documents.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+        <h3 className="text-lg font-semibold text-muted-foreground">No Documents Found</h3>
+        <p className="mt-1 text-sm text-muted-foreground">This project does not have any documents yet. Upload one to get started.</p>
+      </div>
+    )
+  }
 
   return (
     <Table>
@@ -36,12 +50,14 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
                 {canView(doc.type) ? doc.name : 'Restricted Document'}
             </TableCell>
             <TableCell>{doc.type}</TableCell>
-            <TableCell>{format(new Date(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
+            <TableCell>{format(parseISO(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">
               {canView(doc.type) ? (
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
+                <Button variant="outline" size="sm" asChild>
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </a>
                 </Button>
               ) : (
                 <div className="flex items-center justify-end gap-2 text-muted-foreground">
