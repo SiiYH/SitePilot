@@ -1,3 +1,4 @@
+
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
@@ -21,8 +22,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
-import { useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 
@@ -64,9 +65,13 @@ export default function ProjectDetailsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   
-  // Tasks state with real-time updates
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  const tasksQuery = useMemoFirebase(() => {
+    if (!firestore || !project?.id) return null;
+    return query(collection(firestore, 'projects', project.id, 'tasks'), orderBy('createdAt', 'desc'));
+  }, [firestore, project?.id]);
+
+  const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
+
 
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
   const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
@@ -129,40 +134,6 @@ export default function ProjectDetailsPage() {
 
     return () => unsubscribe();
   }, [slug, user, firestore, toast]);
-
-  // Real-time listener for tasks
-  useEffect(() => {
-    if (!firestore || !project?.id) {
-      setTasksLoading(false);
-      return;
-    }
-    
-    setTasksLoading(true);
-    const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
-    
-    const unsubscribe = onSnapshot(
-      tasksRef,
-      (snapshot) => {
-        const tasksData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Task[];
-        setTasks(tasksData);
-        setTasksLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching tasks:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Loading Tasks",
-          description: "Could not load work items. Please refresh the page.",
-        });
-        setTasksLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [firestore, project?.id, toast]);
   
   const projectWithTasks = useMemo(() => {
     if (!project) return null;
@@ -177,7 +148,7 @@ export default function ProjectDetailsPage() {
   };
   
   const handleWorkItemCreated = (newTask: Task) => {
-    // Real-time listener will automatically update the task list
+    // The real-time listener will automatically update the task list
     toast({
       title: "Work Item Created",
       description: "The new work item has been added successfully.",
@@ -362,7 +333,7 @@ export default function ProjectDetailsPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <TasksTable tasks={tasks} user={user} />
+                <TasksTable tasks={tasks || []} user={user} />
               )}
             </CardContent>
           </Card>

@@ -9,29 +9,43 @@ import TasksTable from '@/components/dashboard/TasksTable';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+
 
 export default function MyTasksPage() {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, company } = useAuth();
+  const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
-  useEffect(() => {
-    if (user) {
-      if (user.role === 'Engineer') {
-        const engineerTasks = mockProjects.flatMap(p => 
-            p.tasks
-            .filter(t => t.owner === user.id || t.contributors?.includes(user.id))
-            .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
-        );
-        setTasks(engineerTasks);
-      }
-      setLoading(false);
-    }
-  }, [user]);
+  const tasksQuery = useMemoFirebase(() => {
+    if (!user || user.role !== 'Engineer' || !firestore || !company?.id) return null;
+    
+    // This query is complex and might require composite indexes in a real production app.
+    // For this app, we assume it works or that indexes will be created.
+    return query(
+      collection(firestore, 'projects'),
+      where('companyId', '==', company.id),
+      where('assignedEngineers', 'array-contains', user.id),
+    );
+  }, [user, firestore, company?.id]);
+  
+  // This is a bit of a workaround. useCollection fetches projects, then we extract tasks.
+  // A more optimized approach in a real large-scale app might be to query a top-level `tasks` collection.
+  const { data: projectsWithTasks, isLoading: loading } = useCollection<Project>(tasksQuery);
 
-  const projectsWithTasks = useMemo(() => {
-    if (tasks.length === 0) return [];
+  const tasks = useMemo(() => {
+    if (!projectsWithTasks) return [];
+    return projectsWithTasks.flatMap(p => 
+      (p.tasks || [])
+        .filter(t => t.owner === user?.id || t.contributors?.includes(user?.id || ''))
+        .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [projectsWithTasks, user]);
+
+
+  const projectsForFilter = useMemo(() => {
+    if (!projectsWithTasks) return [];
     
     const projectMap = new Map<string, { id: string; name: string }>();
     tasks.forEach(task => {
@@ -41,7 +55,7 @@ export default function MyTasksPage() {
     });
 
     return Array.from(projectMap.values());
-  }, [tasks]);
+  }, [tasks, projectsWithTasks]);
 
   const filteredTasks = useMemo(() => {
     if (selectedProjectId === 'all') {
@@ -80,7 +94,7 @@ export default function MyTasksPage() {
             All tasks and work items assigned to you. Click a work item to view details.
           </p>
         </div>
-        {projectsWithTasks.length > 0 && (
+        {projectsForFilter.length > 0 && (
             <div className="w-full sm:w-64">
                 <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
                     <SelectTrigger>
@@ -89,7 +103,7 @@ export default function MyTasksPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Projects</SelectItem>
-                        {projectsWithTasks.map(project => (
+                        {projectsForFilter.map(project => (
                             <SelectItem key={project.id} value={project.id}>
                                 {project.name}
                             </SelectItem>

@@ -30,6 +30,7 @@ export interface Task {
   contributors?: string[]; // User IDs
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
   dueDate: string;
+  createdAt: string;
   projectName?: string;
   projectSlug?: string;
   projectId?: string;
