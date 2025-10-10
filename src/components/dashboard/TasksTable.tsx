@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp, Tags } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -23,6 +23,7 @@ interface TasksTableProps {
 }
 
 type SortOrder = 'asc' | 'desc' | 'none';
+type TypeFilter = 'all' | 'Task' | 'Milestone';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Completed': 'default',
@@ -52,15 +53,23 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
   const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
 
   React.useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
+  
+  const filteredTasks = useMemo(() => {
+    if (typeFilter === 'all') {
+      return tasks;
+    }
+    return tasks.filter(task => task.type === typeFilter);
+  }, [tasks, typeFilter]);
 
   const sortedTasks = useMemo(() => {
-    const sortableTasks = [...tasks];
+    const sortableTasks = [...filteredTasks];
     if (sortOrder === 'none') {
       return sortableTasks;
     }
@@ -74,7 +83,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
       }
     });
     return sortableTasks;
-  }, [tasks, sortOrder]);
+  }, [filteredTasks, sortOrder]);
 
   const handleSort = () => {
     if (sortOrder === 'none') {
@@ -116,7 +125,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   
   const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
-  if (sortedTasks.length === 0) {
+  if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
         <h3 className="text-lg font-semibold text-muted-foreground">No Work Items Found</h3>
@@ -127,6 +136,25 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
 
   return (
     <>
+        <div className="flex items-center gap-2 mb-4">
+            <div className="w-full sm:w-48">
+                 <Select value={typeFilter} onValueChange={(value: TypeFilter) => setTypeFilter(value)}>
+                    <SelectTrigger>
+                        <Tags className="mr-2 h-4 w-4" />
+                        <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="Task">Tasks</SelectItem>
+                        <SelectItem value="Milestone">Milestones</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+             <Button variant="ghost" onClick={handleSort} className="px-3">
+                Due Date
+                <SortIcon className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
         {/* Mobile View: List of Cards */}
         <div className="space-y-4 md:hidden">
             {sortedTasks.map(task => {
@@ -189,15 +217,12 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Type</TableHead>
                 <TableHead>Work Item</TableHead>
+                <TableHead>Type</TableHead>
                 {showProjectColumn && <TableHead>Project</TableHead>}
                 {showAssignedToColumn && <TableHead>Owner</TableHead>}
                 <TableHead>
-                   <Button variant="ghost" onClick={handleSort} className="px-2">
-                        Due Date
-                        <SortIcon className="ml-2 h-4 w-4" />
-                   </Button>
+                   Due Date
                 </TableHead>
                 <TableHead className="text-right">Status</TableHead>
                 </TableRow>
@@ -208,13 +233,13 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                     const dueDate = getSafeDate(task.dueDate);
                     return (
                     <TableRow key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
+                        <TableCell className="font-medium">{task.title}</TableCell>
                         <TableCell>
                             <Badge variant="outline" className='h-8'>
                                 <Icon className="h-4 w-4 mr-1 text-muted-foreground" />
                                 {task.type}
                             </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">{task.title}</TableCell>
                         {showProjectColumn && (
                         <TableCell>
                             {task.projectSlug ? (
