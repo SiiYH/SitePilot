@@ -47,12 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const seedUsers = async () => {
-        const auth = getAuth();
+        // Use the auth instance from the provider context
         for (const mockUser of mockUsers) {
             if (mockUser.email) {
                 try {
                     // This is a temporary solution to seed users.
-                    // In a real app, you wouldn't use this logic.
                     // It attempts to create users, and fails silently if they exist.
                     await createUserWithEmailAndPassword(auth, mockUser.email, 'password');
                     console.log(`Created user: ${mockUser.email}`);
@@ -66,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     // This is a one-off seeding process.
-    if (localStorage.getItem('sitepilot-users-seeded') !== 'true') {
+    if (localStorage.getItem('sitepilot-users-seeded') !== 'true' && auth) {
         seedUsers().then(() => {
             localStorage.setItem('sitepilot-users-seeded', 'true');
         });
