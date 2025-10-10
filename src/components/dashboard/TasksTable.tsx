@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown } from 'lucide-react';
+import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -113,6 +113,8 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
   
   const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner);
+  
+  const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
   if (sortedTasks.length === 0) {
     return (
@@ -194,7 +196,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 <TableHead>
                    <Button variant="ghost" onClick={handleSort} className="px-2">
                         Due Date
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <SortIcon className="ml-2 h-4 w-4" />
                    </Button>
                 </TableHead>
                 <TableHead className="text-right">Status</TableHead>
