@@ -36,6 +36,11 @@ export default function ProjectsPage() {
     } else {
       setProjectStatuses(defaultProjectStatuses);
     }
+    
+    const savedViewMode = localStorage.getItem('sitepilot-project-view') as ViewMode;
+    if (savedViewMode) {
+        setViewMode(savedViewMode);
+    }
   }, []);
   
   const projectsQuery = useMemoFirebase(() => {
@@ -62,6 +67,11 @@ export default function ProjectsPage() {
         }
     }
   };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('sitepilot-project-view', mode);
+  }
 
   const filteredProjects = useMemo(() => {
     let userProjects = user?.role === 'Engineer'
@@ -134,7 +144,7 @@ export default function ProjectsPage() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => handleViewModeChange('grid')}
                     aria-label="Grid view"
                     className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
                 >
@@ -143,7 +153,7 @@ export default function ProjectsPage() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setViewMode('list')}
+                    onClick={() => handleViewModeChange('list')}
                     aria-label="List view"
                     className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
                 >
