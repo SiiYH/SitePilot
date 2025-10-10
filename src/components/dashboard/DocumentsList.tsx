@@ -2,8 +2,11 @@
 import { Document as DocType, User } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, EyeOff } from 'lucide-react';
+import { Download, FileText, EyeOff, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useStorage } from '@/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { useState } from 'react';
 
 interface DocumentsListProps {
   documents: DocType[];
@@ -11,6 +14,9 @@ interface DocumentsListProps {
 }
 
 export default function DocumentsList({ documents, user }: DocumentsListProps) {
+  const storage = useStorage();
+  const [loadingDoc, setLoadingDoc] = useState<string | null>(null);
+
   const canView = (docType: DocType['type']) => {
     // Director can see everything
     if (user.role === 'Director' || user.role === 'Admin' || user.role === 'System Super Admin') {
@@ -22,6 +28,21 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
     }
     return true;
   };
+
+  const handleDownload = async (docPath: string) => {
+    setLoadingDoc(docPath);
+    try {
+      const docRef = ref(storage, docPath);
+      const url = await getDownloadURL(docRef);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Error getting download URL:", error);
+      // You might want to show a toast message to the user here
+    } finally {
+      setLoadingDoc(null);
+    }
+  };
+
 
   if (!documents || documents.length === 0) {
     return (
@@ -53,11 +74,18 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
             <TableCell>{format(parseISO(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">
               {canView(doc.type) ? (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDownload(doc.path)}
+                  disabled={loadingDoc === doc.path}
+                >
+                  {loadingDoc === doc.path ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
                     <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </a>
+                  )}
+                  Download
                 </Button>
               ) : (
                 <div className="flex items-center justify-end gap-2 text-muted-foreground">

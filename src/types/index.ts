@@ -1,5 +1,4 @@
 
-
 export type UserRole = 'Engineer' | 'Admin' | 'Director' | 'System Super Admin';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -39,7 +38,7 @@ export interface Task {
 export interface Document {
   id: string;
   name: string;
-  url: string;
+  path: string; // Changed from url to path
   type: 'Blueprint' | 'Contract' | 'Permit' | 'Report';
   uploadedAt: string;
 }

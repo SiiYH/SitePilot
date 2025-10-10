@@ -22,7 +22,7 @@ import { Project, Document as DocType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 
 interface UploadDocumentDialogProps {
   project: Project;
@@ -67,11 +67,10 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
 
     try {
         const snapshot = await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
+        
         const newDocument: Omit<DocType, 'id'> = {
             name: values.name,
-            url: downloadURL,
+            path: snapshot.ref.fullPath, // Store the full path instead of the URL
             type: values.type,
             uploadedAt: new Date().toISOString(),
         };
