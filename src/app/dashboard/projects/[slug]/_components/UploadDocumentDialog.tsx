@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,7 +32,7 @@ interface UploadDocumentDialogProps {
 const formSchema = z.object({
   name: z.string().min(3, 'Document name must be at least 3 characters.'),
   type: z.enum(['Blueprint', 'Contract', 'Permit', 'Report']),
-  file: z.instanceof(File).refine(file => file.size > 0, 'A file is required.'),
+  file: z.instanceof(File, { message: "A file is required." }),
 });
 
 const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Report'];
@@ -52,8 +51,6 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
       type: 'Report',
     },
   });
-
-  const fileRef = form.register('file');
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -171,19 +168,18 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
             <FormField
               control={form.control}
               name="file"
-              render={({ field }) => (
+              render={({ field: { onChange, value, ...rest } }) => (
                 <FormItem>
                   <FormLabel>File</FormLabel>
                   <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        id="file-upload"
-                        {...fileRef}
-                        className="flex-1"
-                        onChange={(e) => field.onChange(e.target.files?.[0])}
-                      />
-                    </div>
+                    <Input
+                      type="file"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        onChange(file);
+                      }}
+                      {...rest}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
