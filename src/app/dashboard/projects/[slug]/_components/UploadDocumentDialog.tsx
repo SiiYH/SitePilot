@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Project, Document as DocType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useStorage, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 
@@ -32,7 +32,7 @@ interface UploadDocumentDialogProps {
 const formSchema = z.object({
   name: z.string().min(3, 'Document name must be at least 3 characters.'),
   type: z.enum(['Blueprint', 'Contract', 'Permit', 'Report']),
-  file: z.instanceof(File, { message: "A file is required." }),
+  file: z.instanceof(File).refine(file => file.size > 0, 'A file is required.'),
 });
 
 const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Report'];
@@ -91,14 +91,12 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
         form.reset();
 
     } catch (error) {
-        if (!(error instanceof FirestorePermissionError)) {
-             console.error("Error uploading document:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Upload Failed',
-                description: 'Could not upload the document. Please check console for details.',
-            });
-        }
+        console.error("Error uploading document:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: 'Could not upload the document. Please check console for details.',
+        });
     } finally {
         setIsLoading(false);
     }
