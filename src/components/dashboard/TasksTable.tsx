@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Task, User, UserRole } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,17 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban } from 'lucide-react';
+import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface TasksTableProps {
   tasks: Task[];
   user: User;
 }
+
+type SortOrder = 'asc' | 'desc' | 'none';
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Completed': 'default',
@@ -48,11 +51,40 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const firestore = useFirestore();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('none');
+
   const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
 
   React.useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
+
+  const sortedTasks = useMemo(() => {
+    const sortableTasks = [...tasks];
+    if (sortOrder === 'none') {
+      return sortableTasks;
+    }
+    sortableTasks.sort((a, b) => {
+      const dateA = getSafeDate(a.dueDate)?.getTime() || 0;
+      const dateB = getSafeDate(b.dueDate)?.getTime() || 0;
+      if (sortOrder === 'asc') {
+        return dateA - dateB;
+      } else {
+        return dateB - dateA;
+      }
+    });
+    return sortableTasks;
+  }, [tasks, sortOrder]);
+
+  const handleSort = () => {
+    if (sortOrder === 'none') {
+      setSortOrder('desc');
+    } else if (sortOrder === 'desc') {
+      setSortOrder('asc');
+    } else {
+      setSortOrder('none');
+    }
+  };
 
   const handleStatusChange = (taskId: string, projectId: string | undefined, newStatus: Task['status']) => {
     if (!projectId) return;
@@ -78,11 +110,11 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
   };
 
-  const showProjectColumn = tasks.some(task => task.projectName && task.projectSlug);
+  const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
   
-  const showAssignedToColumn = new Set(tasks.map(t => t.owner)).size > 1 || tasks.some(t => !t.owner);
+  const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner);
 
-  if (tasks.length === 0) {
+  if (sortedTasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
         <h3 className="text-lg font-semibold text-muted-foreground">No Work Items Found</h3>
@@ -95,7 +127,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     <>
         {/* Mobile View: List of Cards */}
         <div className="space-y-4 md:hidden">
-            {tasks.map(task => {
+            {sortedTasks.map(task => {
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 const dueDate = getSafeDate(task.dueDate);
                 return (
@@ -159,12 +191,17 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 <TableHead>Work Item</TableHead>
                 {showProjectColumn && <TableHead>Project</TableHead>}
                 {showAssignedToColumn && <TableHead>Owner</TableHead>}
-                <TableHead>Due Date</TableHead>
+                <TableHead>
+                   <Button variant="ghost" onClick={handleSort} className="px-2">
+                        Due Date
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                   </Button>
+                </TableHead>
                 <TableHead className="text-right">Status</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {tasks.map(task => {
+                {sortedTasks.map(task => {
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     const dueDate = getSafeDate(task.dueDate);
                     return (
