@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 import { useStorage } from '@/firebase';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentsListProps {
   documents: DocType[];
@@ -16,6 +17,7 @@ interface DocumentsListProps {
 export default function DocumentsList({ documents, user }: DocumentsListProps) {
   const storage = useStorage();
   const [loadingDoc, setLoadingDoc] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const canView = (docType: DocType['type']) => {
     // Director can see everything
@@ -30,6 +32,15 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
   };
 
   const handleDownload = async (docPath: string) => {
+    if (!docPath) {
+      console.error("Download failed: Document path is missing.");
+      toast({
+        variant: "destructive",
+        title: "Download Error",
+        description: "Could not download the file because its path is missing.",
+      });
+      return;
+    }
     setLoadingDoc(docPath);
     try {
       const docRef = ref(storage, docPath);
@@ -37,7 +48,11 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
       window.open(url, '_blank');
     } catch (error) {
       console.error("Error getting download URL:", error);
-      // You might want to show a toast message to the user here
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "Could not retrieve the file. See console for details.",
+      });
     } finally {
       setLoadingDoc(null);
     }
