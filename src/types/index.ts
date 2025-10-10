@@ -1,4 +1,5 @@
 
+
 export type UserRole = 'Engineer' | 'Admin' | 'Director' | 'System Super Admin';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -95,6 +96,10 @@ export interface Project {
   marginProfit?: number;
   insuranceAmount?: number;
   currency?: string;
+  createdAt: string;
+  createdBy: string;
+  modifiedAt?: string;
+  modifiedBy?: string;
 }
 
 export interface Claim {

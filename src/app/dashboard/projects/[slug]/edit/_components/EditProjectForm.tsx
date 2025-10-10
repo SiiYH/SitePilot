@@ -24,6 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/use-auth';
 import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 
 interface EditProjectFormProps {
@@ -59,6 +61,7 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
   const { toast } = useToast();
   const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  const firestore = useFirestore();
 
   const getSafeDate = (dateValue: string | Date): Date => {
     if (dateValue instanceof Date) {
@@ -101,17 +104,26 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    // In a real app, this would be an API call to update the project.
-    // For this mock, we'll find and update the project in the mockProjects array.
-    const projectIndex = mockProjects.findIndex(p => p.id === project.id);
-    if (projectIndex !== -1) {
-      mockProjects[projectIndex] = {
-        ...mockProjects[projectIndex],
-        ...values,
-        startDate: values.startDate.toISOString(),
-        endDate: values.endDate.toISOString(),
-      };
+    if (!user || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "You must be logged in to edit projects.",
+      });
+      setIsLoading(false);
+      return;
     }
+
+    const projectDocRef = doc(firestore, 'projects', project.id);
+    const updateData = {
+      ...values,
+      startDate: values.startDate.toISOString(),
+      endDate: values.endDate.toISOString(),
+      modifiedAt: new Date().toISOString(),
+      modifiedBy: user.id,
+    };
+    
+    updateDocumentNonBlocking(projectDocRef, updateData);
     
     setTimeout(() => {
       toast({
@@ -119,10 +131,8 @@ export default function EditProjectForm({ project, engineers }: EditProjectFormP
         description: `${values.name} has been successfully updated.`,
       });
       setIsLoading(false);
-      // It's good practice to push the router to the updated project page
-      // to see the changes reflect.
       router.replace(`/dashboard/projects/${project.slug}`);
-      router.refresh(); // To ensure server component re-fetches data
+      router.refresh();
     }, 1000);
   };
 
