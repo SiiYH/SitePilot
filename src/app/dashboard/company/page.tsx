@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -228,97 +229,99 @@ export default function CompanyPage() {
                         <div>
                             {companyData?.name && <CardTitle>Details for {companyData.name}</CardTitle>}
                         </div>
-                        {companyData && canEdit && (
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href={`/create-company?edit=true&companyId=${companyData.id}`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Details
-                                </Link>
-                            </Button>
-                        )}
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-2">
                 {companyData ? (
-                    <>
-                    {/* General Company Info */}
-                    <div className="space-y-4">
-                        <h3 className="text-base font-semibold">General Details</h3>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <InfoField label="Company Name" value={companyData.name} />
-                            <InfoField label="Industry" value={industryDisplay} />
-                        </div>
-                        <InfoField label="Company Description" value={companyData.description} />
-                    </div>
-                    
-                    <Separator/>
-
-                    {/* E-Invoicing Details */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                           <h3 className="text-base font-semibold">E-Invoicing Details</h3>
-                           {canEdit && (
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/company-setup/e-invoicing?edit=true`}>
+                    <Accordion type="multiple" defaultValue={['general', 'e-invoicing']} className="w-full">
+                      <AccordionItem value="general">
+                        <AccordionTrigger className="text-base font-semibold">General Details</AccordionTrigger>
+                        <AccordionContent className="pt-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div>&nbsp;</div>
+                                {canEdit && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href={`/create-company?edit=true&companyId=${companyData.id}`}>
                                         <Edit className="mr-2 h-4 w-4" />
-                                        {hasEInvData ? 'Edit' : 'Setup'}
-                                    </Link>
-                                </Button>
-                           )}
-                        </div>
+                                        Edit Details
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <InfoField label="Company Name" value={companyData.name} />
+                                <InfoField label="Industry" value={industryDisplay} />
+                            </div>
+                            <InfoField label="Company Description" value={companyData.description} />
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="e-invoicing">
+                        <AccordionTrigger className="text-base font-semibold">E-Invoicing Details</AccordionTrigger>
+                        <AccordionContent className="pt-4 space-y-4">
+                             <div className="flex items-center justify-between">
+                                <div>&nbsp;</div>
+                               {canEdit && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href={`/company-setup/e-invoicing?edit=true`}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            {hasEInvData ? 'Edit' : 'Setup'}
+                                        </Link>
+                                    </Button>
+                               )}
+                            </div>
+                            {hasEInvData ? (
+                                <>
+                                <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled` : 'Disabled'} />
+                                
+                                {eInvData.eInvEnabled && (
+                                    <div className="space-y-4 pt-2">
+                                        <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === '1.1' ? 'Version 1.1' : 'Version 1.0'} />
+                                        {/* Business Identifiers */}
+                                        <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
+                                            <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
+                                            <InfoField label="TIN" value={eInvData.tin} />
+                                            <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
+                                        </div>
+                                        
+                                        <Separator className="my-4" />
 
-                        {hasEInvData ? (
-                            <>
-                            <InfoField label="E-Invoicing Status" value={eInvData.eInvEnabled ? `Enabled` : 'Disabled'} />
-                            
-                            {eInvData.eInvEnabled && (
-                                <div className="space-y-4 pt-2">
-                                    <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === '1.1' ? 'Version 1.1' : 'Version 1.0'} />
-                                    {/* Business Identifiers */}
-                                    <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                        <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
-                                        <InfoField label="TIN" value={eInvData.tin} />
-                                        <InfoField label={getIdentifierLabel(eInvData.customerType)} value={eInvData.identifier} />
+                                        {/* Contact & Address */}
+                                        <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
+                                            <InfoField label="E-Invoicing Email" value={eInvData.email} />
+                                            <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
+                                            {fullAddress && (
+                                                <div className="md:col-span-2">
+                                                    <InfoField label="Address" value={fullAddress} />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Separator className="my-4" />
+
+                                        {/* Financial Details */}
+                                        <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
+                                            <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
+                                        </div>
                                     </div>
-                                    
-                                    <Separator className="my-4" />
-
-                                    {/* Contact & Address */}
-                                    <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                        <InfoField label="E-Invoicing Email" value={eInvData.email} />
-                                        <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
-                                        {fullAddress && (
-                                            <div className="md:col-span-2">
-                                                <InfoField label="Address" value={fullAddress} />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <Separator className="my-4" />
-
-                                    {/* Financial Details */}
-                                    <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
-                                        <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
-                                    </div>
-                                </div>
+                                )}
+                                </>
+                            ) : (
+                                <Card className="bg-muted/30">
+                                    <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                    <p className="font-semibold">No E-Invoicing Information</p>
+                                    <p className="mb-4 text-sm">Add your e-invoicing details to enable this feature.</p>
+                                    <Button asChild variant="outline">
+                                        <Link href="/company-setup/e-invoicing">
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Add E-Invoicing Details
+                                        </Link>
+                                    </Button>
+                                    </CardContent>
+                                </Card>
                             )}
-                            </>
-                        ) : (
-                            <Card className="bg-muted/30">
-                                <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                                <p className="font-semibold">No E-Invoicing Information</p>
-                                <p className="mb-4 text-sm">Add your e-invoicing details to enable this feature.</p>
-                                <Button asChild variant="outline">
-                                    <Link href="/company-setup/e-invoicing">
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Add E-Invoicing Details
-                                    </Link>
-                                </Button>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                    </>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                 ) : (
                     <Card className="bg-muted/30">
                     <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
