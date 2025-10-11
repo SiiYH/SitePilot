@@ -1,48 +1,37 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { mockProjects, mockUsers } from '@/lib/data';
+import { mockProjects } from '@/lib/data';
 import { Project, User } from '@/types';
 import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
 import { Loader2 } from 'lucide-react';
 import ActivateLicenseDialog from './_components/ActivateLicenseDialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function TeamPage() {
-  const { user, company } = useAuth();
-  const [teamUsers, setTeamUsers] = useState<User[]>([]);
+  const { user, company, loading: authLoading } = useAuth();
+  const firestore = useFirestore();
   const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (company) {
-      const companyUsers = mockUsers.filter(u => u.companyId === company.id);
-      setTeamUsers(companyUsers);
-    }
-    setLoading(false);
-  }, [company]);
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+
+  const { data: teamUsers, isLoading: usersLoading } = useCollection<User>(usersQuery);
 
   const handleUserCreated = (newUser: User) => {
-    if (newUser.companyId === company?.id) {
-        setTeamUsers(prevUsers => [newUser, ...prevUsers]);
-    }
-     // Also update the global mock data so other components are aware
-    const userIndex = mockUsers.findIndex(u => u.id === newUser.id);
-    if (userIndex === -1) {
-        mockUsers.push(newUser);
-    }
+    // With useCollection, this is handled automatically, but can be kept for optimistic updates.
   };
   
   const handleUserUpdated = (updatedUser: User) => {
-     setTeamUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
-     const userIndex = mockUsers.findIndex(u => u.id === updatedUser.id);
-    if (userIndex !== -1) {
-        mockUsers[userIndex] = updatedUser;
-    }
+    // With useCollection, this is handled automatically.
   };
 
+  const loading = authLoading || usersLoading;
 
   if (loading || !user) {
     return (
@@ -63,17 +52,15 @@ export default function TeamPage() {
             Oversee team members, their roles, and assigned workload.
             </p>
         </div>
-        {/* {canManageUsers && company && (
+        {canManageUsers && company && (
             company.activated ? (
                 <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
             ) : (
                 <ActivateLicenseDialog />
             )
-        )} */}
-        {canManageUsers && company &&                 <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
-      }
+        )}
       </div>
-      <TeamWorkload users={teamUsers} projects={projects} onUserUpdated={handleUserUpdated} />
+      <TeamWorkload users={teamUsers || []} projects={projects} onUserUpdated={handleUserUpdated} />
     </div>
   );
 }
