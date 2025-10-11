@@ -4,10 +4,9 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc, FirestoreError } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError, collection, query, getDocs } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
 import { login, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
-import { mockUsers } from '@/lib/data';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
@@ -44,11 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
-  const [allUsers, setAllUsers] = useState<User[]>(mockUsers);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
 
   useEffect(() => {
     const seedUsers = async () => {
+        const mockUsersResponse = await fetch('/api/mock-users');
+        const mockUsers = await mockUsersResponse.json();
+
         // Use the auth instance from the provider context
         for (const mockUser of mockUsers) {
             if (mockUser.email) {
@@ -66,11 +68,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
     
+    const fetchAllUsers = async () => {
+      if (!firestore) return;
+      const usersCol = collection(firestore, 'users');
+      const usersSnapshot = await getDocs(usersCol);
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setAllUsers(usersList);
+    };
+
     // This is a one-off seeding process.
     if (localStorage.getItem('sitepilot-users-seeded') !== 'true' && auth) {
-        seedUsers().then(() => {
-            localStorage.setItem('sitepilot-users-seeded', 'true');
-        });
+        // We don't seed users anymore from the client. This should be done on the backend.
+        // But we keep the flag to avoid re-running this logic.
+        localStorage.setItem('sitepilot-users-seeded', 'true');
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
@@ -89,6 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   const companyData = { id: companyDoc.id, ...companyDoc.data() };
                   setCompany(companyData);
                   
+                  await fetchAllUsers();
+
                   // Load license limits
                   if (companyData.activated && companyData.licenseKey) {
                     const storedLicenses = localStorage.getItem('sitepilot-licenses');
