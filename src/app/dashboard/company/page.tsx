@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Building, PlusCircle, Edit, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -86,6 +86,49 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
     );
 }
 
+const CompanyIdCard = ({ companyId }: { companyId: string }) => {
+    const { toast } = useToast();
+    const [hasCopied, setHasCopied] = useState(false);
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(companyId);
+        setHasCopied(true);
+        toast({ title: "Company ID copied!" });
+        setTimeout(() => setHasCopied(false), 2000);
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <CardTitle>Company ID</CardTitle>
+                </div>
+                <CardDescription>Share this ID with new users to have them join your company.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
+                    <p className="flex-1 select-all break-all font-mono text-sm">
+                        {companyId}
+                    </p>
+                    <Button 
+                        type="button" 
+                        size="icon" 
+                        onClick={copyToClipboard}
+                        variant={hasCopied ? "default" : "outline"}
+                    >
+                        {hasCopied ? (
+                            <Check className="h-4 w-4" />
+                        ) : (
+                            <Copy className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">{hasCopied ? 'Copied' : 'Copy ID'}</span>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function CompanyPage() {
   const { user, company, setCompany, loading } = useAuth();
@@ -294,13 +337,16 @@ export default function CompanyPage() {
                 </CardContent>
             </Card>
         </div>
-         <div className="lg:col-span-1">
+         <div className="lg:col-span-1 space-y-6">
             {companyData && (
-                <LicenseActivationCard 
-                    companyData={companyData} 
-                    canEdit={canEdit}
-                    onActivate={handleActivate}
-                />
+                <>
+                    <LicenseActivationCard 
+                        companyData={companyData} 
+                        canEdit={canEdit}
+                        onActivate={handleActivate}
+                    />
+                    {canEdit && <CompanyIdCard companyId={companyData.id} />}
+                </>
             )}
         </div>
       </div>
