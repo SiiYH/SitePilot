@@ -10,11 +10,10 @@ import { Mail, Phone, Building, Edit, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useStorage, useFirestore, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useStorage, useFirestore, errorEmitter, FirestorePermissionError, type SecurityRuleContext, updateDocumentNonBlocking } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth } from 'firebase/auth';
 
 
 const getInitials = (name: string) => {
@@ -58,7 +57,7 @@ export default function ProfilePage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !storage || !firestore) return;
   
     setIsUploading(true);
     toast({ title: "Uploading Avatar...", description: "Please wait." });
@@ -73,27 +72,7 @@ export default function ProfilePage() {
       const userDocRef = doc(firestore, "users", user.id);
       const updateData = { avatarUrl: downloadURL };
       
-      await updateDoc(userDocRef, updateData)
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: userDocRef.path,
-              operation: 'update',
-              requestResourceData: updateData,
-            } satisfies SecurityRuleContext);
-
-            // This will be caught by the FirebaseErrorListener and shown in the dev overlay
-            errorEmitter.emit('permission-error', permissionError);
-
-            // Also show a toast to the user
-            toast({
-                variant: "destructive",
-                title: "Permission Denied",
-                description: "You do not have permission to update your profile.",
-            });
-            
-            // We still re-throw to ensure the promise chain is broken
-            throw permissionError;
-        });
+      updateDocumentNonBlocking(userDocRef, updateData);
 
       // Update the local user state for immediate UI feedback ONLY on success
       setUser(prevUser => prevUser ? { ...prevUser, avatarUrl: downloadURL } : null);
@@ -104,9 +83,6 @@ export default function ProfilePage() {
       });
 
     } catch (error) {
-      // Catch any error (upload or Firestore update)
-      // The specific permission error is already handled above
-      // This is a fallback for other issues (e.g., network, storage rules)
       if (!(error instanceof FirestorePermissionError)) {
           console.error("Error during avatar upload process:", error);
           toast({
