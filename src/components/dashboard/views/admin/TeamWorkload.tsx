@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 interface TeamWorkloadProps {
   users: User[];
   projects: Project[];
-  onUserUpdated: (updatedUser: User) => void;
+  onUserUpdated: (userId: string, updates: Partial<User>) => void;
 }
 
 const getInitials = (name: string) => {
@@ -112,11 +112,12 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       });
       return;
     }
-    const updatedUser = { ...user, role: newRole };
-    onUserUpdated(updatedUser);
+    
+    onUserUpdated(userId, { role: newRole });
+
     toast({
         title: "Role Updated",
-        description: `${updatedUser.name}'s role has been changed to ${newRole}.`
+        description: `${user.name}'s role has been changed to ${newRole}.`
     });
   };
 
@@ -125,15 +126,14 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     const user = users.find(u => u.id === userId);
     if(user) {
         const now = new Date().toISOString();
-        const updatedUser = { 
-            ...user, 
-            status,
-            history: [...(user.history || []), { status, date: now }]
-        };
-        onUserUpdated(updatedUser);
+        const newHistoryEntry = { status, date: now };
+        const updatedHistory = [...(user.history || []), newHistoryEntry];
+        
+        onUserUpdated(userId, { status, history: updatedHistory });
+
         toast({
             title: "Status Updated",
-            description: `${updatedUser.name} has been set to ${status}.`
+            description: `${user.name} has been set to ${status}.`
         });
     }
   };
