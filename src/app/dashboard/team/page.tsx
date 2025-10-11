@@ -1,15 +1,16 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { mockProjects } from '@/lib/data';
-import { Project, User } from '@/types';
+import { Project, User, UserStatus, UserStatusChange } from '@/types';
 import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
 import { Loader2 } from 'lucide-react';
 import ActivateLicenseDialog from './_components/ActivateLicenseDialog';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
 
 export default function TeamPage() {
   const { user, company, loading: authLoading } = useAuth();
@@ -27,8 +28,19 @@ export default function TeamPage() {
     // With useCollection, this is handled automatically, but can be kept for optimistic updates.
   };
   
-  const handleUserUpdated = (updatedUser: User) => {
-    // With useCollection, this is handled automatically.
+  const handleUserUpdated = (userId: string, updates: Partial<User>) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userId);
+
+    const updatePayload: { [key: string]: any } = { ...updates };
+
+    // If history is part of the update, use arrayUnion
+    if (updates.history && Array.isArray(updates.history)) {
+        const newHistoryEntry = updates.history[0];
+        updatePayload.history = arrayUnion(newHistoryEntry);
+    }
+    
+    updateDocumentNonBlocking(userDocRef, updatePayload);
   };
 
   const loading = authLoading || usersLoading;
