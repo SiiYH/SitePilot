@@ -37,13 +37,25 @@ service cloud.firestore {
      * @principle Enforces user-ownership for profiles, preventing unauthorized access or modification.
      */
     match /users/{userId} {
-      //isSingedIn
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
+
+  // Get permissions - admin/director can read any user in their company
+  allow get: if isOwner(userId) || (isAdminOrDirector() && isSameCompany());
+  
+  // List permissions - all except engineers can list users from their company
+  allow list: if canListUsers() && isSameCompany();
+  
+  // Create permissions - admin/director can create users for their company
+  allow create: if (isSignedIn() && isOwner(userId)) || 
+                   (isAdminOrDirector() && isCreatingSameCompany());
+  
+  // Update permissions - admin/director can update any user in their company
+  allow update: if (isSignedIn() && isOwner(userId)) || 
+                   (isAdminOrDirector() && isSameCompany());
+  
+  // Delete permissions - admin/director can delete any user in their company
+  allow delete: if (isSignedIn() && isOwner(userId)) || 
+                   (isAdminOrDirector() && isSameCompany());
+}
 
     /**
      * @description Controls access to company profiles.
@@ -140,5 +152,36 @@ service cloud.firestore {
     function isProjectOwner(projectId) {
         return get(/databases/$(database)/documents/projects/$(projectId)).data.createdBy == request.auth.uid;
     }
+
+    function getUserData() {
+    return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+  }
+  
+  function getUserRole() {
+    return getUserData().role;
+  }
+  
+  function getUserCompany() {
+    return getUserData().companyId;
+  }
+  
+  function isAdminOrDirector() {
+    let role = getUserRole();
+    return role == 'admin' || role == 'director';
+  }
+  
+  function canListUsers() {
+    return isSignedIn() && getUserRole() != 'engineer';
+  }
+  
+  // Check if the target document belongs to same company
+  function isSameCompany() {
+    return resource.data.companyId == getUserCompany();
+  }
+  
+  // Check if the document being created belongs to same company
+  function isCreatingSameCompany() {
+    return request.resource.data.companyId == getUserCompany();
+  }
   }
 }
