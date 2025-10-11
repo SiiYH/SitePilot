@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -75,14 +75,18 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
 
   const getTasksForEngineer = (engineerId: string) => {
     return projects.flatMap(p => 
-      p.tasks
+      (p.tasks || [])
         .filter(t => t.owner === engineerId)
         .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
     );
   };
+  
+  const getProjectsForEngineer = (engineerId: string) => {
+    return projects.filter(p => p.assignedEngineers.includes(engineerId));
+  }
 
   const unassignedTasks = projects.flatMap(p => 
-    p.tasks
+    (p.tasks || [])
       .filter(t => !t.owner)
       .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
   );
@@ -268,6 +272,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
             {sortedUsers.length > 0 ? (
                 sortedUsers.map(user => {
                   const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
+                  const assignedProjects = user.role === 'Engineer' ? getProjectsForEngineer(user.id) : [];
                   const stats = getTaskStats(tasks);
                   
                   return (
@@ -475,17 +480,24 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center px-4 py-12 text-center bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border-2 border-dashed border-muted-foreground/20">
-                                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-4 shadow-sm">
-                                    <svg className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                </div>
-                                <p className="text-sm font-semibold text-foreground/80 mb-1">
-                                    No tasks assigned to {user.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Tasks will appear here when assigned
-                                </p>
+                                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-4 shadow-sm">
+                                      <FolderKanban className="h-8 w-8 text-muted-foreground"/>
+                                  </div>
+                                  <p className="text-sm font-semibold text-foreground/80 mb-1">
+                                      No tasks assigned to {user.name}
+                                  </p>
+                                  {assignedProjects.length > 0 ? (
+                                    <div className="text-xs text-muted-foreground mt-2">
+                                        <p>This user is assigned to {assignedProjects.length} project(s):</p>
+                                        <ul className='mt-1 list-disc list-inside'>
+                                            {assignedProjects.map(p => <li key={p.id}>{p.name}</li>)}
+                                        </ul>
+                                    </div>
+                                  ) : (
+                                     <p className="text-xs text-muted-foreground">
+                                        This user is not assigned to any projects.
+                                    </p>
+                                  )}
                                 </div>
                             )
                             ) : (
