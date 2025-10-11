@@ -4,7 +4,7 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc, FirestoreError, collection, query, getDocs } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError, collection, query, getDocs, where } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
 import { login, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -47,61 +47,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const seedUsers = async () => {
-        const mockUsersResponse = await fetch('/api/mock-users');
-        const mockUsers = await mockUsersResponse.json();
-
-        // Use the auth instance from the provider context
-        for (const mockUser of mockUsers) {
-            if (mockUser.email) {
-                try {
-                    // This is a temporary solution to seed users.
-                    // It attempts to create users, and fails silently if they exist.
-                    await createUserWithEmailAndPassword(auth, mockUser.email, 'password');
-                    console.log(`Created user: ${mockUser.email}`);
-                } catch (error: any) {
-                    if (error.code !== 'auth/email-already-in-use') {
-                        console.error(`Error creating user ${mockUser.email}:`, error);
-                    }
-                }
-            }
-        }
-    };
+    const fetchCompanyUsers = async (companyId: string) => {
+        if (!firestore) return;
+        const usersCol = collection(firestore, 'users');
+        // Only fetch users belonging to the specified company
+        const q = query(usersCol, where('companyId', '==', companyId));
+        
+        getDocs(q)
+          .then(usersSnapshot => {
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setAllUsers(usersList);
+          })
+          .catch(serverError => {
+              const permissionError = new FirestorePermissionError({
+                path: usersCol.path,
+                operation: 'list',
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
+      };
     
-    const fetchAllUsers = async () => {
-      if (!firestore) return;
-      const usersCol = collection(firestore, 'users');
-      
-      getDocs(usersCol)
-        .then(usersSnapshot => {
-          const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-          setAllUsers(usersList);
-        })
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-              path: usersCol.path,
-              operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-    };
-
-    // This is a one-off seeding process.
-    if (localStorage.getItem('sitepilot-users-seeded') !== 'true' && auth) {
-        // We don't seed users anymore from the client. This should be done on the backend.
-        // But we keep the flag to avoid re-running this logic.
-        localStorage.setItem('sitepilot-users-seeded', 'true');
-    }
-
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
       if (firebaseUser) {
-        // User is signed in, fetch profile.
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         try {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               setUser(userData);
+
               if (userData.companyId) {
                 const companyDocRef = doc(firestore, 'companies', userData.companyId);
                 const companyDoc = await getDoc(companyDocRef);
@@ -109,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   const companyData = { id: companyDoc.id, ...companyDoc.data() };
                   setCompany(companyData);
                   
-                  await fetchAllUsers();
+                  await fetchCompanyUsers(userData.companyId);
 
                   // Load license limits
                   if (companyData.activated && companyData.licenseKey) {
@@ -137,19 +111,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                   setCompany(null);
                 }
+              } else if (userData.role === 'System Super Admin') {
+                  // System admin doesn't need a company context, but might need to see all users
+                  // For now, we clear company context for them.
+                  setCompany(null);
+                  setLicenseLimits(defaultLimits);
               } else {
                 setCompany(null);
                 setLicenseLimits(defaultLimits);
               }
             } else {
-              // This case might happen if a user is in Auth but not in Firestore.
-              // For this app's logic, we sign them out.
               await auth.signOut();
               setUser(null);
               setCompany(null);
             }
         } catch (e: any) {
-            // Check if it is a Firestore permission error
              if (e instanceof FirestoreError && e.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
                   path: userDocRef.path,
@@ -157,84 +133,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
                 errorEmitter.emit('permission-error', permissionError);
             } else {
-                // For other errors, you might want to handle them differently
                 console.error("Error fetching user document:", e);
             }
-            // Sign out the user if their document can't be fetched
             await auth.signOut();
             setUser(null);
             setCompany(null);
         }
       } else {
-        // User is signed out.
         setUser(null);
         setCompany(null);
         setLicenseLimits(defaultLimits);
       }
       setLoading(false);
     });
-
-    // Seed sample companies for Company Management
-    const allCompaniesString = localStorage.getItem('sitepilot-all-companies');
-    if (!allCompaniesString) {
-      const sampleCompanies = [
-        {
-          id: 'company-demo-123',
-          name: "SitePilot Demo Construction",
-          industryCode: "F",
-          industryDescription: "CONSTRUCTION",
-          description: "A sample company for the default users to demonstrate SitePilot's features.",
-          activated: true,
-          licenseKey: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
-        },
-        {
-          id: 'company-456',
-          name: "Innovate Builders",
-          industryCode: "F",
-          industryDescription: "CONSTRUCTION",
-          description: "Pioneering the future of modular construction.",
-          activated: false,
-          licenseKey: null,
-        },
-        {
-          id: 'company-789',
-          name: "Heritage Restorations",
-          industryCode: "M",
-          industryDescription: "PROFESSIONAL, SCIENTIFIC AND TECHNICAL ACTIVITIES",
-          description: "Specializing in the restoration of historical buildings.",
-          activated: true,
-          licenseKey: 'U1AtVkFMSUQtSEVSSVRBR0UtUkVTVE9SQVRJT05TLUQxLUEyLUUxMC1FWFBVTkxJTUlURUQtMTcyMjE2MTQyODg4MA==',
-        }
-      ];
-
-       const sampleLicenses = [
-        {
-          key: 'U1AtVkFMSUQtU0lURVBILURFTE8tQ09OU1RSVUNUSU9OLUQyLUEyLUU1LUVYUDIwMjUwNzI4LTE3MjIxNjEyMjkxMjM=',
-          purchaser: 'SitePilot Demo Construction',
-          maxDirectors: 2,
-          maxAdmins: 2,
-          maxEngineers: 5,
-          expiresAt: '2025-07-28T00:00:00.000Z',
-          createdAt: '2024-07-28T16:07:09.123Z',
-          activatedAt: '2024-07-28T16:07:09.123Z',
-          companyId: 'company-demo-123',
-        },
-        {
-          key: 'U1AtVkFMSUQtSEVSSVRBR0UtUkVTVE9SQVRJT05TLUQxLUEyLUUxMC1FWFBVTkxJTUlURUQtMTcyMjE2MTQyODg4MA==',
-          purchaser: 'Heritage Restorations',
-          maxDirectors: 1,
-          maxAdmins: 2,
-          maxEngineers: 10,
-          expiresAt: 'Unlimited',
-          createdAt: '2024-07-28T16:10:28.880Z',
-          activatedAt: '2024-07-28T16:10:28.880Z',
-          companyId: 'company-789'
-        }
-      ];
-
-      localStorage.setItem('sitepilot-all-companies', JSON.stringify(sampleCompanies));
-      localStorage.setItem('sitepilot-licenses', JSON.stringify(sampleLicenses));
-    }
     
     return () => unsubscribe();
   }, [auth, firestore]);
@@ -250,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     const loggedInUser = await login(credentials);
     if (loggedInUser) {
-      // setUser is handled by onAuthStateChanged
       router.push('/dashboard');
     }
     setLoading(false);
@@ -263,7 +173,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return null;
     }
-    // We pass the currently active company's ID to the signup function
     const companyId = company?.id;
     const newUser = await createNewUser({ ...data, companyId });
     if (newUser) {
@@ -286,8 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const newUser = await createNewUser(data);
     
-    // After creating the user, Firebase automatically signs in the new user.
-    // We must now sign the original admin/director back in.
     await auth.updateCurrentUser(creatingUser);
     
     if (newUser) {
@@ -300,7 +207,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleLogout = async () => {
     await auth.signOut();
-    // setUser and setCompany are handled by onAuthStateChanged
     router.push('/login');
   };
 
@@ -320,3 +226,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+    
