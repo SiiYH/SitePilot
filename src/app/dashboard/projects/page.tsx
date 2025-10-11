@@ -17,6 +17,7 @@ import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import ActivateLicenseDialog from '../team/_components/ActivateLicenseDialog';
 
 
 type ViewMode = 'grid' | 'list';
@@ -169,7 +170,11 @@ export default function ProjectsPage() {
                 </Button>
             </div>
             {user?.role !== 'Engineer' && company && (
+              company.activated ? (
                 <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
+              ) : (
+                <ActivateLicenseDialog featureName="create projects" />
+              )
             )}
             {canManageSettings && (
                 <Button variant="outline" asChild>

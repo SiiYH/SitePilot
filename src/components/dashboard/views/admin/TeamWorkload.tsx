@@ -414,7 +414,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                                 <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(user.createdAt), { addSuffix: true })}</p>
                                             </div>
                                         </div>
-                                        {user.history.map((item, index) => (
+                                        {(user.history || []).map((item, index) => (
                                              <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-muted-foreground/20">
                                                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted shadow-sm">
                                                     <Clock className="h-6 w-6 text-muted-foreground" />

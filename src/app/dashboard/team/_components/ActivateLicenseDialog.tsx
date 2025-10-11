@@ -14,13 +14,17 @@ import {
 import { PlusCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
-export default function ActivateLicenseDialog() {
+interface ActivateLicenseDialogProps {
+  featureName?: string;
+}
+
+export default function ActivateLicenseDialog({ featureName = 'add new users' }: ActivateLicenseDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Create User
+          Create {featureName === 'create projects' ? 'Project' : 'User'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -30,7 +34,7 @@ export default function ActivateLicenseDialog() {
             <span>Activate Your Company License</span>
           </DialogTitle>
           <DialogDescription>
-            To add new users, your company's license must be activated first. Please go to your company settings to enter your license key.
+            To {featureName}, your company's license must be activated first. Please go to your company settings to enter your license key.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

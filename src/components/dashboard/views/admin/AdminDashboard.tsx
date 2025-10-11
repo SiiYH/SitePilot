@@ -1,36 +1,68 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from './admin/CreateProjectDialog';
-import { Project, User, Claim, AttendanceRecord } from '@/types';
-import { mockUsers } from '@/lib/data';
+import { Project, User, Claim, AttendanceRecord, ProjectStatus } from '@/types';
 import ProgressOverview from './admin/ProgressOverview';
 import ClaimsOverview from './admin/ClaimsOverview';
 import AttendanceSummary from './admin/AttendanceSummary';
 import AdminAlerts from './admin/AdminAlerts';
+import { useAuth } from '@/hooks/use-auth';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { defaultProjectStatuses } from '@/lib/data';
+import { Search, Activity } from 'lucide-react';
+import ActivateLicenseDialog from '../../team/_components/ActivateLicenseDialog';
 
 interface AdminDashboardProps {
   projects: Project[];
   claims: Claim[];
   attendance: AttendanceRecord[];
   users: User[];
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
 }
 
-export default function AdminDashboard({ projects: initialProjects, claims, attendance, users }: AdminDashboardProps) {
+export default function AdminDashboard({ 
+  projects: initialProjects, 
+  claims, 
+  attendance, 
+  users,
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter
+}: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const engineers = mockUsers.filter(u => u.role === 'Engineer');
+  const { company } = useAuth();
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
+  useEffect(() => {
+    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+    if (storedStatuses) {
+      setProjectStatuses(JSON.parse(storedStatuses));
+    } else {
+      setProjectStatuses(defaultProjectStatuses);
+    }
+  }, []);
+  
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
 
-  const unassignedTasks = projects.flatMap(p => p.tasks.filter(t => !t.owner));
+  const unassignedTasks = projects.flatMap(p => (p.tasks || []).filter(t => !t.owner));
 
-  const latestProjects = [...projects]
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-    .slice(0, 5);
+  const latestProjects = projects.length > 0
+    ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -47,15 +79,21 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
       </div>
 
       <div>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-xl font-semibold">Active Projects</h3>
-            <p className="text-sm text-muted-foreground">Showing the 5 most recent projects.</p>
+            <h3 className="text-xl font-semibold">Latest Projects</h3>
+            <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
-          <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} />
+          {company && (
+            company.activated ? (
+                <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+            ) : (
+                <ActivateLicenseDialog featureName="create projects" />
+            )
+        )}
         </div>
         {latestProjects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {latestProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
@@ -63,12 +101,12 @@ export default function AdminDashboard({ projects: initialProjects, claims, atte
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
             <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Get started by creating a new project.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Get started by creating a new project.
+            </p>
           </div>
         )}
       </div>
     </div>
   );
 }
-
-    

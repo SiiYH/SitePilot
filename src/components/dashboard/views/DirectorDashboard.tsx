@@ -17,6 +17,7 @@ import { defaultProjectStatuses } from '@/lib/data';
 import { Search, Activity, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import ActivateLicenseDialog from '../../team/_components/ActivateLicenseDialog';
 
 interface DirectorDashboardProps {
   projects: Project[];
@@ -99,7 +100,13 @@ export default function DirectorDashboard({
             <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
           <div className='flex items-center gap-2 flex-wrap'>
-            {company && <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />}
+            {company && (
+                company.activated ? (
+                    <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+                ) : (
+                    <ActivateLicenseDialog featureName="create projects" />
+                )
+            )}
           </div>
         </div>
         {latestProjects.length > 0 ? (

@@ -68,7 +68,7 @@ export default function TeamPage() {
             company.activated ? (
                 <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
             ) : (
-                <ActivateLicenseDialog />
+                <ActivateLicenseDialog featureName="add new users" />
             )
         )}
       </div>
