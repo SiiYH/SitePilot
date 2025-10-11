@@ -233,7 +233,7 @@ export default function CompanyPage() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                 {companyData ? (
-                    <Accordion type="multiple" defaultValue={['general', 'e-invoicing']} className="w-full">
+                    <Accordion type="multiple" className="w-full">
                       <AccordionItem value="general">
                         <AccordionTrigger className="text-base font-semibold">General Details</AccordionTrigger>
                         <AccordionContent className="pt-4 space-y-4">
