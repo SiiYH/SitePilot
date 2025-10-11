@@ -61,9 +61,9 @@ export default function AdminDashboard({
 
   const unassignedTasks = projects.flatMap(p => (p.tasks || []).filter(t => !t.owner));
 
-  const latestProject = projects.length > 0
-    ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-    : null;
+  const latestProjects = projects.length > 0
+    ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -82,14 +82,16 @@ export default function AdminDashboard({
       <div>
         <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-xl font-semibold">Latest Project</h3>
-            <p className="text-sm text-muted-foreground">The most recently created project in your workspace.</p>
+            <h3 className="text-xl font-semibold">Latest Projects</h3>
+            <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
           {company && <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />}
         </div>
-        {latestProject ? (
+        {latestProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <ProjectCard project={latestProject} />
+            {latestProjects.map(project => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
