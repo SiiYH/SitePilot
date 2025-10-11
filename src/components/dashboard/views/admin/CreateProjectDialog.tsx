@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,6 +31,7 @@ import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface CreateProjectDialogProps {
   users: User[];
@@ -544,3 +544,5 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     </Dialog>
   );
 }
+
+    
