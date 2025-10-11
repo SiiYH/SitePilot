@@ -47,8 +47,8 @@ const InfoField = ({ label, value, unit, currency }: { label: string; value?: st
 };
 
 
-function AssignedTeam({ engineers, currentUser }: { engineers: User[], currentUser: User }) {
-    if (engineers.length === 0) return null;
+function AssignedTeam({ users, currentUser }: { users: User[], currentUser: User }) {
+    if (users.length === 0) return null;
 
     return (
         <Card>
@@ -60,19 +60,19 @@ function AssignedTeam({ engineers, currentUser }: { engineers: User[], currentUs
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {engineers.map(engineer => (
-                        <div key={engineer.id} className="flex items-center justify-between">
+                    {users.map(user => (
+                        <div key={user.id} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Avatar>
-                                    <AvatarImage src={engineer.avatarUrl} alt={engineer.name} />
-                                    <AvatarFallback>{getInitials(engineer.name)}</AvatarFallback>
+                                    <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium">{engineer.name}</p>
-                                    <p className="text-sm text-muted-foreground">{engineer.role}</p>
+                                    <p className="font-medium">{user.name}</p>
+                                    <p className="text-sm text-muted-foreground">{user.role}</p>
                                 </div>
                             </div>
-                            {engineer.id === currentUser.id && (
+                            {user.id === currentUser.id && (
                                 <Badge variant="secondary">me</Badge>
                             )}
                         </div>
@@ -84,7 +84,7 @@ function AssignedTeam({ engineers, currentUser }: { engineers: User[], currentUs
 }
 
 
-export default function OverviewTab({ project, engineers, user, onProjectUpdate }: { project: Project, engineers: User[], user: User, onProjectUpdate: (project: Project) => void }) {
+export default function OverviewTab({ project, assignedUsers, user, onProjectUpdate }: { project: Project, assignedUsers: User[], user: User, onProjectUpdate: (project: Project) => void }) {
     const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
     const upcomingMilestones = project.milestones.filter(m => m.status === 'Upcoming');
     const canViewFinancials = user.role === 'Admin' || user.role === 'Director';
@@ -197,7 +197,7 @@ export default function OverviewTab({ project, engineers, user, onProjectUpdate 
                 </CardContent>
             </Card>
             <div className="space-y-6">
-                <AssignedTeam engineers={engineers} currentUser={user} />
+                <AssignedTeam users={assignedUsers} currentUser={user} />
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">

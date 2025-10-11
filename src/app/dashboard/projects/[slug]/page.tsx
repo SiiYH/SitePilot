@@ -45,8 +45,8 @@ async function getClaimsForProject(projectId: string): Promise<Claim[]> {
   return mockClaims.filter(claim => claim.projectId === projectId);
 }
 
-async function getAssignedEngineers(engineerIds: string[]): Promise<User[]> {
-    return mockUsers.filter(user => engineerIds.includes(user.id));
+async function getAssignedUsers(userIds: string[]): Promise<User[]> {
+    return mockUsers.filter(user => userIds.includes(user.id));
 }
 
 
@@ -61,7 +61,7 @@ export default function ProjectDetailsPage() {
   
   const [project, setProject] = useState<Project | undefined>(undefined);
   const [claims, setClaims] = useState<Claim[]>([]);
-  const [assignedEngineers, setAssignedEngineers] = useState<User[]>([]);
+  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
@@ -120,9 +120,9 @@ export default function ProjectDetailsPage() {
           }
           setClaims(claimsData);
           
-          // Fetch assigned engineers
-          const engineersData = await getAssignedEngineers(projectData.assignedEngineers);
-          setAssignedEngineers(engineersData);
+          // Fetch assigned users
+          const usersData = await getAssignedUsers(projectData.assignedEngineers);
+          setAssignedUsers(usersData);
         } else {
           notFound();
         }
@@ -322,7 +322,7 @@ export default function ProjectDetailsPage() {
           {canManageSettings && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab project={projectWithTasks} engineers={assignedEngineers} user={user} onProjectUpdate={updateProjectState} />
+          <OverviewTab project={projectWithTasks} assignedUsers={assignedUsers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
           <ClaimsTab claims={claims} project={projectWithTasks} onClaimCreated={handleClaimCreated} />
@@ -337,7 +337,7 @@ export default function ProjectDetailsPage() {
               {canManageWorkItems && (
                 <CreateWorkItemDialog 
                   project={projectWithTasks}
-                  engineers={assignedEngineers} 
+                  engineers={assignedUsers} 
                   onWorkItemCreated={handleWorkItemCreated} 
                 />
               )}
