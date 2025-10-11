@@ -72,21 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!firestore) return;
       const usersCol = collection(firestore, 'users');
       
-      try {
-          const usersSnapshot = await getDocs(usersCol);
+      getDocs(usersCol)
+        .then(usersSnapshot => {
           const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
           setAllUsers(usersList);
-      } catch (e: any) {
-          if (e instanceof FirestoreError && e.code === 'permission-denied') {
-              const permissionError = new FirestorePermissionError({
-                  path: usersCol.path,
-                  operation: 'list',
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          } else {
-              console.error("Error fetching all users:", e);
-          }
-      }
+        })
+        .catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+              path: usersCol.path,
+              operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
     };
 
     // This is a one-off seeding process.
