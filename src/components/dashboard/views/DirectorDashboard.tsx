@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -64,7 +63,7 @@ export default function DirectorDashboard({
   const unassignedTasks = projects.flatMap(p => (p.tasks || []).filter(t => !t.owner));
 
   const latestProjects = projects.length > 0
-    ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4)
+    ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3)
     : [];
 
   return (
@@ -104,7 +103,7 @@ export default function DirectorDashboard({
           </div>
         </div>
         {latestProjects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
              {latestProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
             ))}
