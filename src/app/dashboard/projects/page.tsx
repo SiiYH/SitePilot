@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { mockUsers, defaultProjectStatuses } from '@/lib/data';
+import { defaultProjectStatuses } from '@/lib/data';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
@@ -48,11 +49,18 @@ export default function ProjectsPage() {
     return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
 
-  const { data: firestoreProjects, isLoading: loading } = useCollection<Project>(projectsQuery);
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+
+  const { data: firestoreProjects, isLoading: loadingProjects } = useCollection<Project>(projectsQuery);
+  const { data: companyUsers, isLoading: loadingUsers } = useCollection<User>(usersQuery);
 
   const projects = firestoreProjects || localProjects;
   
-  const engineers = mockUsers.filter(u => u.role === 'Engineer' && u.companyId === company?.id);
+  const loading = loadingProjects || loadingUsers;
+
   const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
 
   const handleProjectCreated = (newProject: Project) => {
@@ -161,7 +169,7 @@ export default function ProjectsPage() {
                 </Button>
             </div>
             {user?.role !== 'Engineer' && company && (
-                <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />
+                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
             )}
             {canManageSettings && (
                 <Button variant="outline" asChild>

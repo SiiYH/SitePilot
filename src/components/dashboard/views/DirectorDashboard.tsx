@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -56,8 +57,6 @@ export default function DirectorDashboard({
     }
   }, []);
 
-  const engineers = users.filter(u => u.role === 'Engineer');
-
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
@@ -101,7 +100,7 @@ export default function DirectorDashboard({
             <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
           <div className='flex items-center gap-2 flex-wrap'>
-            {company && <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />}
+            {company && <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />}
           </div>
         </div>
         {latestProjects.length > 0 ? (

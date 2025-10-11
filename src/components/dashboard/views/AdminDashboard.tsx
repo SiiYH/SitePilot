@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -53,8 +54,6 @@ export default function AdminDashboard({
     }
   }, []);
   
-  const engineers = users.filter(u => u.role === 'Engineer');
-
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
@@ -85,7 +84,7 @@ export default function AdminDashboard({
             <h3 className="text-xl font-semibold">Latest Projects</h3>
             <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
-          {company && <CreateProjectDialog engineers={engineers} onProjectCreated={handleProjectCreated} companyId={company.id} />}
+          {company && <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />}
         </div>
         {latestProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

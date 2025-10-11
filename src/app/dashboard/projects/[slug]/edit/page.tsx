@@ -1,14 +1,15 @@
 
+
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
-import { mockUsers } from '@/lib/data';
-import { Project } from '@/types';
+import { Project, User } from '@/types';
 import EditProjectForm from './_components/EditProjectForm';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 
 async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
@@ -26,9 +27,17 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
 export default function EditProjectPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { company } = useAuth();
   const firestore = useFirestore();
   const [project, setProject] = useState<Project | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const [loadingProject, setLoadingProject] = useState(true);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  
+  const { data: users, isLoading: loadingUsers } = useCollection<User>(usersQuery);
 
   useEffect(() => {
     if (slug && firestore) {
@@ -38,12 +47,12 @@ export default function EditProjectPage() {
         } else {
           notFound();
         }
-        setLoading(false);
+        setLoadingProject(false);
       });
     }
   }, [slug, firestore]);
   
-  if (loading) {
+  if (loadingProject || loadingUsers) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -54,8 +63,6 @@ export default function EditProjectPage() {
   if (!project) {
     notFound();
   }
-  
-  const engineers = mockUsers.filter(u => u.role === 'Engineer');
 
   return (
     <div className="space-y-6">
@@ -63,7 +70,7 @@ export default function EditProjectPage() {
         <h2 className="text-2xl font-bold tracking-tight">Edit Project</h2>
         <p className="text-muted-foreground">Make changes to "{project.name}" details.</p>
       </div>
-      <EditProjectForm project={project} engineers={engineers} />
+      <EditProjectForm project={project} users={users || []} />
     </div>
   );
 }

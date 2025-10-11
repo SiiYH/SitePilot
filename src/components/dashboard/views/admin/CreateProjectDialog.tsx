@@ -34,7 +34,7 @@ import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CreateProjectDialogProps {
-  engineers: User[];
+  users: User[];
   onProjectCreated: (project: Project) => void;
   companyId: string;
 }
@@ -72,7 +72,7 @@ const createSlug = (name: string) => {
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
-export default function CreateProjectDialog({ engineers, onProjectCreated, companyId }: CreateProjectDialogProps) {
+export default function CreateProjectDialog({ users, onProjectCreated, companyId }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -423,7 +423,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                 name="assignedEngineers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assign Engineers</FormLabel>
+                    <FormLabel>Assign Users</FormLabel>
                     <Controller
                       control={form.control}
                       name="assignedEngineers"
@@ -432,35 +432,35 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" className="w-full justify-between">
                               {field.value?.length > 0
-                                ? `${field.value.length} engineer(s) selected`
-                                : 'Select engineers...'}
+                                ? `${field.value.length} user(s) selected`
+                                : 'Select users...'}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                              <CommandInput placeholder="Search engineers..." />
+                              <CommandInput placeholder="Search users..." />
                               <CommandList>
-                                  <CommandEmpty>No engineers found.</CommandEmpty>
+                                  <CommandEmpty>No users found.</CommandEmpty>
                                   <CommandGroup>
-                                  {engineers.map((engineer) => (
+                                  {users.map((user) => (
                                       <CommandItem
-                                      key={engineer.id}
+                                      key={user.id}
                                       onSelect={() => {
                                           const selected = field.value || [];
-                                          const newValue = selected.includes(engineer.id)
-                                          ? selected.filter((id) => id !== engineer.id)
-                                          : [...selected, engineer.id];
+                                          const newValue = selected.includes(user.id)
+                                          ? selected.filter((id) => id !== user.id)
+                                          : [...selected, user.id];
                                           field.onChange(newValue);
                                       }}
                                       >
                                       <Check
                                           className={cn(
                                           'mr-2 h-4 w-4',
-                                          field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
+                                          field.value?.includes(user.id) ? 'opacity-100' : 'opacity-0'
                                           )}
                                       />
-                                      {engineer.name}
+                                      {user.name} ({user.role})
                                       </CommandItem>
                                   ))}
                                   </CommandGroup>
