@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Project, User, UserRole, UserStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -73,34 +72,68 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
 
-  const getTasksForEngineer = (engineerId: string) => {
+  // PERFORMANCE OPTIMIZATION 1: Memoize unassigned tasks
+  const unassignedTasks = useMemo(() => {
     return projects.flatMap(p => 
       (p.tasks || [])
-        .filter(t => t.owner === engineerId)
+        .filter(t => !t.owner)
         .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
     );
-  };
-  
-  const getProjectsForEngineer = (engineerId: string) => {
-    return projects.filter(p => p.assignedEngineers.includes(engineerId));
-  }
+  }, [projects]);
 
-  const unassignedTasks = projects.flatMap(p => 
-    (p.tasks || [])
-      .filter(t => !t.owner)
-      .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
-  );
-  
-  const getTaskStats = (tasks: any[]) => {
+  // PERFORMANCE OPTIMIZATION 2: Memoize engineer projects map
+  const engineerProjectsMap = useMemo(() => {
+    const map: Record<string, Project[]> = {};
+    users.forEach(user => {
+      if (user.role === 'Engineer') {
+        map[user.id] = projects.filter(p => p.assignedEngineers?.includes(user.id));
+      }
+    });
+    return map;
+  }, [users, projects]);
+
+  // PERFORMANCE OPTIMIZATION 3: Memoize engineer tasks map
+  const engineerTasksMap = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    users.forEach(user => {
+      if (user.role === 'Engineer') {
+        map[user.id] = projects.flatMap(p => 
+          (p.tasks || [])
+            .filter(t => t.owner === user.id)
+            .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
+        );
+      }
+    });
+    return map;
+  }, [users, projects]);
+
+  // PERFORMANCE OPTIMIZATION 4: Memoize task stats calculation
+  const getTaskStats = useCallback((tasks: any[]) => {
     return {
       total: tasks.length,
       completed: tasks.filter(t => t.status === 'Completed').length,
       inProgress: tasks.filter(t => t.status === 'In Progress').length,
       overdue: tasks.filter(t => t.status === 'Overdue').length,
     };
-  };
+  }, []);
 
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
+  // PERFORMANCE OPTIMIZATION 5: Memoize filtered users
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      if (roleFilter === 'All') return user.role !== 'System Super Admin';
+      return user.role === roleFilter;
+    });
+  }, [users, roleFilter]);
+
+  // PERFORMANCE OPTIMIZATION 6: Memoize sorted users
+  const sortedUsers = useMemo(() => {
+    return [...filteredUsers].sort((a, b) => {
+      if (a.status === b.status) return a.name.localeCompare(b.name);
+      return a.status === 'Active' ? -1 : 1;
+    });
+  }, [filteredUsers]);
+
+  const handleRoleChange = useCallback((userId: string, newRole: UserRole) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
 
@@ -119,9 +152,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
         title: "Role Updated",
         description: `${user.name}'s role has been changed to ${newRole}.`
     });
-  };
+  }, [users, licenseUsage, licenseLimits, onUserUpdated, toast]);
 
-  const handleStatusChange = (userId: string, newStatus: boolean) => {
+  const handleStatusChange = useCallback((userId: string, newStatus: boolean) => {
     const status: UserStatus = newStatus ? 'Active' : 'Inactive';
     const user = users.find(u => u.id === userId);
     if(user) {
@@ -136,17 +169,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
             description: `${user.name} has been set to ${status}.`
         });
     }
-  };
-  
-  const filteredUsers = users.filter(user => {
-      if (roleFilter === 'All') return user.role !== 'System Super Admin';
-      return user.role === roleFilter;
-  });
-
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    if (a.status === b.status) return a.name.localeCompare(b.name);
-    return a.status === 'Active' ? -1 : 1;
-  });
+  }, [users, onUserUpdated, toast]);
 
   return (
     <Card className="shadow-lg border-0 overflow-hidden">
@@ -271,8 +294,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
             )}
             {sortedUsers.length > 0 ? (
                 sortedUsers.map(user => {
-                  const tasks = user.role === 'Engineer' ? getTasksForEngineer(user.id) : [];
-                  const assignedProjects = user.role === 'Engineer' ? getProjectsForEngineer(user.id) : [];
+                  // OPTIMIZED: Use pre-computed maps instead of filtering on every render
+                  const tasks = engineerTasksMap[user.id] || [];
+                  const assignedProjects = engineerProjectsMap[user.id] || [];
                   const stats = getTaskStats(tasks);
                   
                   return (
@@ -315,16 +339,20 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 </div>
                               
                               {user.role === 'Engineer' && (
-                                <div className="flex items-center gap-4 text-sm">
-                                  <span className="text-muted-foreground font-medium">
-                                      {assignedProjects.length} {assignedProjects.length === 1 ? 'project' : 'projects'}
-                                  </span>
-                                  <span className="text-muted-foreground font-medium text-xs">•</span>
-                                  <span className="text-muted-foreground font-medium">
-                                    {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
-                                  </span>
-                                  {tasks.length > 0 && (
-                                    <div className="hidden sm:flex items-center gap-3">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground font-medium">
+                                        {assignedProjects.length} {assignedProjects.length === 1 ? 'project' : 'projects'}
+                                    </span>
+                                  </div>
+                                  <span className="text-muted-foreground font-medium text-xs hidden sm:inline">•</span>
+                                  <div className="flex items-center gap-2">
+                                     <span className="text-muted-foreground font-medium">
+                                        {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+                                    </span>
+                                    {tasks.length > 0 && (
+                                    <div className="flex items-center gap-3">
                                       {stats.inProgress > 0 && (
                                         <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                                           {stats.inProgress} in progress
@@ -337,6 +365,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                       )}
                                     </div>
                                   )}
+                                  </div>
                                 </div>
                               )}
                               {user.role !== 'Engineer' && (
@@ -433,6 +462,28 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     </div>
                                 </DialogContent>
                             </Dialog>
+                            
+                            {/* NEW FEATURE: Show assigned projects breakdown */}
+                            {user.role === 'Engineer' && assignedProjects.length > 0 && (
+                              <div className="p-4 rounded-lg bg-muted/30 border">
+                                <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                                  <FolderKanban className="h-4 w-4" />
+                                  Assigned Projects ({assignedProjects.length})
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {assignedProjects.map(project => (
+                                    <Link
+                                      key={project.id}
+                                      href={`/dashboard/projects/${project.slug}`}
+                                      className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium inline-flex items-center gap-1.5 border border-primary/20 hover:border-primary/40"
+                                    >
+                                      {project.name}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
                             {user.role === 'Engineer' ? (
                             tasks.length > 0 ? (
                                 <div className="rounded-xl border-0 overflow-hidden shadow-md bg-gradient-to-br from-background to-muted/30">
@@ -491,12 +542,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                       No tasks assigned to {user.name}
                                   </p>
                                   {assignedProjects.length > 0 ? (
-                                    <div className="text-xs text-muted-foreground mt-2">
-                                        <p>This user is assigned to {assignedProjects.length} project(s):</p>
-                                        <ul className='mt-1 list-disc list-inside'>
-                                            {assignedProjects.map(p => <li key={p.id}>{p.name}</li>)}
-                                        </ul>
-                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Assigned to {assignedProjects.length} {assignedProjects.length === 1 ? 'project' : 'projects'} but no specific tasks yet
+                                    </p>
                                   ) : (
                                      <p className="text-xs text-muted-foreground">
                                         This user is not assigned to any projects.
