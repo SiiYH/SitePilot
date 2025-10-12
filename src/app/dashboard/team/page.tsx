@@ -16,7 +16,13 @@ import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
 export default function TeamPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  // const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  
+  const { data: projects = [], isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -44,7 +50,7 @@ export default function TeamPage() {
     updateDocumentNonBlocking(userDocRef, updatePayload);
   };
 
-  const loading = authLoading || usersLoading;
+  const loading = authLoading || usersLoading || projectsLoading;
 
   if (loading || !user) {
     return (
@@ -73,7 +79,12 @@ export default function TeamPage() {
             )
         )}
       </div>
-      <TeamWorkload users={teamUsers || []} projects={projects} onUserUpdated={handleUserUpdated} />
+      {/* <TeamWorkload users={teamUsers || []} projects={projects} onUserUpdated={handleUserUpdated} /> */}
+      <TeamWorkload
+  users={teamUsers || []}
+  projects={projects || []}
+  onUserUpdated={handleUserUpdated}
+/>
     </div>
   );
 }

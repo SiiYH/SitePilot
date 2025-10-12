@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -82,20 +83,47 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   }, [projects]);
 
   // PERFORMANCE OPTIMIZATION 2: Memoize engineer projects map
+  /* const engineerProjectsMap = useMemo(() => {
+    const countMap: Record<string, number> = {};
+  
+    // Initialize all engineers with 0 first
+    users.forEach(user => {
+      if (user.role === 'Engineer') countMap[user.id] = 0;
+    });
+  
+    // Then count actual project assignments
+    projects.forEach(project => {
+      project.assignedEngineers?.forEach(engineerId => {
+        countMap[engineerId] = (countMap[engineerId] || 0) + 1;
+      });
+    });
+  
+    return countMap;
+  }, [users, projects]); */
   const engineerProjectsMap = useMemo(() => {
     const map: Record<string, Project[]> = {};
+  
     users.forEach(user => {
-      if (user.role === 'Engineer') {
-        map[user.id] = projects.filter(p => p.assignedEngineers?.includes(user.id));
-      }
+      if (user.role === 'Engineer') map[user.id] = [];
     });
+  
+    projects.forEach(project => {
+      project.assignedEngineers?.forEach(engineerId => {
+        if (!map[engineerId]) map[engineerId] = [];
+        map[engineerId].push(project);
+      });
+    });
+  
     return map;
   }, [users, projects]);
+  
+  
   console.log('engineerProjectsMap:');
   console.log(engineerProjectsMap);
   const totalEngineers = Object.keys(engineerProjectsMap).length;
   console.log('Total engineers:', totalEngineers);
 
+  
   // PERFORMANCE OPTIMIZATION 3: Memoize engineer tasks map
   const engineerTasksMap = useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -424,7 +452,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         <div className="flex flex-col gap-4">
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-primary/5">
+                                    <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-accent">
                                         <div className="flex items-center gap-3 py-2">
                                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                                             <FileClock className="h-5 w-5 text-primary" />
@@ -502,7 +530,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     </TableHeader>
                                     <TableBody>
                                     {tasks.map((task, idx) => {
-                                      const StatusIcon = statusConfig[task.status]?.icon || Circle;
+                                      /* const StatusIcon = statusConfig[task.status]?.icon || Circle; */
+                                      const StatusIcon = statusConfig[task.status as keyof typeof statusConfig]?.icon || Circle;
+
                                       return (
                                         <TableRow 
                                           key={task.id}
@@ -525,7 +555,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                           </TableCell>
                                           <TableCell className="text-right">
                                             <Badge 
-                                              className={cn("font-semibold border shadow-sm", statusConfig[task.status]?.className)}
+                                              className={cn("font-semibold border shadow-sm", statusConfig[task.status as keyof typeof statusConfig]?.className)}
                                             >
                                               <StatusIcon className={cn("h-3 w-3 mr-1.5", task.status === 'In Progress' && "animate-spin")} />
                                               <span className='hidden sm:inline'>{task.status}</span>
