@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -72,6 +72,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const { toast } = useToast();
   const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
+  const [viewMode, setViewMode] = useState<'accordion' | 'table'>('accordion');
 
   // PERFORMANCE OPTIMIZATION 1: Memoize unassigned tasks
   const unassignedTasks = useMemo(() => {
@@ -179,6 +180,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
         });
     }
   }, [users, onUserUpdated, toast]);
+  
+  const handleViewModeChange = (mode: 'accordion' | 'table') => {
+    setViewMode(mode);
+  }
 
   return (
     <Card className="shadow-lg border-0 overflow-hidden">
@@ -210,21 +215,32 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-3 text-xs">
-                {roles.filter(r => r !== 'System Super Admin').map(role => (
-                  <div key={role} className="flex flex-col items-center px-4 py-3 bg-background/80 backdrop-blur-sm rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 flex-1 sm:flex-initial group hover:scale-105">
-                    <span className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent group-hover:from-primary/90 group-hover:to-primary/60 transition-all">
-                      {licenseUsage[role]}/{licenseLimits[role]}
-                    </span>
-                    <span className="font-medium text-muted-foreground mt-1">{role}s</span>
-                  </div>
-                ))}
-              </div>
+              <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewModeChange('accordion')}
+                    aria-label="Accordion view"
+                    className={cn('h-8 w-8', viewMode === 'accordion' && 'bg-background shadow-sm')}
+                >
+                    <Users className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewModeChange('table')}
+                    aria-label="Table view"
+                    className={cn('h-8 w-8', viewMode === 'table' && 'bg-background shadow-sm')}
+                >
+                    <List className="h-4 w-4" />
+                </Button>
+            </div>
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-6 px-3 sm:px-6">
+        {viewMode === 'accordion' ? (
         <Accordion type="single" collapsible className="w-full space-y-3">
             {unassignedTasks.length > 0 && (
                  <AccordionItem 
@@ -599,9 +615,94 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               </div>
             )}
         </Accordion>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Workload</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedUsers.map(user => {
+                  const tasks = engineerTasksMap[user.id] || [];
+                  const assignedProjects = engineerProjectsMap[user.id] || [];
+                  return (
+                    <TableRow key={user.id} className={cn(user.status === 'Inactive' && 'opacity-60')}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.avatarUrl} alt={user.name} />
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold">{user.name}</p>
+                            <p className="text-xs text-muted-foreground">{user.email || user.phone}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={cn("text-xs font-semibold px-2 py-1 border", roleColors[user.role])}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className={cn("h-2 w-2 rounded-full", user.status === 'Active' ? 'bg-green-500' : 'bg-gray-400')} />
+                          <span>{user.status}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.role === 'Engineer' ? (
+                          <div className="flex flex-col">
+                            <span>{assignedProjects.length} Project(s)</span>
+                            <span className="text-xs text-muted-foreground">{tasks.length} Task(s)</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                         {canManageUsers && (
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-32">
+                              <Select 
+                                value={user.role} 
+                                onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
+                                disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Set role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {roles.map(r => (
+                                    <SelectItem key={r} value={r} disabled={r !== user.role && licenseUsage[r] >= licenseLimits[r]}>
+                                      {r}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Switch
+                              checked={user.status === 'Active'}
+                              onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
+                              disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                            />
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
-
-    
