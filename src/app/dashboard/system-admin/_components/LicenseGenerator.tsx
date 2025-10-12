@@ -331,17 +331,17 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                                         type="button" 
                                         size="lg" 
                                         onClick={copyToClipboard}
-                                        className="h-auto sm:h-full px-6 sm:px-4"
+                                        className="h-auto sm:h-full px-8 sm:px-4"
                                         variant={hasCopied ? "default" : "outline"}
                                     >
                                         {hasCopied ? (
                                             <>
-                                                <Check className="h-4 w-4 sm:mr-2" />
+                                                <Check className="h-8 w-4 sm:mr-2" />
                                                 <span className="hidden sm:inline">Copied</span>
                                             </>
                                         ) : (
                                             <>
-                                                <Copy className="h-4 w-4 sm:mr-2" />
+                                                <Copy className="h-8 w-4 sm:mr-2" />
                                                 <span className="hidden sm:inline">Copy</span>
                                             </>
                                         )}

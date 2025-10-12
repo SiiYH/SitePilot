@@ -41,6 +41,22 @@ service cloud.firestore {
       allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
       allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
     }
+    
+    match /users/{subcollection=**} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
+      allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
+      allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
+    }
+    
+    // === Licenses rules ===
+    match /licenses/{licenseId} {
+      allow get, list, create, update: if isSignedIn() && isSuperSystemAdmin();
+    }
+
+    // Optional: helper for nested collections (if any)
+    match /licenses/{licenseId}/{subcollection=**} {
+      allow read, write: if isSignedIn() && isSuperSystemAdmin();
+    }
 
     /**
      * @description Controls access to company profiles.
@@ -51,7 +67,7 @@ service cloud.firestore {
      */
     match /companies/{companyId} {
       allow get, list: if true;
-      allow create, update, delete: if false;
+      allow create, update, delete: if isSignedIn() && isAdminOrDirector();
     }
 
     /**
@@ -157,6 +173,11 @@ service cloud.firestore {
   function isAdminOrDirector() {
     let role = getUserRole();
     return role == 'admin' || role == 'director';
+  }
+  
+  function isSuperSystemAdmin(){
+  	let role = getUserRole();
+    return role == 'system super admin';
   }
   
   function canListUsers() {
