@@ -1,6 +1,6 @@
 
 
-export type UserRole = 'engineer' | 'admin' | 'director' | 'system super admin';
+export type UserRole = 'engineer' | 'admin' | 'director' | 'system super admin' | '';
 export type UserStatus = 'Active' | 'Inactive';
 
 export type UserChange = {

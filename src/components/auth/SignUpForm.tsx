@@ -82,7 +82,7 @@ export default function SignUpForm() {
     }
 
     // Role is defaulted to 'engineer' on signup now.
-    const user = await signUp({ ...values, role: 'engineer' });
+    const user = await signUp({ ...values, role: '' });
     if (!user) {
       toast({
         variant: 'destructive',
