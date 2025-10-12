@@ -84,10 +84,9 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         const expiryString = expiryDate ? format(expiryDate, 'yyyyMMdd') : 'UNLIMITED';
 
         const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
-        const encodedKey = btoa(key);
         
         const newLicense: License = {
-            id: encodedKey, // The key itself is the document ID
+            id: key, // The key itself is the document ID
             purchaser: values.purchaser,
             maxDirectors: values.maxDirectors,
             maxAdmins: values.maxAdmins,
@@ -102,7 +101,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         }
 
         onLicenseGenerated(newLicense);
-        setGeneratedKey(encodedKey);
+        setGeneratedKey(key);
         setHasCopied(false);
         toast({
             title: 'License Key Generated',
