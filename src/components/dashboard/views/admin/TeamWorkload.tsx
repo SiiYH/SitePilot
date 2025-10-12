@@ -91,6 +91,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     });
     return map;
   }, [users, projects]);
+  console.log('engineerProjectsMap:');
+  console.log(engineerProjectsMap);
+  const totalEngineers = Object.keys(engineerProjectsMap).length;
+  console.log('Total engineers:', totalEngineers);
 
   // PERFORMANCE OPTIMIZATION 3: Memoize engineer tasks map
   const engineerTasksMap = useMemo(() => {
