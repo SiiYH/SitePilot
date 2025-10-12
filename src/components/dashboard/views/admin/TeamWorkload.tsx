@@ -73,12 +73,16 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const { toast } = useToast();
   const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
-  const [viewMode, setViewMode] = useState<'accordion' | 'table'>('accordion');
+  const [viewMode, setViewMode] = useState<'accordion' | 'table'>('table');
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Default to table on desktop, accordion on mobile
-    setViewMode(isMobile ? 'accordion' : 'table');
+    const savedView = localStorage.getItem('sitepilot-team-view-mode') as 'accordion' | 'table' | null;
+    if (savedView) {
+      setViewMode(savedView);
+    } else {
+      setViewMode(isMobile ? 'accordion' : 'table');
+    }
   }, [isMobile]);
 
   // PERFORMANCE OPTIMIZATION 1: Memoize unassigned tasks
@@ -100,8 +104,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   
     projects.forEach(project => {
       project.assignedEngineers?.forEach(engineerId => {
-        if (!map[engineerId]) map[engineerId] = [];
-        map[engineerId].push(project);
+        if (map[engineerId]) {
+            map[engineerId].push(project);
+        }
       });
     });
   
@@ -190,6 +195,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   
   const handleViewModeChange = (mode: 'accordion' | 'table') => {
     setViewMode(mode);
+    localStorage.setItem('sitepilot-team-view-mode', mode);
   }
 
   return (
