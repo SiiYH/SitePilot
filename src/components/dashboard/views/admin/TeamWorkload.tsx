@@ -83,23 +83,6 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   }, [projects]);
 
   // PERFORMANCE OPTIMIZATION 2: Memoize engineer projects map
-  /* const engineerProjectsMap = useMemo(() => {
-    const countMap: Record<string, number> = {};
-  
-    // Initialize all engineers with 0 first
-    users.forEach(user => {
-      if (user.role === 'Engineer') countMap[user.id] = 0;
-    });
-  
-    // Then count actual project assignments
-    projects.forEach(project => {
-      project.assignedEngineers?.forEach(engineerId => {
-        countMap[engineerId] = (countMap[engineerId] || 0) + 1;
-      });
-    });
-  
-    return countMap;
-  }, [users, projects]); */
   const engineerProjectsMap = useMemo(() => {
     const map: Record<string, Project[]> = {};
   
@@ -116,12 +99,6 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   
     return map;
   }, [users, projects]);
-  
-  
-  console.log('engineerProjectsMap:');
-  console.log(engineerProjectsMap);
-  const totalEngineers = Object.keys(engineerProjectsMap).length;
-  console.log('Total engineers:', totalEngineers);
 
   
   // PERFORMANCE OPTIMIZATION 3: Memoize engineer tasks map
@@ -452,12 +429,12 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         <div className="flex flex-col gap-4">
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-accent">
+                                    <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-accent group">
                                         <div className="flex items-center gap-3 py-2">
                                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                                            <FileClock className="h-5 w-5 text-primary" />
+                                            <FileClock className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
                                           </div>
-                                          <span className="font-semibold text-sm">View Change History</span>
+                                          <span className="font-semibold text-sm group-hover:text-white transition-colors">View Change History</span>
                                         </div>
                                     </Button>
                                 </DialogTrigger>
@@ -626,3 +603,5 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     </Card>
   );
 }
+
+    
