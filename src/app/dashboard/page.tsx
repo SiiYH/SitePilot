@@ -14,9 +14,8 @@ import { collection, query, where } from 'firebase/firestore';
 import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
 
 export default function DashboardPage() {
-  const { user, company } = useAuth();
+  const { user, company, loading: authLoading } = useAuth();
   const router = useRouter();
-  const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -69,15 +68,21 @@ export default function DashboardPage() {
   }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
 
 
-  const loading = projectsLoading || !company;
+  const loading = projectsLoading || authLoading;
 
   useEffect(() => {
-    if (!loading && user && (user.role === '' || !user.companyId)) {
+    // Only redirect after data fully loaded
+    if (!loading && user) {
+      const shouldRedirect =
+        user.role !== 'system super admin' && (user.role === '' || !user.companyId);
+  
+      if (shouldRedirect) {
         router.replace('/welcome');
+      }
     }
   }, [user, loading, router]);
-
-
+  
+  // Still show loading while redirecting
   if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -85,6 +90,7 @@ export default function DashboardPage() {
       </div>
     );
   }
+
   
   // Redirect if user has no role or company, unless they are a system admin
   if (user.role !== 'system super admin' && (user.role === '' || !user.companyId)) {
@@ -94,6 +100,10 @@ export default function DashboardPage() {
       </div>
     );
   }
+  // Prevent showing dashboard content while redirecting
+  if (!authLoading && user.role !== 'system super admin' && (user.role === '' || !user.companyId)) {
+    return null; // or a <Redirecting /> component
+  }
 
   const engineerTasks = user.role === 'engineer' 
     ? tasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id))
@@ -102,6 +112,9 @@ export default function DashboardPage() {
   const engineerProjects = user.role === 'engineer' && projects
     ? projects.filter(p => p.assignedEngineers.includes(user.id))
     : projects || [];
+    
+  const capitalize = (s: string) => (s && s.charAt(0).toUpperCase() + s.slice(1)) || "";
+
 
   const renderDashboard = () => {
     switch (user.role) {
@@ -138,7 +151,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
        <div>
         <h2 className="text-2xl font-bold tracking-tight">
-          {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
+          {capitalize(user.role)} Dashboard
         </h2>
         <p className="text-muted-foreground">
           Welcome, {user.name}. Here's your overview.
