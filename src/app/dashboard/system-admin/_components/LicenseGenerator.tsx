@@ -109,12 +109,28 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         });
     };
 
-    const copyToClipboard = () => {
+    const copyToClipboard = async () => {
         if (!generatedKey) return;
-        navigator.clipboard.writeText(generatedKey);
-        setHasCopied(true);
-        setTimeout(() => setHasCopied(false), 2000);
-    }
+        try {
+          await navigator.clipboard.writeText(generatedKey);
+          setHasCopied(true);
+          setTimeout(() => setHasCopied(false), 2000);
+          toast({ title: 'Copied!', description: 'License key copied to clipboard.' });
+        } catch (error) {
+          console.error('Clipboard write failed:', error);
+          // Fallback for restricted environments
+          const textarea = document.createElement('textarea');
+          textarea.value = generatedKey;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          setHasCopied(true);
+          setTimeout(() => setHasCopied(false), 2000);
+          toast({ title: 'Copied (fallback)', description: 'Clipboard permissions were restricted.' });
+        }
+      };
+      
 
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-lg">
