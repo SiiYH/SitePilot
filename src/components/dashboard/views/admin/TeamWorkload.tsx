@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -170,7 +170,11 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       return;
     }
     
-    onUserUpdated(userId, { role: newRole });
+    const now = new Date().toISOString();
+    const newHistoryEntry = { role: newRole, date: now };
+    const updatedHistory = [...(user.history || []), newHistoryEntry];
+    
+    onUserUpdated(userId, { role: newRole, history: updatedHistory });
 
     toast({
         title: "Role Updated",
@@ -294,7 +298,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 </TableHeader>
                                 <TableBody>
                                 {unassignedTasks.map((task, idx) => {
-                                  const StatusIcon = statusConfig[task.status]?.icon || Circle;
+                                  const StatusIcon = statusConfig[task.status as keyof typeof statusConfig]?.icon || Circle;
                                   return (
                                     <TableRow 
                                       key={task.id}
@@ -317,7 +321,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                       </TableCell>
                                       <TableCell className="text-right">
                                         <Badge 
-                                          className={cn("font-semibold border shadow-sm", statusConfig[task.status]?.className)}
+                                          className={cn("font-semibold border shadow-sm", statusConfig[task.status as keyof typeof statusConfig]?.className)}
                                         >
                                           <StatusIcon className={cn("h-3 w-3 mr-1.5", task.status === 'In Progress' && "animate-spin")} />
                                           <span className='hidden sm:inline'>{task.status}</span>
@@ -463,7 +467,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     <Button variant="outline" className="w-full h-auto hover:shadow-md transition-all border-primary/20 hover:border-primary/40 hover:bg-accent group">
                                         <div className="flex items-center gap-3 py-2">
                                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                                            <FileClock className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+                                            <History className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
                                           </div>
                                           <span className="font-semibold text-sm group-hover:text-white transition-colors">View Change History</span>
                                         </div>
@@ -473,7 +477,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     <DialogHeader>
                                         <DialogTitle className="text-2xl">Change Log for {user.name}</DialogTitle>
                                         <DialogDescription className="text-base">
-                                            A complete record of this user's status changes.
+                                            A complete record of this user's status and role changes.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -490,10 +494,11 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                         {(user.history || []).map((item, index) => (
                                              <div key={index} className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-muted-foreground/20">
                                                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted shadow-sm">
-                                                    <Clock className="h-6 w-6 text-muted-foreground" />
+                                                    {item.status ? <Clock className="h-6 w-6 text-muted-foreground" /> : <Briefcase className="h-6 w-6 text-muted-foreground" />}
                                                 </div>
                                                  <div>
-                                                    <p className="font-semibold">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>{item.status}</span></p>
+                                                    {item.status && <p className="font-semibold">Status changed to <span className={cn('font-bold', item.status === 'Active' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>{item.status}</span></p>}
+                                                    {item.role && <p className="font-semibold">Role changed to <span className="font-bold text-primary">{capitalize(item.role)}</span></p>}
                                                     <p className="text-sm text-muted-foreground font-medium">{format(parseISO(item.date), "PPP p")}</p>
                                                     <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(item.date), { addSuffix: true })}</p>
                                                  </div>
@@ -538,7 +543,6 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     </TableHeader>
                                     <TableBody>
                                     {tasks.map((task, idx) => {
-                                      /* const StatusIcon = statusConfig[task.status]?.icon || Circle; */
                                       const StatusIcon = statusConfig[task.status as keyof typeof statusConfig]?.icon || Circle;
 
                                       return (

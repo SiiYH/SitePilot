@@ -3,8 +3,9 @@
 export type UserRole = 'engineer' | 'admin' | 'director' | 'system super admin';
 export type UserStatus = 'Active' | 'Inactive';
 
-export type UserStatusChange = {
-  status: UserStatus;
+export type UserChange = {
+  status?: UserStatus;
+  role?: UserRole;
   date: string;
 };
 
@@ -17,7 +18,7 @@ export interface User {
   avatarUrl: string;
   status: UserStatus;
   createdAt: string; // Changed from serverTimestamp() to string
-  history: UserStatusChange[];
+  history: UserChange[];
   companyId?: string;
 }
 

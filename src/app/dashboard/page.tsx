@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
     
-    let userProjects = user?.role === 'Engineer'
+    let userProjects = user?.role === 'engineer'
       ? projects.filter(p => p.assignedEngineers.includes(user.id))
       : projects;
     
@@ -77,17 +77,17 @@ export default function DashboardPage() {
     );
   }
   
-  const engineerTasks = user.role === 'Engineer' 
+  const engineerTasks = user.role === 'engineer' 
     ? tasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id))
     : [];
 
-  const engineerProjects = user.role === 'Engineer' && projects
+  const engineerProjects = user.role === 'engineer' && projects
     ? projects.filter(p => p.assignedEngineers.includes(user.id))
     : projects || [];
 
   const renderDashboard = () => {
     switch (user.role) {
-      case 'Admin':
+      case 'admin':
         return <AdminDashboard 
                   projects={filteredProjects || []} 
                   claims={claims} 
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                   statusFilter={statusFilter}
                   setStatusFilter={setStatusFilter}
                 />;
-      case 'Director':
+      case 'director':
         return <DirectorDashboard 
                   projects={filteredProjects || []} 
                   claims={claims} 
@@ -109,7 +109,7 @@ export default function DashboardPage() {
                   statusFilter={statusFilter}
                   setStatusFilter={setStatusFilter}
                 />;
-      case 'Engineer':
+      case 'engineer':
         return <EngineerDashboard projects={engineerProjects} tasks={engineerTasks} user={user} />;
       default:
         return <div>Welcome! Your dashboard is being set up.</div>;
@@ -120,7 +120,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
        <div>
         <h2 className="text-2xl font-bold tracking-tight">
-          {user.role} Dashboard
+          {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
         </h2>
         <p className="text-muted-foreground">
           Welcome, {user.name}. Here's your overview.
