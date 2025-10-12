@@ -139,3 +139,15 @@ export interface CreateWorkItemDialogProps {
     engineers: User[];
     onWorkItemCreated: (task: Task) => void;
 }
+
+export type License = {
+  id: string;
+  purchaser: string;
+  maxDirectors: number;
+  maxAdmins: number;
+  maxEngineers: number;
+  expiresAt: string | null;
+  createdAt: string;
+  activatedAt?: string;
+  companyId?: string;
+};

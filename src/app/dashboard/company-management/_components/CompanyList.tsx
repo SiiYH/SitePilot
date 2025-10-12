@@ -19,7 +19,7 @@ const getStatus = (activated: boolean, license?: License | null): { text: 'Activ
     if (!activated || !license) {
         return { text: 'Inactive', variant: 'secondary' };
     }
-    if (license.expiresAt === 'Unlimited') {
+    if (license.expiresAt === null) {
         return { text: 'Active', variant: 'default' };
     }
     const daysLeft = differenceInDays(parseISO(license.expiresAt), new Date());
@@ -66,7 +66,7 @@ export default function CompanyList({ companies }: CompanyListProps) {
                         <TableBody>
                             {companies.length > 0 ? (
                                 [...companies].reverse().map(company => {
-                                    const license = licenses.find(l => l.key === company.licenseKey);
+                                    const license = licenses.find(l => l.id === company.licenseKey);
                                     const status = getStatus(company.activated, license);
                                     return (
                                         <TableRow key={company.id} onClick={() => handleRowClick(company.id)} className="cursor-pointer">
@@ -103,7 +103,7 @@ export default function CompanyList({ companies }: CompanyListProps) {
                                             </TableCell>
                                             <TableCell>
                                                 {license && license.expiresAt ? (
-                                                    license.expiresAt === 'Unlimited' ? (
+                                                    license.expiresAt === null ? (
                                                         <Badge variant="secondary">Unlimited</Badge>
                                                     ) : (
                                                         <LicenseExpiryCountdown expiresAt={license.expiresAt} />

@@ -63,7 +63,7 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                         </div>
                                         <div>
                                             <p className="font-bold">{license.purchaser}</p>
-                                            {license.expiresAt === 'Unlimited' ? (
+                                            {license.expiresAt === null ? (
                                                 <Badge variant="secondary">Unlimited</Badge>
                                             ) : (
                                                 <LicenseExpiryCountdown expiresAt={license.expiresAt} />
@@ -134,7 +134,7 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                         <TableCell className="text-center">{license.maxAdmins}</TableCell>
                                         <TableCell className="text-center">{license.maxEngineers}</TableCell>
                                         <TableCell>
-                                            {license.expiresAt === 'Unlimited' ? (
+                                            {license.expiresAt === null ? (
                                                 <Badge variant="secondary">Unlimited</Badge>
                                             ) : (
                                                 <LicenseExpiryCountdown expiresAt={license.expiresAt} />

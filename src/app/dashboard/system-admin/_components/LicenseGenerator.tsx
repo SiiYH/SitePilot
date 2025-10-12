@@ -47,7 +47,7 @@ export type License = {
   maxDirectors: number;
   maxAdmins: number;
   maxEngineers: number;
-  expiresAt: string;
+  expiresAt: string | null;
   createdAt: string;
   activatedAt?: string;
   companyId?: string;
@@ -91,7 +91,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             maxDirectors: values.maxDirectors,
             maxAdmins: values.maxAdmins,
             maxEngineers: values.maxEngineers,
-            expiresAt: expiryDate ? expiryDate.toISOString() : 'Unlimited',
+            expiresAt: expiryDate ? expiryDate.toISOString() : null,
             createdAt: new Date().toISOString(),
         }
 

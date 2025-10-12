@@ -43,7 +43,7 @@ export default function CompanyDetailsPage() {
                     const storedLicenses = localStorage.getItem('sitepilot-licenses');
                     if(storedLicenses) {
                         const licenses: License[] = JSON.parse(storedLicenses);
-                        const foundLicense = licenses.find(lic => lic.key === foundCompany.licenseKey);
+                        const foundLicense = licenses.find(lic => lic.id === foundCompany.licenseKey);
                         setLicense(foundLicense || null);
                     }
                 }
@@ -52,8 +52,8 @@ export default function CompanyDetailsPage() {
     }, [params.key]);
 
     const copyToClipboard = () => {
-        if (!license?.key) return;
-        navigator.clipboard.writeText(license.key);
+        if (!license?.id) return;
+        navigator.clipboard.writeText(license.id);
         setHasCopied(true);
         toast({ title: "License key copied!" });
         setTimeout(() => setHasCopied(false), 2000);
@@ -68,7 +68,7 @@ export default function CompanyDetailsPage() {
     }
     
     const isActivated = company.activated;
-    const isExpired = license && license.expiresAt !== 'Unlimited' && parseISO(license.expiresAt) < new Date();
+    const isExpired = license && license.expiresAt !== null && parseISO(license.expiresAt) < new Date();
     
     const getStatus = (): { text: 'Active' | 'Expired' | 'Inactive'; variant: 'default' | 'destructive' | 'secondary' } => {
         if (!isActivated) {
@@ -128,7 +128,7 @@ export default function CompanyDetailsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <InfoField label="License Created At" value={format(parseISO(license.createdAt), 'PPP p')} />
                             <InfoField label="License Activated At" value={license.activatedAt ? format(parseISO(license.activatedAt), 'PPP p') : 'Not Activated'} />
-                            <InfoField label="Expires At" value={license.expiresAt === 'Unlimited' ? 'Never' : format(parseISO(license.expiresAt), 'PPP')} />
+                            <InfoField label="Expires At" value={license.expiresAt === null ? 'Never' : format(parseISO(license.expiresAt), 'PPP')} />
                         </div>
                     ) : (
                         <p className="text-sm text-muted-foreground italic">No license dates available.</p>
@@ -142,7 +142,7 @@ export default function CompanyDetailsPage() {
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <div className="flex-1 rounded-lg border bg-muted/50 p-3">
                                     <p className="select-all break-all font-mono text-xs sm:text-sm">
-                                        {license.key}
+                                        {license.id}
                                     </p>
                                 </div>
                                 <Button 
