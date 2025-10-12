@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import { defaultProjectStatuses } from '@/lib/data';
 import { Search, Activity, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import ActivateLicenseDialog from '../../team/_components/ActivateLicenseDialog';
+import ActivateLicenseDialog from './admin/ActivateLicenseDialog';
 
 interface DirectorDashboardProps {
   projects: Project[];

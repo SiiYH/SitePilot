@@ -17,7 +17,7 @@ import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import ActivateLicenseDialog from '../team/_components/ActivateLicenseDialog';
+import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 
 
 type ViewMode = 'grid' | 'list';

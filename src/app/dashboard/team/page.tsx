@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
 import { Loader2 } from 'lucide-react';
-import ActivateLicenseDialog from './_components/ActivateLicenseDialog';
+import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
 

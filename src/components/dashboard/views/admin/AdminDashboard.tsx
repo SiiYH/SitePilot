@@ -1,20 +1,21 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import ProjectCard from '@/components/dashboard/ProjectCard';
-import CreateProjectDialog from './admin/CreateProjectDialog';
+import CreateProjectDialog from './CreateProjectDialog';
 import { Project, User, Claim, AttendanceRecord, ProjectStatus } from '@/types';
-import ProgressOverview from './admin/ProgressOverview';
-import ClaimsOverview from './admin/ClaimsOverview';
-import AttendanceSummary from './admin/AttendanceSummary';
-import AdminAlerts from './admin/AdminAlerts';
+import ProgressOverview from './ProgressOverview';
+import ClaimsOverview from './ClaimsOverview';
+import AttendanceSummary from './AttendanceSummary';
+import AdminAlerts from './AdminAlerts';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultProjectStatuses } from '@/lib/data';
 import { Search, Activity } from 'lucide-react';
-import ActivateLicenseDialog from '../../team/_components/ActivateLicenseDialog';
+import ActivateLicenseDialog from './ActivateLicenseDialog';
 
 interface AdminDashboardProps {
   projects: Project[];
