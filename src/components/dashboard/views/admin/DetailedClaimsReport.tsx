@@ -27,7 +27,7 @@ export default function DetailedClaimsReport() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Engineer Name</TableHead>
+                <TableHead>engineer Name</TableHead>
                 <TableHead>Site Name</TableHead>
                 <TableHead>e-Invoice No.</TableHead>
                 <TableHead>Claim Title</TableHead>
@@ -40,7 +40,7 @@ export default function DetailedClaimsReport() {
               {detailedClaimsData.length > 0 ? (
                 detailedClaimsData.map((data, index) => (
                   <TableRow key={index}>
-                    <TableCell>{data['Engineer Name']}</TableCell>
+                    <TableCell>{data['engineer Name']}</TableCell>
                     <TableCell>{data['Site Name']}</TableCell>
                     <TableCell>{data['e-Invoice No.']}</TableCell>
                     <TableCell className="font-medium">{data['Claim Title']}</TableCell>

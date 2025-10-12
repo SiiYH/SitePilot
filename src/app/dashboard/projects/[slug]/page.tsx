@@ -80,8 +80,8 @@ export default function ProjectDetailsPage() {
 
   const { data: documents, isLoading: documentsLoading } = useCollection<DocType>(documentsQuery);
 
-  const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
-  const canManageWorkItems = user?.role === 'Admin' || user?.role === 'Director';
+  const canManageSettings = user?.role === 'admin' || user?.role === 'director';
+  const canManageWorkItems = user?.role === 'admin' || user?.role === 'director';
 
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
@@ -115,7 +115,7 @@ export default function ProjectDetailsPage() {
           
           // Fetch claims
           let claimsData = await getClaimsForProject(projectData.id);
-          if (user.role === 'Engineer') {
+          if (user.role === 'engineer') {
             claimsData = claimsData.filter(claim => claim.submittedBy === user.id);
           }
           setClaims(claimsData);
@@ -236,8 +236,8 @@ export default function ProjectDetailsPage() {
     notFound();
   }
   
-  const canEditProject = user.role === 'Admin' || user.role === 'Director';
-  const canUploadImage = user.role === 'Director' || user.role === 'Admin';
+  const canEditProject = user.role === 'admin' || user.role === 'director';
+  const canUploadImage = user.role === 'director' || user.role === 'admin';
   const currentStatus = projectStatuses.find(s => s.id === projectWithTasks.status);
 
 

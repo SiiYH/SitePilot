@@ -80,7 +80,7 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
                 )}
                  {!isActivated && !canEdit && (
                      <p className="text-sm text-muted-foreground italic">
-                        Only an Admin or Director can activate the company license.
+                        Only an admin or director can activate the company license.
                     </p>
                  )}
             </CardContent>

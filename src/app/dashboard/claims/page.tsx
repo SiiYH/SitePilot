@@ -22,7 +22,7 @@ export default function ClaimsPage() {
     let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
     
     // Further filter for engineers
-    if (user?.role === 'Engineer' && user.id) {
+    if (user?.role === 'engineer' && user.id) {
       q = query(q, where('submittedBy', '==', user.id));
     }
     return q;
@@ -58,7 +58,7 @@ export default function ClaimsPage() {
     );
   }
 
-  const isEngineer = user?.role === 'Engineer';
+  const isEngineer = user?.role === 'engineer';
   const engineerProjects = isEngineer && projects && user ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
 
   return (

@@ -116,7 +116,7 @@ export interface Claim {
   receiptImageUrls?: string[];
   receiptImageHint?: string;
   remark?: string;
-  approvedBy?: string; // User ID of Director who approved
+  approvedBy?: string; // User ID of director who approved
   approvedAt?: string; // ISO date string
   eInvoiceNo?: string;
 }

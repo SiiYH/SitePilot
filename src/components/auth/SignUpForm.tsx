@@ -100,7 +100,7 @@ export default function SignUpForm() {
            <Alert variant="destructive" className="text-sm">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              The license limit for new <strong>Engineer</strong> sign-ups has been reached. Please contact an administrator.
+              The license limit for new <strong>engineer</strong> sign-ups has been reached. Please contact an administrator.
             </AlertDescription>
           </Alert>
         )}

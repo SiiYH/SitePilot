@@ -96,9 +96,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
         setDocumentNonBlocking(companyDocRef, finalCompanyData, {});
         
         const userDocRef = doc(firestore, 'users', user.id);
-        const userUpdates: { companyId: string; role?: 'Director' } = { companyId: newCompanyId };
-        if (user.role !== 'Director') {
-            userUpdates.role = 'Director';
+        const userUpdates: { companyId: string; role?: 'director' } = { companyId: newCompanyId };
+        if (user.role !== 'director') {
+            userUpdates.role = 'director';
         }
         updateDocumentNonBlocking(userDocRef, userUpdates);
         

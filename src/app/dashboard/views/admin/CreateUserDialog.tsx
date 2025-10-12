@@ -25,7 +25,7 @@ const formSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['Admin', 'Director', 'Engineer']),
+  role: z.enum(['admin', 'director', 'engineer']),
 }).refine(data => data.contactMethod === 'email' ? z.string().email().safeParse(data.email).success : true, {
   message: 'A valid email is required',
   path: ['email'],
@@ -38,7 +38,7 @@ interface CreateUserDialogProps {
     onUserCreated: (newUser: any) => void;
 }
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
+const roles: UserRole[] = ['admin', 'director', 'engineer'];
 
 export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
       email: '',
       phone: '',
       password: '',
-      role: 'Engineer',
+      role: 'engineer',
     },
   });
 

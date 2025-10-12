@@ -19,7 +19,7 @@ export default function MyTasksPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user || user.role !== 'Engineer' || !firestore || !company?.id) return null;
+    if (!user || user.role !== 'engineer' || !firestore || !company?.id) return null;
     
     // This query is complex and might require composite indexes in a real production app.
     // For this app, we assume it works or that indexes will be created.
@@ -74,11 +74,11 @@ export default function MyTasksPage() {
   }
 
   // This page is only for Engineers
-  if (user.role !== 'Engineer') {
+  if (user.role !== 'engineer') {
       return (
           <div className="space-y-6">
               <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
-              <p className="text-muted-foreground">This page is only available for users with the 'Engineer' role.</p>
+              <p className="text-muted-foreground">This page is only available for users with the 'engineer' role.</p>
           </div>
       )
   }

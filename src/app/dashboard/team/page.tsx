@@ -60,7 +60,7 @@ export default function TeamPage() {
     );
   }
   
-  const canManageUsers = user.role === 'Admin' || user.role === 'Director';
+  const canManageUsers = user.role === 'admin' || user.role === 'director';
 
   return (
     <div className="space-y-6">

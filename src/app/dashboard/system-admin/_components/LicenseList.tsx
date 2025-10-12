@@ -55,7 +55,7 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                     {licenses.length > 0 ? (
                        <Accordion type="single" collapsible className="w-full space-y-3">
                          {[...licenses].reverse().map(license => (
-                            <AccordionItem value={license.key} key={license.key} className="border-0 rounded-xl overflow-hidden shadow-sm bg-muted/20 hover:shadow-md transition-shadow">
+                            <AccordionItem value={license.id} key={license.id} className="border-0 rounded-xl overflow-hidden shadow-sm bg-muted/20 hover:shadow-md transition-shadow">
                                 <AccordionTrigger className="p-4 hover:no-underline [&[data-state=open]]:bg-muted/30">
                                      <div className="flex items-center gap-3 text-left">
                                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -76,12 +76,12 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                                      <div className="space-y-2 rounded-md border bg-background p-3">
                                         <div className="flex items-center justify-between">
                                              <span className="text-sm text-muted-foreground font-medium">License Key</span>
-                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.key)}>
-                                                {copiedKey === license.key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.id)}>
+                                                {copiedKey === license.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                                             </Button>
                                         </div>
                                         <p className="font-mono text-xs break-all leading-relaxed">
-                                            {license.key}
+                                            {license.id}
                                         </p>
                                     </div>
                                     <InfoRow icon={User} label="Directors">{license.maxDirectors}</InfoRow>
@@ -119,14 +119,14 @@ export default function LicenseList({ licenses }: LicenseListProps) {
                         <TableBody>
                             {licenses.length > 0 ? (
                                 [...licenses].reverse().map(license => (
-                                    <TableRow key={license.key}>
+                                    <TableRow key={license.id}>
                                         <TableCell className="font-medium">{license.purchaser}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <KeyRound className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-mono text-xs truncate max-w-[200px]">{license.key}</span>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.key)}>
-                                                    {copiedKey === license.key ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                <span className="font-mono text-xs truncate max-w-[200px]">{license.id}</span>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(license.id)}>
+                                                    {copiedKey === license.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -157,3 +157,5 @@ export default function LicenseList({ licenses }: LicenseListProps) {
         </Card>
     );
 }
+
+    

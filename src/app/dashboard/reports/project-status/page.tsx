@@ -28,7 +28,7 @@ export default function ProjectStatusPage() {
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   const projects = reportData.projects;
-  const engineers = reportData.users.filter(u => u.role === 'Engineer');
+  const engineers = reportData.users.filter(u => u.role === 'engineer');
 
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
@@ -80,11 +80,11 @@ export default function ProjectStatusPage() {
                   </Select>
                </div>
                <div className="grid flex-auto gap-2 min-w-48">
-                  <span className="text-sm font-medium">Engineer</span>
+                  <span className="text-sm font-medium">engineer</span>
                   <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
                     <SelectTrigger>
                       <User className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Select Engineer" />
+                      <SelectValue placeholder="Select engineer" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Engineers</SelectItem>

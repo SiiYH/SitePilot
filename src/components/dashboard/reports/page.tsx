@@ -26,13 +26,13 @@ const reports = [
     icon: GanttChartSquare,
   },
   {
-    title: 'Engineer Summary Report',
+    title: 'engineer Summary Report',
     description: 'A summary of performance and financial metrics for each engineer.',
     href: '/dashboard/reports/engineer-summary',
     icon: BarChart,
   },
   {
-    title: "Engineer's Performance Report",
+    title: "engineer's Performance Report",
     description: 'An overview of task completions, overdue tasks, and on-time rates.',
     href: '/dashboard/reports/engineer-performance',
     icon: LineChart,
@@ -88,11 +88,11 @@ export default function ReportsPage() {
                 <TaskMilestoneReport />
             </div>
             <div className="printable-content print-break-after">
-                <h2 className="text-xl font-bold mb-4">Engineer Summary Report</h2>
+                <h2 className="text-xl font-bold mb-4">engineer Summary Report</h2>
                 <EngineerSummaryReport />
             </div>
              <div className="printable-content print-break-after">
-                <h2 className="text-xl font-bold mb-4">Engineer Performance Report</h2>
+                <h2 className="text-xl font-bold mb-4">engineer Performance Report</h2>
                 <EngineerPerformanceReport />
             </div>
              <div className="printable-content">

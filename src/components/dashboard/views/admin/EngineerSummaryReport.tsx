@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useReportContext } from '@/contexts/ReportContext';
 
 interface SummaryData {
-  "Engineer Name": string;
+  "engineer Name": string;
   "Completed Sites": number;
   "Total Amount (RM)": number;
   "Claim (RM)": number;
@@ -29,7 +29,7 @@ export default function EngineerSummaryReport() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Engineer Name</TableHead>
+                    <TableHead>engineer Name</TableHead>
                     <TableHead className="text-right">Completed Sites</TableHead>
                     <TableHead className="text-right">Total Amount (RM)</TableHead>
                     <TableHead className="text-right">Claim (RM)</TableHead>
@@ -39,8 +39,8 @@ export default function EngineerSummaryReport() {
                 </TableHeader>
                 <TableBody>
                     {summaryData.map(data => (
-                    <TableRow key={data['Engineer Name']}>
-                        <TableCell className="font-medium">{data['Engineer Name']}</TableCell>
+                    <TableRow key={data['engineer Name']}>
+                        <TableCell className="font-medium">{data['engineer Name']}</TableCell>
                         <TableCell className="text-right">{data['Completed Sites']}</TableCell>
                         <TableCell className="text-right">{data['Total Amount (RM)'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                         <TableCell className="text-right">{data['Claim (RM)'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>

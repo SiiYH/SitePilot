@@ -13,8 +13,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
+
 
 const customerTypeLabels: { [key: string]: string } = {
   'malaysia-business': 'Malaysia Business',
@@ -79,7 +81,7 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
                 )}
                  {!isActivated && !canEdit && (
                      <p className="text-sm text-muted-foreground italic">
-                        Only an Admin or Director can activate the company license.
+                        Only an admin or director can activate the company license.
                     </p>
                  )}
             </CardContent>
@@ -135,54 +137,61 @@ export default function CompanyPage() {
   const { user, company, setCompany, loading } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const canEdit = user?.role === 'Admin' || user?.role === 'Director';
+  const canEdit = user?.role === 'admin' || user?.role === 'director';
 
   const handleActivate = async (key: string) => {
-    if (!company) return;
-    // Note: In a real app, license validation would happen on a secure backend.
-    // This client-side logic is for demonstration purposes.
-    const licensesString = localStorage.getItem('sitepilot-licenses');
-    const licenses = licensesString ? JSON.parse(licensesString) : [];
+    if (!company || !firestore) return;
     
-    const license = licenses.find((lic: any) => lic.key === key);
+    const licenseDocRef = doc(firestore, 'licenses', key);
 
-    if (license) {
-        if (license.activatedAt && license.companyId !== company.id) {
+    try {
+        const licenseDoc = await getDoc(licenseDocRef);
+
+        if (licenseDoc.exists()) {
+            const license = licenseDoc.data() as License;
+            if (license.activatedAt && license.companyId !== company.id) {
+                toast({
+                    variant: "destructive",
+                    title: "License Key Already Used",
+                    description: "This license key has already been activated for another company.",
+                });
+                return;
+            }
+            
+            const companyDocRef = doc(firestore, 'companies', company.id);
+            const companyUpdateData = {
+                activated: true,
+                licenseKey: key,
+            };
+            updateDocumentNonBlocking(companyDocRef, companyUpdateData);
+
+            const licenseUpdateData = {
+                activatedAt: new Date().toISOString(),
+                companyId: company.id,
+            };
+            updateDocumentNonBlocking(licenseDocRef, licenseUpdateData);
+
+            const updatedCompanyData = { ...company, ...companyUpdateData };
+            setCompany(updatedCompanyData);
+
+            toast({
+                title: "License Activated!",
+                description: "Your company is now active.",
+            });
+
+        } else {
             toast({
                 variant: "destructive",
-                title: "License Key Already Used",
-                description: "This license key has already been activated for another company.",
+                title: "Invalid License Key",
+                description: "The provided license key is not valid. Please try again.",
             });
-            return;
         }
-        
-        const companyDocRef = doc(firestore, 'companies', company.id);
-        const updateData = {
-            activated: true,
-            licenseKey: key,
-        };
-        updateDocumentNonBlocking(companyDocRef, updateData);
-
-        // Update local state
-        const updatedCompanyData = { ...company, ...updateData };
-        setCompany(updatedCompanyData);
-
-        // Update license in localStorage
-        const updatedLicenses = licenses.map((lic: any) => 
-            lic.key === key ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
-        );
-        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
-
-        toast({
-            title: "License Activated!",
-            description: "Your company is now active.",
-        });
-
-    } else {
+    } catch (error) {
+        console.error("Error during license activation:", error);
         toast({
             variant: "destructive",
-            title: "Invalid License Key",
-            description: "The provided license key is not valid. Please try again.",
+            title: "Activation Error",
+            description: "An unexpected error occurred. Please try again.",
         });
     }
   };
@@ -356,3 +365,5 @@ export default function CompanyPage() {
     </div>
   );
 }
+
+    

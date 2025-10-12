@@ -20,8 +20,8 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
   const { toast } = useToast();
 
   const canView = (docType: DocType['type']) => {
-    // Director can see everything
-    if (user.role === 'Director' || user.role === 'Admin' || user.role === 'System Super Admin') {
+    // director can see everything
+    if (user.role === 'director' || user.role === 'admin' || user.role === 'system super admin') {
       return true;
     }
     // For now, Engineers can see everything except contracts

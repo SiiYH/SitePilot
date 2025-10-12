@@ -17,7 +17,7 @@ interface ReportDataContext {
 }
 
 interface SummaryData {
-  "Engineer Name": string;
+  "engineer Name": string;
   "Completed Sites": number;
   "Total Amount (RM)": number;
   "Claim (RM)": number;
@@ -26,7 +26,7 @@ interface SummaryData {
 }
 
 interface PerformanceData {
-  "Engineer Name": string;
+  "engineer Name": string;
   "Total Tasks": number;
   "Completed Tasks": number;
   "Overdue Tasks": number;
@@ -34,7 +34,7 @@ interface PerformanceData {
 }
 
 interface DetailedClaimData {
-    "Engineer Name": string;
+    "engineer Name": string;
     "Site Name": string;
     "e-Invoice No.": string;
     "Claim Title": string;
@@ -101,7 +101,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const [selectedProjectStatus, setSelectedProjectStatus] = useState<string | undefined>();
   
   const allEngineers = useMemo(() => {
-    return reportData.users.filter(u => u.role === 'Engineer');
+    return reportData.users.filter(u => u.role === 'engineer');
   }, [reportData.users]);
 
   const engineers = useMemo(() => {
@@ -208,7 +208,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       }).length;
 
       return {
-        "Engineer Name": engineer.name,
+        "engineer Name": engineer.name,
         "Completed Sites": completedSites,
         "Total Amount (RM)": totalAmount,
         "Claim (RM)": claimAmount,
@@ -239,7 +239,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const onTimeRate = completedTasks > 0 ? (onTimeTasks / completedTasks) * 100 : 0;
 
       return {
-        "Engineer Name": engineer.name,
+        "engineer Name": engineer.name,
         "Total Tasks": totalTasks,
         "Completed Tasks": completedTasks,
         "Overdue Tasks": overdueTasks,
@@ -253,7 +253,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         const engineer = reportData.users.find(u => u.id === claim.submittedBy);
         const project = reportData.projects.find(p => p.id === claim.projectId);
         return {
-            "Engineer Name": engineer?.name || 'N/A',
+            "engineer Name": engineer?.name || 'N/A',
             "Site Name": project?.name || 'N/A',
             "e-Invoice No.": claim.eInvoiceNo || 'N/A',
             "Claim Title": claim.title,
@@ -309,12 +309,12 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   
   const exportSummaryToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(summaryData);
-    exportToExcel(worksheet, 'Engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
+    exportToExcel(worksheet, 'engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
   };
   
   const exportPerformanceToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(performanceData);
-    exportToExcel(worksheet, 'Engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
+    exportToExcel(worksheet, 'engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
   };
   
   const exportDetailedClaimsToExcel = () => {
@@ -343,8 +343,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     const workbook = XLSX.utils.book_new();
     
     XLSX.utils.book_append_sheet(workbook, projectStatusWorksheet, 'Project Status');
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
-    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'engineer Summary');
+    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
     XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task & Milestone Details');
     

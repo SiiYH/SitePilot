@@ -27,7 +27,7 @@ export default function CompanyManagementPage() {
     );
   }
 
-  if (user?.role !== 'System Super Admin') {
+  if (user?.role !== 'system super admin') {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>

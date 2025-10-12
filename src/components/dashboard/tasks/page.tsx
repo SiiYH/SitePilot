@@ -79,7 +79,7 @@ export default function MyTasksPage() {
       return (
           <div className="space-y-6">
               <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
-              <p className="text-muted-foreground">This page is only available for users with the 'Engineer' role.</p>
+              <p className="text-muted-foreground">This page is only available for users with the 'engineer' role.</p>
           </div>
       )
   }

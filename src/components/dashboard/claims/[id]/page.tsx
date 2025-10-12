@@ -279,7 +279,7 @@ export default function ClaimDetailsPage() {
                     <div className="flex items-center justify-between">
                          <CardTitle className="flex items-center gap-2">
                             <MessageSquare className="h-5 w-5 text-primary" />
-                            <span>Director's Remark</span>
+                            <span>director's Remark</span>
                         </CardTitle>
                         {user?.role === 'director' && !isEditingRemark && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)} className="p-2 h-auto sm:h-9 sm:px-3 sm:py-2">

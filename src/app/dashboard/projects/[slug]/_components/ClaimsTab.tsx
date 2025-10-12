@@ -43,7 +43,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTab
                     <CardTitle>Claims</CardTitle>
                     <CardDescription>All payment claims associated with this project. Click a claim to view details.</CardDescription>
                 </div>
-                {user?.role === 'Engineer' && (
+                {user?.role === 'engineer' && (
                     <CreateClaimDialog
                         projects={[project]}
                         onClaimCreated={onClaimCreated}

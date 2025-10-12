@@ -123,7 +123,7 @@ export default function WorkItemDetailsPage() {
     notFound();
   }
 
-  const canManageWorkItem = user.role === 'Admin' || user.role === 'Director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
+  const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
   const owner = mockUsers.find(u => u.id === workItem.owner);
   const contributors = mockUsers.filter(u => workItem.contributors?.includes(u.id));
   const Icon = typeIcon[workItem.type] || GanttChartSquare;

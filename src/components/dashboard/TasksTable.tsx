@@ -55,7 +55,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
-  const canEdit = user.role === 'Engineer' || user.role === 'Admin' || user.role === 'Director';
+  const canEdit = user.role === 'engineer' || user.role === 'admin' || user.role === 'director';
 
   React.useEffect(() => {
     setTasks(initialTasks);

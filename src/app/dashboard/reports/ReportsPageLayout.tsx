@@ -45,10 +45,10 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   
   const getReportTitle = () => {
     if (pathname.includes('/engineer-summary')) {
-      return "SitePilot - Engineer Summary Report";
+      return "SitePilot - engineer Summary Report";
     }
     if (pathname.includes('/engineer-performance')) {
-      return "SitePilot - Engineer Performance Report";
+      return "SitePilot - engineer Performance Report";
     }
     if (pathname.includes('/detailed-claims')) {
         return "SitePilot - Detailed Claims Report";

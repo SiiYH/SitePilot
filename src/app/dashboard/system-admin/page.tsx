@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,27 +7,28 @@ import LicenseList from './_components/LicenseList';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, orderBy, query } from 'firebase/firestore';
 
-const STORAGE_KEY = 'sitepilot-licenses';
 
 export default function SystemAdminPage() {
   const { user, loading } = useAuth();
-  const [licenses, setLicenses] = useState<License[]>([]);
+  const firestore = useFirestore();
+  
+  const licensesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'licenses'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
 
-  useEffect(() => {
-    const storedLicenses = localStorage.getItem(STORAGE_KEY);
-    if (storedLicenses) {
-      setLicenses(JSON.parse(storedLicenses));
-    }
-  }, []);
+  const { data: licenses, isLoading: licensesLoading } = useCollection<License>(licensesQuery);
 
   const handleLicenseGenerated = (newLicense: License) => {
-    const updatedLicenses = [newLicense, ...licenses];
-    setLicenses(updatedLicenses);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLicenses));
+    // The useCollection hook will automatically update the list
   };
 
-  if (loading) {
+  const pageLoading = loading || licensesLoading;
+
+  if (pageLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -34,7 +36,7 @@ export default function SystemAdminPage() {
     );
   }
 
-  if (user?.role !== 'System Super Admin') {
+  if (user?.role !== 'system super admin') {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
@@ -56,7 +58,9 @@ export default function SystemAdminPage() {
       </div>
       <LicenseGenerator onLicenseGenerated={handleLicenseGenerated} />
       <Separator />
-      <LicenseList licenses={licenses} />
+      <LicenseList licenses={licenses || []} />
     </div>
   );
 }
+
+    

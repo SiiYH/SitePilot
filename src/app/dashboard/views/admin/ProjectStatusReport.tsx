@@ -17,7 +17,7 @@ import { defaultProjectStatuses } from '@/lib/data';
 export default function ProjectStatusReport() {
   const { projectStatusData, reportData } = useReportContext();
   const { user } = useAuth();
-  const canViewFinancials = user?.role === 'Admin' || user?.role === 'Director';
+  const canViewFinancials = user?.role === 'admin' || user?.role === 'director';
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   useEffect(() => {

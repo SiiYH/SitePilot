@@ -87,8 +87,8 @@ function AssignedTeam({ users, currentUser }: { users: User[], currentUser: User
 export default function OverviewTab({ project, assignedUsers, user, onProjectUpdate }: { project: Project, assignedUsers: User[], user: User, onProjectUpdate: (project: Project) => void }) {
     const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
     const upcomingMilestones = project.milestones.filter(m => m.status === 'Upcoming');
-    const canViewFinancials = user.role === 'Admin' || user.role === 'Director';
-    const canEditManualProgress = user.role === 'Admin' || user.role === 'Director';
+    const canViewFinancials = user.role === 'admin' || user.role === 'director';
+    const canEditManualProgress = user.role === 'admin' || user.role === 'director';
     const calculatedProgress = getProjectProgress(project);
 
     const progressModeLabels: Record<Project['progressTrackingMode'], string> = {

@@ -18,6 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 const formSchema = z.object({
     purchaser: z.string().min(3, 'Purchaser name is required.'),
@@ -39,7 +42,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export type License = {
-  key: string;
+  id: string; // The license key is the ID
   purchaser: string;
   maxDirectors: number;
   maxAdmins: number;
@@ -50,8 +53,6 @@ export type License = {
   companyId?: string;
 }
 
-const STORAGE_KEY = 'sitepilot-licenses';
-
 interface LicenseGeneratorProps {
     onLicenseGenerated: (newLicense: License) => void;
 }
@@ -60,6 +61,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
     const [generatedKey, setGeneratedKey] = useState<string | null>(null);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -85,7 +87,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         const encodedKey = btoa(key);
         
         const newLicense: License = {
-            key: encodedKey,
+            id: encodedKey, // The key itself is the document ID
             purchaser: values.purchaser,
             maxDirectors: values.maxDirectors,
             maxAdmins: values.maxAdmins,
@@ -94,17 +96,17 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             createdAt: new Date().toISOString(),
         }
 
-        const storedLicenses = localStorage.getItem(STORAGE_KEY);
-        const licenses = storedLicenses ? JSON.parse(storedLicenses) : [];
-        licenses.push(newLicense);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(licenses));
+        if (firestore) {
+            const licenseDocRef = doc(firestore, 'licenses', newLicense.id);
+            setDocumentNonBlocking(licenseDocRef, newLicense);
+        }
 
         onLicenseGenerated(newLicense);
         setGeneratedKey(encodedKey);
         setHasCopied(false);
         toast({
             title: 'License Key Generated',
-            description: 'The license key has been created successfully.',
+            description: 'The license key has been created and saved to Firestore.',
         });
     };
 
@@ -353,7 +355,5 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         </Card>
     );
 }
-
-    
 
     

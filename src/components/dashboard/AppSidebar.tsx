@@ -21,7 +21,7 @@ const mainMenuItems = [
 ];
 
 const settingsMenuItems = [
-  { href: '/dashboard/system-admin', label: 'System Admin', icon: ShieldCheck, tooltip: 'System Admin', roles: ['system super admin'] },
+  { href: '/dashboard/system-admin', label: 'System admin', icon: ShieldCheck, tooltip: 'System admin', roles: ['system super admin'] },
   { href: '/dashboard/company-management', label: 'Company Mgt', icon: Briefcase, tooltip: 'Company Management', roles: ['system super admin'] },
   { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['admin', 'director', 'engineer', 'system super admin'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['admin', 'director', 'engineer'] },

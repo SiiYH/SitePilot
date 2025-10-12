@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
 export default function LicenseForm() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function LicenseForm() {
   const firestore = useFirestore();
 
   const handleActivate = async () => {
-    if (!company) {
+    if (!company || !firestore) {
         toast({
             variant: 'destructive',
             title: "Error",
@@ -34,54 +35,64 @@ export default function LicenseForm() {
     
     setIsLoading(true);
 
-    // Note: In a real app, license validation would happen on a secure backend.
-    // This client-side logic is for demonstration purposes.
-    const licensesString = localStorage.getItem('sitepilot-licenses');
-    const licenses = licensesString ? JSON.parse(licensesString) : [];
+    const licenseDocRef = doc(firestore, 'licenses', licenseKey);
     
-    const license = licenses.find((lic: any) => lic.key === licenseKey);
+    try {
+        const licenseDoc = await getDoc(licenseDocRef);
 
-    if (license) {
-        if (license.activatedAt && license.companyId !== company.id) {
+        if (licenseDoc.exists()) {
+            const license = licenseDoc.data() as License;
+
+            if (license.activatedAt && license.companyId !== company.id) {
+                toast({
+                    variant: "destructive",
+                    title: "License Key Already Used",
+                    description: "This license key has already been activated for another company.",
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            const companyDocRef = doc(firestore, 'companies', company.id);
+            const companyUpdateData = {
+                activated: true,
+                licenseKey: licenseKey,
+            };
+            updateDocumentNonBlocking(companyDocRef, companyUpdateData);
+
+            const licenseUpdateData = {
+                activatedAt: new Date().toISOString(),
+                companyId: company.id,
+            };
+            updateDocumentNonBlocking(licenseDocRef, licenseUpdateData);
+
+            const updatedCompanyData = { ...company, ...companyUpdateData };
+            setCompany(updatedCompanyData);
+
+            toast({
+                title: "License Activated!",
+                description: "Your company is now active. Let's set up e-invoicing.",
+            });
+            
+            setTimeout(() => {
+                setIsLoading(false);
+                router.push('/company-setup/e-invoicing');
+            }, 1500);
+
+        } else {
             toast({
                 variant: "destructive",
-                title: "License Key Already Used",
-                description: "This license key has already been activated for another company.",
+                title: "Invalid License Key",
+                description: "The provided license key is not valid. Please check and try again.",
             });
             setIsLoading(false);
-            return;
         }
-
-        const companyDocRef = doc(firestore, 'companies', company.id);
-        const updateData = {
-            activated: true,
-            licenseKey: licenseKey,
-        };
-        updateDocumentNonBlocking(companyDocRef, updateData);
-
-        const updatedCompanyData = { ...company, ...updateData };
-        setCompany(updatedCompanyData);
-
-        const updatedLicenses = licenses.map((lic: any) => 
-            lic.key === licenseKey ? { ...lic, activatedAt: new Date().toISOString(), companyId: company.id } : lic
-        );
-        localStorage.setItem('sitepilot-licenses', JSON.stringify(updatedLicenses));
-
-        toast({
-            title: "License Activated!",
-            description: "Your company is now active. Let's set up e-invoicing.",
-        });
-        
-        setTimeout(() => {
-            setIsLoading(false);
-            router.push('/company-setup/e-invoicing');
-        }, 1500);
-
-    } else {
+    } catch (error) {
+        console.error("Error activating license:", error);
         toast({
             variant: "destructive",
-            title: "Invalid License Key",
-            description: "The provided license key is not valid. Please check and try again.",
+            title: "Activation Failed",
+            description: "An error occurred while activating the license. Please try again.",
         });
         setIsLoading(false);
     }
@@ -117,3 +128,5 @@ export default function LicenseForm() {
     </Card>
   );
 }
+
+    

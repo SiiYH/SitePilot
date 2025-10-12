@@ -62,12 +62,12 @@ export default function ProjectsPage() {
   
   const loading = loadingProjects || loadingUsers;
 
-  const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
+  const canManageSettings = user?.role === 'admin' || user?.role === 'director';
 
   const handleProjectCreated = (newProject: Project) => {
     // Optimistically add the new project to the local state
     if (newProject.companyId === company?.id) {
-        if (user?.role === 'Engineer') {
+        if (user?.role === 'engineer') {
           if (newProject.assignedEngineers.includes(user.id)) {
             setLocalProjects(prevProjects => [newProject, ...prevProjects]);
           }
@@ -83,7 +83,7 @@ export default function ProjectsPage() {
   }
 
   const filteredProjects = useMemo(() => {
-    let userProjects = user?.role === 'Engineer'
+    let userProjects = user?.role === 'engineer'
       ? projects.filter(p => p.assignedEngineers.includes(user.id))
       : projects;
     
@@ -116,7 +116,7 @@ export default function ProjectsPage() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
             <h2 className="text-2xl font-bold tracking-tight">
-              {user?.role === 'Engineer' ? 'My Assigned Projects' : 'All Projects'}
+              {user?.role === 'engineer' ? 'My Assigned Projects' : 'All Projects'}
             </h2>
             <p className="text-muted-foreground">
                 View, manage, and create new projects.
@@ -169,7 +169,7 @@ export default function ProjectsPage() {
                     <List className="h-4 w-4" />
                 </Button>
             </div>
-            {user?.role !== 'Engineer' && company && (
+            {user?.role !== 'engineer' && company && (
               company.activated ? (
                 <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
               ) : (
@@ -201,7 +201,7 @@ export default function ProjectsPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
           <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {searchQuery ? "No projects match your search." : (user?.role === 'Engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
+            {searchQuery ? "No projects match your search." : (user?.role === 'engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
           </p>
         </div>
       )}

@@ -58,7 +58,7 @@ export default function EditWorkItemPage() {
         );
     }
     
-    const engineers = mockUsers.filter(u => u.role === 'Engineer');
+    const engineers = mockUsers.filter(u => u.role === 'engineer');
 
     return (
         <div className="space-y-6">

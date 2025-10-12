@@ -5,7 +5,7 @@ import type { User, Project, Claim, AttendanceRecord, ProjectStatus } from '@/ty
 export const mockUsers: User[] = [
   {
     id: 'user-super-admin',
-    name: 'Super Admin',
+    name: 'Super admin',
     email: 'superadmin@sitepilot.com',
     role: 'system super admin',
     avatarUrl: 'https://picsum.photos/seed/user-sa/200/200',
@@ -15,7 +15,7 @@ export const mockUsers: User[] = [
   },
   {
     id: 'user-admin',
-    name: 'Jane Smith (Admin)',
+    name: 'Jane Smith (admin)',
     email: 'admin@sitepilot.com',
     role: 'admin',
     avatarUrl: 'https://picsum.photos/seed/user2/200/200',
@@ -26,7 +26,7 @@ export const mockUsers: User[] = [
   },
   {
     id: 'user-director',
-    name: 'Robert Johnson (Director)',
+    name: 'Robert Johnson (director)',
     email: 'director@sitepilot.com',
     role: 'director',
     avatarUrl: 'https://picsum.photos/seed/user3/200/200',
@@ -37,7 +37,7 @@ export const mockUsers: User[] = [
   },
   {
     id: 'user-engineer-1',
-    name: 'John Doe (Engineer)',
+    name: 'John Doe (engineer)',
     email: 'engineer@sitepilot.com',
     role: 'engineer',
     avatarUrl: 'https://picsum.photos/seed/user1/200/200',
@@ -48,7 +48,7 @@ export const mockUsers: User[] = [
   },
   {
     id: 'user-engineer-2',
-    name: 'Emily White (Engineer)',
+    name: 'Emily White (engineer)',
     phone: '+15551234567',
     role: 'engineer',
     avatarUrl: 'https://picsum.photos/seed/user4/200/200',
@@ -59,7 +59,7 @@ export const mockUsers: User[] = [
   },
   {
     id: 'user-engineer-3',
-    name: 'Alex Ray (Engineer)',
+    name: 'Alex Ray (engineer)',
     email: 'engineer01@gmail.com',
     role: 'engineer',
     avatarUrl: 'https://picsum.photos/seed/user5/200/200',

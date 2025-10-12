@@ -53,7 +53,7 @@ export default function ReportsLayout({
       return (
           <div className="space-y-6">
               <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
-              <p className="text-muted-foreground">This page is only available for Admin or Director roles.</p>
+              <p className="text-muted-foreground">This page is only available for admin or director roles.</p>
           </div>
       )
   }

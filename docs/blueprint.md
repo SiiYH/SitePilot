@@ -2,7 +2,7 @@
 
 ## Core Features:
 
-- Role-Based Authentication: Allow users to register and authenticate as either 'Engineer', 'Admin', or 'Director'. For engineers without email addresses, provide authentication via SMS verification. A welcome message will be displayed with their name and role upon login.
+- Role-Based Authentication: Allow users to register and authenticate as either 'engineer', 'admin', or 'director'. For engineers without email addresses, provide authentication via SMS verification. A welcome message will be displayed with their name and role upon login.
 - Project Dashboard: Display a summary of all active construction projects, including key milestones, deadlines, and overall progress. Differentiate based on user role to show project-relevant information (e.g., an engineer only sees their assigned projects).
 - Task Management: Enable the creation, assignment, and tracking of individual tasks within each project.  Allow engineers to update task status (e.g., 'In Progress', 'Completed'), and Admins/Directors to monitor progress. Task assignments take user roles into account.
 - Document Repository: Provide a centralized location to upload and manage project-related documents (e.g., blueprints, contracts, permits). Implement role-based access control to restrict document visibility (e.g., only Directors can view contracts).

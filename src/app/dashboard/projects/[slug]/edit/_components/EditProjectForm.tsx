@@ -59,7 +59,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
+  const canEditFinancials = user?.role === 'admin' || user?.role === 'director';
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const firestore = useFirestore();
 

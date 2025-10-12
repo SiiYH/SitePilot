@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
+import { firestore } from '@/firebase/config';
 
 export default function DashboardPage() {
   const { user, company, loading: authLoading } = useAuth();
@@ -69,7 +70,7 @@ export default function DashboardPage() {
 
 
   const loading = projectsLoading || authLoading;
-
+  
   useEffect(() => {
     // Only redirect after data fully loaded
     if (!loading && user) {

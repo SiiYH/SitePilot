@@ -114,7 +114,7 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
   });
 
   const progressTrackingMode = form.watch('progressTrackingMode');
-  const canEditFinancials = user?.role === 'Admin' || user?.role === 'Director';
+  const canEditFinancials = user?.role === 'admin' || user?.role === 'director';
 
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {

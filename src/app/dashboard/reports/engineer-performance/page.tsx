@@ -22,7 +22,7 @@ export default function EngineerPerformancePage() {
   const [date, setDate] = useState<DateRange | undefined>();
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
 
-  const engineers = reportData.users.filter(u => u.role === 'Engineer');
+  const engineers = reportData.users.filter(u => u.role === 'engineer');
 
   useEffect(() => {
     setDateRange(date);
@@ -38,18 +38,18 @@ export default function EngineerPerformancePage() {
         <div className="space-y-6">
           <div className="print-hidden flex flex-col gap-4">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">Engineer Performance Report</h2>
+                <h2 className="text-2xl font-bold tracking-tight">engineer Performance Report</h2>
                 <p className="text-muted-foreground">
                 An overview of task completions, overdue tasks, and on-time rates.
                 </p>
             </div>
             <div className="flex flex-wrap items-end gap-4">
                 <div className="grid flex-auto gap-2 min-w-48">
-                    <span className="text-sm font-medium">Engineer</span>
+                    <span className="text-sm font-medium">engineer</span>
                     <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
                         <SelectTrigger>
                         <User className="mr-2 h-4 w-4" />
-                        <SelectValue placeholder="Select Engineer" />
+                        <SelectValue placeholder="Select engineer" />
                         </SelectTrigger>
                         <SelectContent>
                         <SelectItem value="all">All Engineers</SelectItem>

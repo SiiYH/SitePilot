@@ -9,7 +9,7 @@ import StatusManager from './_components/StatusManager';
 export default function SettingsPage() {
   const { user } = useAuth();
 
-  const canManageSettings = user?.role === 'Admin' || user?.role === 'Director';
+  const canManageSettings = user?.role === 'admin' || user?.role === 'director';
 
   if (!canManageSettings) {
     return (

@@ -19,7 +19,7 @@ export default function EngineerPerformanceReport() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Engineer Name</TableHead>
+                <TableHead>engineer Name</TableHead>
                 <TableHead className="text-right">Total Tasks</TableHead>
                 <TableHead className="text-right">Completed Tasks</TableHead>
                 <TableHead className="text-right">Overdue Tasks</TableHead>
@@ -28,8 +28,8 @@ export default function EngineerPerformanceReport() {
             </TableHeader>
             <TableBody>
               {performanceData.map(data => (
-                <TableRow key={data['Engineer Name']}>
-                  <TableCell className="font-medium">{data['Engineer Name']}</TableCell>
+                <TableRow key={data['engineer Name']}>
+                  <TableCell className="font-medium">{data['engineer Name']}</TableCell>
                   <TableCell className="text-right">{data['Total Tasks']}</TableCell>
                   <TableCell className="text-right">{data['Completed Tasks']}</TableCell>
                   <TableCell className="text-right">{data['Overdue Tasks']}</TableCell>

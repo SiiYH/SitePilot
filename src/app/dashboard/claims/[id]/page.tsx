@@ -90,7 +90,7 @@ export default function ClaimDetailsPage() {
   }
 
   const { claim, project, submittedBy, approvedBy } = claimData;
-  const canManageClaim = user.role === 'Director';
+  const canManageClaim = user.role === 'director';
 
   const handleStatusChange = (newStatus: Claim['status']) => {
     if (!canManageClaim) return;
@@ -278,9 +278,9 @@ export default function ClaimDetailsPage() {
                     <div className="flex items-center justify-between">
                          <CardTitle className="flex items-center gap-2">
                             <MessageSquare className="h-5 w-5 text-primary" />
-                            <span>Director's Remark</span>
+                            <span>director's Remark</span>
                         </CardTitle>
-                        {user?.role === 'Director' && !isEditingRemark && (
+                        {user?.role === 'director' && !isEditingRemark && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)} className="p-2 h-auto sm:h-9 sm:px-3 sm:py-2">
                                 <Edit className="h-4 w-4 sm:mr-2"/>
                                 <span className="sr-only sm:not-sr-only">Edit</span>
@@ -289,7 +289,7 @@ export default function ClaimDetailsPage() {
                     </div>
                  </CardHeader>
                  <CardContent>
-                    {isEditingRemark && user?.role === 'Director' ? (
+                    {isEditingRemark && user?.role === 'director' ? (
                         <div className="space-y-4">
                             <Textarea 
                                 placeholder="Add a remark for this claim..."
@@ -304,7 +304,7 @@ export default function ClaimDetailsPage() {
                         </p>
                     )}
                  </CardContent>
-                 {isEditingRemark && user?.role === 'Director' && (
+                 {isEditingRemark && user?.role === 'director' && (
                     <CardFooter className="justify-end gap-2">
                         <Button variant="ghost" onClick={() => {
                             setIsEditingRemark(false);
