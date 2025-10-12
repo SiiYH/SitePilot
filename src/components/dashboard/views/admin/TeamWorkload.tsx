@@ -317,6 +317,10 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               {user.role === 'Engineer' && (
                                 <div className="flex items-center gap-4 text-sm">
                                   <span className="text-muted-foreground font-medium">
+                                      {assignedProjects.length} {assignedProjects.length === 1 ? 'project' : 'projects'}
+                                  </span>
+                                  <span className="text-muted-foreground font-medium text-xs">•</span>
+                                  <span className="text-muted-foreground font-medium">
                                     {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
                                   </span>
                                   {tasks.length > 0 && (
