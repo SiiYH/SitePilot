@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Project, User, UserRole, UserStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -73,6 +74,12 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
   const [viewMode, setViewMode] = useState<'accordion' | 'table'>('accordion');
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // Default to table on desktop, accordion on mobile
+    setViewMode(isMobile ? 'accordion' : 'table');
+  }, [isMobile]);
 
   // PERFORMANCE OPTIMIZATION 1: Memoize unassigned tasks
   const unassignedTasks = useMemo(() => {
@@ -215,16 +222,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     </SelectContent>
                 </Select>
               </div>
-              <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewModeChange('accordion')}
-                    aria-label="Accordion view"
-                    className={cn('h-8 w-8', viewMode === 'accordion' && 'bg-background shadow-sm')}
-                >
-                    <Users className="h-4 w-4" />
-                </Button>
+              <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 md:flex">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -234,7 +232,16 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                 >
                     <List className="h-4 w-4" />
                 </Button>
-            </div>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewModeChange('accordion')}
+                    aria-label="Accordion view"
+                    className={cn('h-8 w-8', viewMode === 'accordion' && 'bg-background shadow-sm')}
+                >
+                    <Users className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
