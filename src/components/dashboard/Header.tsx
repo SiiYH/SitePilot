@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -23,6 +24,7 @@ export default function Header() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 print-hidden">
@@ -32,7 +34,7 @@ export default function Header() {
         </div>
         <div className="hidden md:block min-w-0">
             <h1 className="text-lg font-semibold truncate">Welcome, {user.name.split(' ')[0]}!</h1>
-            <p className="text-sm text-muted-foreground truncate">You are logged in as a {user.role}.</p>
+            <p className="text-sm text-muted-foreground truncate">You are logged in as a {capitalize(user.role)}.</p>
         </div>
       </div>
       

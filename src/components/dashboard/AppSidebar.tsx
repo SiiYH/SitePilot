@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -8,22 +9,23 @@ import Link from 'next/link';
 import Logo from '@/components/icons/Logo';
 import { SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarSeparator } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
+import type { UserRole } from '@/types';
 
 const mainMenuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tooltip: 'Dashboard', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban, tooltip: 'Projects', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['Engineer'], activePaths: ['/dashboard/work-items'] },
-  { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['Admin', 'Director'] },
-  { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['Admin', 'Director'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tooltip: 'Dashboard', roles: ['admin', 'director', 'engineer'] },
+  { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban, tooltip: 'Projects', roles: ['admin', 'director', 'engineer'] },
+  { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['engineer'], activePaths: ['/dashboard/work-items'] },
+  { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['admin', 'director'] },
+  { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['admin', 'director', 'engineer'] },
+  { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['admin', 'director'] },
 ];
 
 const settingsMenuItems = [
-  { href: '/dashboard/system-admin', label: 'System Admin', icon: ShieldCheck, tooltip: 'System Admin', roles: ['System Super Admin'] },
-  { href: '/dashboard/company-management', label: 'Company Mgt', icon: Briefcase, tooltip: 'Company Management', roles: ['System Super Admin'] },
-  { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['Admin', 'Director', 'Engineer', 'System Super Admin'] },
-  { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['Admin', 'Director', 'Engineer'] },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['Admin', 'Director'] },
+  { href: '/dashboard/system-admin', label: 'System Admin', icon: ShieldCheck, tooltip: 'System Admin', roles: ['system super admin'] },
+  { href: '/dashboard/company-management', label: 'Company Mgt', icon: Briefcase, tooltip: 'Company Management', roles: ['system super admin'] },
+  { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['admin', 'director', 'engineer', 'system super admin'] },
+  { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['admin', 'director', 'engineer'] },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['admin', 'director'] },
 ]
 
 export default function AppSidebar() {
@@ -39,7 +41,7 @@ export default function AppSidebar() {
     return false;
   };
   
-  const userHasAccess = (roles: string[]) => {
+  const userHasAccess = (roles: UserRole[]) => {
     if (!user) return false;
     return roles.includes(user.role);
   }

@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { UserRole } from '@/types';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -54,7 +55,7 @@ export default function SignUpForm() {
   });
 
   const contactMethod = form.watch('contactMethod');
-  const engineerLimitReached = licenseUsage.Engineer >= licenseLimits.Engineer;
+  const engineerLimitReached = licenseUsage.engineer >= licenseLimits.engineer;
 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -80,8 +81,8 @@ export default function SignUpForm() {
         return;
     }
 
-    // Role is defaulted to 'Engineer' on signup now.
-    const user = await signUp({ ...values, role: 'Engineer' });
+    // Role is defaulted to 'engineer' on signup now.
+    const user = await signUp({ ...values, role: 'engineer' });
     if (!user) {
       toast({
         variant: 'destructive',
@@ -156,7 +157,7 @@ export default function SignUpForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="you@company.com" {...field} />
+                  <Input placeholder="you@company.com" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -170,7 +171,7 @@ export default function SignUpForm() {
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="+1 555-123-4567" {...field} />
+                  <Input placeholder="+1 555-123-4567" {...field} value={field.value ?? ''}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>

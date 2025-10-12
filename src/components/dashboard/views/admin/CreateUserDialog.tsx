@@ -24,7 +24,7 @@ const formSchema = z.object({
   email: z.string().optional(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['Admin', 'Director', 'Engineer']),
+  role: z.enum(['admin', 'director', 'engineer']),
 }).refine(data => data.contactMethod === 'email' ? z.string().email().safeParse(data.email).success : true, {
   message: 'A valid email is required',
   path: ['email'],
@@ -38,7 +38,9 @@ interface CreateUserDialogProps {
     companyId: string;
 }
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
+const roles: UserRole[] = ['admin', 'director', 'engineer'];
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 
 export default function CreateUserDialog({ onUserCreated, companyId }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);
@@ -55,7 +57,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
       email: '',
       phone: '',
       password: '',
-      role: 'Engineer',
+      role: 'engineer',
     },
   });
 
@@ -69,7 +71,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
       toast({
         variant: 'destructive',
         title: 'License Limit Reached',
-        description: `You cannot add another ${values.role}. Please upgrade your plan.`,
+        description: `You cannot add another ${capitalize(values.role)}. Please upgrade your plan.`,
       });
       setIsLoading(false);
       return;
@@ -202,7 +204,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
                                 <SelectContent>
                                     {roles.map(r => (
                                         <SelectItem key={r} value={r} disabled={licenseUsage[r] >= licenseLimits[r]}>
-                                            {r} ({licenseUsage[r]}/{licenseLimits[r]} used)
+                                            {capitalize(r)} ({licenseUsage[r]}/{licenseLimits[r]} used)
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -216,7 +218,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
                     <Alert variant="destructive" className="text-xs">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
-                            The license limit for the <strong>{selectedRole}</strong> role has been reached.
+                            The license limit for the <strong>{capitalize(selectedRole)}</strong> role has been reached.
                         </AlertDescription>
                     </Alert>
                 )}

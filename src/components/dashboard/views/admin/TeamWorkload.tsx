@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -60,18 +61,19 @@ const statusConfig = {
 };
 
 const roleColors: { [key in UserRole]: string } = {
-  'Admin': 'bg-gradient-to-br from-purple-500/10 to-purple-600/10 text-purple-700 dark:from-purple-500/20 dark:to-purple-600/20 dark:text-purple-300 border-purple-500/20',
-  'Director': 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300 border-blue-500/20',
-  'Engineer': 'bg-gradient-to-br from-green-500/10 to-green-600/10 text-green-700 dark:from-green-500/20 dark:to-green-600/20 dark:text-green-300 border-green-500/20',
-  'System Super Admin': 'bg-gradient-to-br from-gray-500/10 to-gray-600/10 text-gray-700 dark:from-gray-500/20 dark:to-gray-600/20 dark:text-gray-300 border-gray-500/20',
+  'admin': 'bg-gradient-to-br from-purple-500/10 to-purple-600/10 text-purple-700 dark:from-purple-500/20 dark:to-purple-600/20 dark:text-purple-300 border-purple-500/20',
+  'director': 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300 border-blue-500/20',
+  'engineer': 'bg-gradient-to-br from-green-500/10 to-green-600/10 text-green-700 dark:from-green-500/20 dark:to-green-600/20 dark:text-green-300 border-green-500/20',
+  'system super admin': 'bg-gradient-to-br from-gray-500/10 to-gray-600/10 text-gray-700 dark:from-gray-500/20 dark:to-gray-600/20 dark:text-gray-300 border-gray-500/20',
 };
 
-const roles: UserRole[] = ['Admin', 'Director', 'Engineer'];
+const roles: UserRole[] = ['admin', 'director', 'engineer'];
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser, licenseUsage, licenseLimits } = useAuth();
   const { toast } = useToast();
-  const canManageUsers = currentUser?.role === 'Admin' || currentUser?.role === 'Director';
+  const canManageUsers = currentUser?.role === 'admin' || currentUser?.role === 'director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
   const [viewMode, setViewMode] = useState<'accordion' | 'table'>('table');
   const isMobile = useIsMobile();
@@ -99,7 +101,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     const map: Record<string, Project[]> = {};
   
     users.forEach(user => {
-      if (user.role === 'Engineer') map[user.id] = [];
+      if (user.role === 'engineer') map[user.id] = [];
     });
   
     projects.forEach(project => {
@@ -118,7 +120,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const engineerTasksMap = useMemo(() => {
     const map: Record<string, any[]> = {};
     users.forEach(user => {
-      if (user.role === 'Engineer') {
+      if (user.role === 'engineer') {
         map[user.id] = projects.flatMap(p => 
           (p.tasks || [])
             .filter(t => t.owner === user.id)
@@ -142,7 +144,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   // PERFORMANCE OPTIMIZATION 5: Memoize filtered users
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
-      if (roleFilter === 'All') return user.role !== 'System Super Admin';
+      if (roleFilter === 'All') return user.role !== 'system super admin';
       return user.role === roleFilter;
     });
   }, [users, roleFilter]);
@@ -163,7 +165,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       toast({
         variant: 'destructive',
         title: 'License Limit Reached',
-        description: `Cannot assign the ${newRole} role as the license limit has been met.`,
+        description: `Cannot assign the ${capitalize(newRole)} role as the license limit has been met.`,
       });
       return;
     }
@@ -172,7 +174,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
 
     toast({
         title: "Role Updated",
-        description: `${user.name}'s role has been changed to ${newRole}.`
+        description: `${user.name}'s role has been changed to ${capitalize(newRole)}.`,
     });
   }, [users, licenseUsage, licenseLimits, onUserUpdated, toast]);
 
@@ -223,7 +225,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                     <SelectContent>
                         <SelectItem value="All">All Roles</SelectItem>
                         {roles.map(r => (
-                            <SelectItem key={r} value={r}>{r}</SelectItem>
+                            <SelectItem key={r} value={r}>{capitalize(r)}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -366,7 +368,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     <div className="font-bold text-lg truncate">{user.name}</div>
                                     <div className="flex items-center gap-2">
                                         <Badge className={cn("text-xs font-semibold px-3 py-1 border", roleColors[user.role])}>
-                                        {user.role}
+                                        {capitalize(user.role)}
                                         </Badge>
                                         {user.status === 'Inactive' && (
                                         <Badge variant="outline" className="text-xs border-destructive/50 text-destructive bg-destructive/5 px-3 py-1">
@@ -376,7 +378,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                     </div>
                                 </div>
                               
-                              {user.role === 'Engineer' && (
+                              {user.role === 'engineer' && (
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
                                   <div className="flex items-center gap-2">
                                     <FolderKanban className="h-4 w-4 text-muted-foreground" />
@@ -406,7 +408,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                   </div>
                                 </div>
                               )}
-                              {user.role !== 'Engineer' && (
+                              {user.role !== 'engineer' && (
                                 <p className="text-sm text-muted-foreground font-medium">
                                   Management role
                                 </p>
@@ -421,7 +423,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <Select 
                                 value={user.role} 
                                 onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
-                                disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
                               >
                                 <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
                                   <SelectValue placeholder="Set role" />
@@ -429,7 +431,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 <SelectContent>
                                   {roles.map(r => (
                                     <SelectItem key={r} value={r} disabled={r !== user.role && licenseUsage[r] >= licenseLimits[r]}>
-                                      {r}
+                                      {capitalize(r)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -441,7 +443,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 id={`status-${user.id}`}
                                 checked={user.status === 'Active'}
                                 onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
-                                disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
                               />
                               <Label 
                                 htmlFor={`status-${user.id}`}
@@ -502,7 +504,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             </Dialog>
                             
                             {/* NEW FEATURE: Show assigned projects breakdown */}
-                            {user.role === 'Engineer' && assignedProjects.length > 0 && (
+                            {user.role === 'engineer' && assignedProjects.length > 0 && (
                               <div className="p-4 rounded-lg bg-muted/30 border">
                                 <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                                   <FolderKanban className="h-4 w-4" />
@@ -522,7 +524,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               </div>
                             )}
                             
-                            {user.role === 'Engineer' ? (
+                            {user.role === 'engineer' ? (
                             tasks.length > 0 ? (
                                 <div className="rounded-xl border-0 overflow-hidden shadow-md bg-gradient-to-br from-background to-muted/30">
                                 <Table>
@@ -603,7 +605,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 {user.name} does not have tasks
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                Only users with the 'Engineer' role can be assigned tasks.
+                                Only users with the 'engineer' role can be assigned tasks.
                                 </p>
                             </div>
                             )}
@@ -660,7 +662,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       </TableCell>
                       <TableCell>
                         <Badge className={cn("text-xs font-semibold px-2 py-1 border", roleColors[user.role])}>
-                          {user.role}
+                          {capitalize(user.role)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -670,7 +672,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         </div>
                       </TableCell>
                       <TableCell>
-                        {user.role === 'Engineer' ? (
+                        {user.role === 'engineer' ? (
                           <div className="flex flex-col">
                             <span>{assignedProjects.length} Project(s)</span>
                             <span className="text-xs text-muted-foreground">{tasks.length} Task(s)</span>
@@ -686,7 +688,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <Select 
                                 value={user.role} 
                                 onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
-                                disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
                               >
                                 <SelectTrigger className="h-8 text-xs">
                                   <SelectValue placeholder="Set role" />
@@ -694,7 +696,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 <SelectContent>
                                   {roles.map(r => (
                                     <SelectItem key={r} value={r} disabled={r !== user.role && licenseUsage[r] >= licenseLimits[r]}>
-                                      {r}
+                                      {capitalize(r)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -703,7 +705,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                             <Switch
                               checked={user.status === 'Active'}
                               onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
-                              disabled={user.id === currentUser?.id || user.role === 'System Super Admin'}
+                              disabled={user.id === currentUser?.id || user.role === 'system super admin'}
                             />
                           </div>
                         )}

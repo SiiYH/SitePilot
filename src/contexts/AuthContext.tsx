@@ -29,10 +29,10 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const defaultLimits: Record<UserRole, number> = {
-  'System Super Admin': 1,
-  Admin: 1,
-  Director: 1,
-  Engineer: 2,
+  'system super admin': 1,
+  'admin': 1,
+  'director': 1,
+  'engineer': 2,
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -93,10 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         const activeLicense = licenses.find(lic => lic.key === companyData.licenseKey);
                         if (activeLicense) {
                             setLicenseLimits({
-                                'System Super Admin': 1, // System admin is not governed by license
-                                Admin: activeLicense.maxAdmins,
-                                Director: activeLicense.maxDirectors,
-                                Engineer: activeLicense.maxEngineers,
+                                'system super admin': 1, // System admin is not governed by license
+                                admin: activeLicense.maxAdmins,
+                                director: activeLicense.maxDirectors,
+                                engineer: activeLicense.maxEngineers,
                             });
                         } else {
                            setLicenseLimits(defaultLimits); // Fallback if key is invalid
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                   setCompany(null);
                 }
-              } else if (userData.role === 'System Super Admin') {
+              } else if (userData.role === 'system super admin') {
                   // System admin doesn't need a company context, but might need to see all users
                   // For now, we clear company context for them.
                   setCompany(null);
@@ -151,10 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [auth, firestore]);
   
   const licenseUsage = {
-    'System Super Admin': allUsers.filter(u => u.role === 'System Super Admin' && u.status === 'Active').length,
-    'Admin': allUsers.filter(u => u.role === 'Admin' && u.status === 'Active' && u.companyId === company?.id).length,
-    'Director': allUsers.filter(u => u.role === 'Director' && u.status === 'Active' && u.companyId === company?.id).length,
-    'Engineer': allUsers.filter(u => u.role === 'Engineer' && u.status === 'Active' && u.companyId === company?.id).length,
+    'system super admin': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
+    'admin': allUsers.filter(u => u.role === 'admin' && u.status === 'Active' && u.companyId === company?.id).length,
+    'director': allUsers.filter(u => u.role === 'director' && u.status === 'Active' && u.companyId === company?.id).length,
+    'engineer': allUsers.filter(u => u.role === 'engineer' && u.status === 'Active' && u.companyId === company?.id).length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
@@ -226,5 +226,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-    

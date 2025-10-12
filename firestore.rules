@@ -37,25 +37,10 @@ service cloud.firestore {
      * @principle Enforces user-ownership for profiles, preventing unauthorized access or modification.
      */
     match /users/{userId} {
-
-  // Get permissions - admin/director can read any user in their company
-  allow get: if isOwner(userId) || (isAdminOrDirector() && isSameCompany());
-  
-  // List permissions - all except engineers can list users from their company
-  allow list: if canListUsers() && isSameCompany();
-  
-  // Create permissions - admin/director can create users for their company
-  allow create: if (isSignedIn() && isOwner(userId)) || 
-                   (isAdminOrDirector() && isCreatingSameCompany());
-  
-  // Update permissions - admin/director can update any user in their company
-  allow update: if (isSignedIn() && isOwner(userId)) || 
-                   (isAdminOrDirector() && isSameCompany());
-  
-  // Delete permissions - admin/director can delete any user in their company
-  allow delete: if (isSignedIn() && isOwner(userId)) || 
-                   (isAdminOrDirector() && isSameCompany());
-}
+      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
+      allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
+      allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
+    }
 
     /**
      * @description Controls access to company profiles.
@@ -164,6 +149,10 @@ service cloud.firestore {
   function getUserCompany() {
     return getUserData().companyId;
   }
+  
+  function isEngineer() {	
+  return getUserRole() == 'engineer';
+	}
   
   function isAdminOrDirector() {
     let role = getUserRole();
