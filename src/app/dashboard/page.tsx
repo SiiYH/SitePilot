@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Project, User, Claim, AttendanceRecord, Task } from '@/types';
 import AdminDashboard from '@/components/dashboard/views/AdminDashboard';
@@ -14,6 +15,7 @@ import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
 
 export default function DashboardPage() {
   const { user, company } = useAuth();
+  const router = useRouter();
   const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -69,6 +71,13 @@ export default function DashboardPage() {
 
   const loading = projectsLoading || !company;
 
+  useEffect(() => {
+    if (!loading && user && (user.role === '' || !user.companyId)) {
+        router.replace('/welcome');
+    }
+  }, [user, loading, router]);
+
+
   if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -77,6 +86,15 @@ export default function DashboardPage() {
     );
   }
   
+  // Redirect if user has no role or company, unless they are a system admin
+  if (user.role !== 'system super admin' && (user.role === '' || !user.companyId)) {
+     return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const engineerTasks = user.role === 'engineer' 
     ? tasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id))
     : [];
