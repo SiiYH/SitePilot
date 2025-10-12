@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
 import { doc, getDoc, FirestoreError, collection, query, getDocs, where } from 'firebase/firestore';
 import type { User, UserRole } from '@/types';
-import { login, createNewUser, CreateUserData, UserCredentials, SignUpData } from '@/lib/auth';
+import { login, createNewUser, CreateUserData, UserCredentials, SignUpData, signUp } from '@/lib/auth';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
@@ -174,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
     const companyId = company?.id;
-    const newUser = await createNewUser({ ...data, companyId });
+    const newUser = await signUp({ ...data, companyId });
     if (newUser) {
       router.push('/welcome');
     }
