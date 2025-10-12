@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatDistanceToNowStrict, parseISO, differenceInDays } from 'date-fns';
+import { formatDistanceToNowStrict, parseISO, differenceInDays, isValid } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 
 interface LicenseExpiryCountdownProps {
-  expiresAt: string; // ISO string
+  expiresAt: string | null; // ISO string or null
 }
 
 export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCountdownProps) {
@@ -16,7 +16,16 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
   const [expiryStatus, setExpiryStatus] = useState<'safe' | 'soon' | 'imminent' | 'expired'>('safe');
 
   useEffect(() => {
+    if (!expiresAt) {
+      return;
+    }
+
     const expiryDate = parseISO(expiresAt);
+    if (!isValid(expiryDate)) {
+      // Don't render anything if the date is invalid.
+      setTimeLeft('');
+      return;
+    }
     
     const updateCountdown = () => {
       const now = new Date();
@@ -52,6 +61,10 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
     imminent: 'border-red-400/50 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     expired: 'border-transparent bg-destructive text-destructive-foreground',
   };
+
+  if (!timeLeft) {
+    return null;
+  }
 
   return (
     <Badge className={cn('flex items-center gap-1.5', statusStyles[expiryStatus])}>
