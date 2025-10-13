@@ -3,7 +3,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck, Briefcase } from 'lucide-react';
+import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck, Briefcase, Key } from 'lucide-react';
 import Link from 'next/link';
 
 import Logo from '@/components/icons/Logo';
@@ -18,11 +18,12 @@ const mainMenuItems = [
   { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['admin', 'director'] },
   { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['admin', 'director', 'engineer'] },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['admin', 'director'] },
-  { href: '/dashboard/system-admin', label: 'System admin', icon: ShieldCheck, tooltip: 'System admin', roles: ['system super admin'] },
+  { href: '/dashboard/system-admin', label: 'System Admin', icon: ShieldCheck, tooltip: 'System Admin', roles: ['system super admin'] },
 ];
 
 const settingsMenuItems = [
   { href: '/dashboard/company-management', label: 'Company Mgt', icon: Briefcase, tooltip: 'Company Management', roles: ['system super admin'] },
+  { href: '/dashboard/system-admin/licenses', label: 'License Mgt', icon: Key, tooltip: 'License Management', roles: ['system super admin'] },
   { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['admin', 'director', 'engineer', 'system super admin'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['admin', 'director', 'engineer'] },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['admin', 'director'] },
