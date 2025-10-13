@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -28,7 +27,6 @@ export type SignUpData = {
     email?: string;
     phone?: string;
     password: string;
-    role: UserRole;
     companyId?: string;
 };
 
@@ -74,7 +72,7 @@ export async function signUp(data: SignUpData): Promise<User | null> {
             name: data.name,
             email: data.email,
             phone: data.phone,
-            role: data.role,
+            role: '', // Role is blank on sign up
             avatarUrl: `https://picsum.photos/seed/user${Date.now()}/200/200`,
             status: 'Active',
             createdAt: new Date().toISOString(), // Use ISO string for consistency

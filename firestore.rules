@@ -37,7 +37,7 @@ service cloud.firestore {
      * @principle Enforces user-ownership for profiles, preventing unauthorized access or modification.
      */
     match /users/{userId} {
-      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
+      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector()||isSuperSystemAdmin());
       allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
       allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
     }

@@ -29,7 +29,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const defaultLimits: Record<UserRole, number> = {
-  'system super admin': 1,
+  'system super admin': Infinity,
   'admin': 1,
   'director': 1,
   'engineer': 2,
@@ -47,11 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const fetchCompanyUsers = async (companyId: string) => {
+    const fetchCompanyUsers = async (companyId: string, isSystemAdmin: boolean) => {
         if (!firestore) return;
         const usersCol = collection(firestore, 'users');
-        // Only fetch users belonging to the specified company
-        const q = query(usersCol, where('companyId', '==', companyId));
+        
+        // System admin gets all users, others get users for their company
+        const q = isSystemAdmin ? query(usersCol) : query(usersCol, where('companyId', '==', companyId));
         
         getDocs(q)
           .then(usersSnapshot => {
@@ -75,25 +76,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               setUser(userData);
+              const isSystemAdmin = userData.role === 'system super admin';
 
-              if (userData.companyId) {
-                const companyDocRef = doc(firestore, 'companies', userData.companyId);
-                const companyDoc = await getDoc(companyDocRef);
-                if (companyDoc.exists()) {
-                  const companyData = { id: companyDoc.id, ...companyDoc.data() };
-                  setCompany(companyData);
-                  
-                  await fetchCompanyUsers(userData.companyId);
+              if (userData.companyId || isSystemAdmin) {
+                if (userData.companyId) {
+                  const companyDocRef = doc(firestore, 'companies', userData.companyId);
+                  const companyDoc = await getDoc(companyDocRef);
+                  if (companyDoc.exists()) {
+                    const companyData = { id: companyDoc.id, ...companyDoc.data() };
+                    setCompany(companyData);
+                    
+                    // Fetch users for the company or all users for sys admin
+                    await fetchCompanyUsers(userData.companyId, isSystemAdmin);
 
-                  // Load license limits
-                  if (companyData.activated && companyData.licenseKey) {
-                    const storedLicenses = localStorage.getItem('sitepilot-licenses');
-                    if (storedLicenses) {
-                        const licenses: License[] = JSON.parse(storedLicenses);
-                        const activeLicense = licenses.find(lic => lic.key === companyData.licenseKey);
-                        if (activeLicense) {
+                    // Load license limits
+                    if (companyData.activated && companyData.licenseKey) {
+                        const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
+                        const licenseDoc = await getDoc(licenseDocRef);
+                        if (licenseDoc.exists()) {
+                            const activeLicense = licenseDoc.data() as License;
                             setLicenseLimits({
-                                'system super admin': 1, // System admin is not governed by license
+                                'system super admin': Infinity,
                                 admin: activeLicense.maxAdmins,
                                 director: activeLicense.maxDirectors,
                                 engineer: activeLicense.maxEngineers,
@@ -102,20 +105,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                            setLicenseLimits(defaultLimits); // Fallback if key is invalid
                         }
                     } else {
-                       setLicenseLimits(defaultLimits); // Fallback if no licenses stored
+                      setLicenseLimits(defaultLimits); // Fallback if not activated
                     }
                   } else {
-                    setLicenseLimits(defaultLimits); // Fallback if not activated
+                    setCompany(null);
                   }
-
-                } else {
-                  setCompany(null);
+                } else if (isSystemAdmin) {
+                   // System admin gets all users
+                   await fetchCompanyUsers('', true);
+                   setCompany(null);
+                   setLicenseLimits(defaultLimits);
                 }
-              } else if (userData.role === 'system super admin') {
-                  // System admin doesn't need a company context, but might need to see all users
-                  // For now, we clear company context for them.
-                  setCompany(null);
-                  setLicenseLimits(defaultLimits);
               } else {
                 setCompany(null);
                 setLicenseLimits(defaultLimits);
@@ -155,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     'admin': allUsers.filter(u => u.role === 'admin' && u.status === 'Active' && u.companyId === company?.id).length,
     'director': allUsers.filter(u => u.role === 'director' && u.status === 'Active' && u.companyId === company?.id).length,
     'engineer': allUsers.filter(u => u.role === 'engineer' && u.status === 'Active' && u.companyId === company?.id).length,
+    '': 0, // for blank roles
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
@@ -169,12 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignUp = async (data: SignUpData): Promise<User | null> => {
     setLoading(true);
-    if (licenseUsage[data.role] >= licenseLimits[data.role]) {
-      setLoading(false);
-      return null;
-    }
-    const companyId = company?.id;
-    const newUser = await signUp({ ...data, companyId });
+    const newUser = await signUp(data);
     if (newUser) {
       router.push('/welcome');
     }
