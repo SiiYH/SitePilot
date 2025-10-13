@@ -113,7 +113,8 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
                 <DialogDescription>Fill in the details to create a new user account.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
                 <FormField
                 control={form.control}
                 name="name"
@@ -248,8 +249,8 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
                     </FormItem>
                 )}
                 />
-
-                <DialogFooter>
+                </div>
+                <DialogFooter className="pt-4">
                     <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                         Cancel
                     </Button>

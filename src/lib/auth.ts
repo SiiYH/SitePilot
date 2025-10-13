@@ -23,6 +23,7 @@ export type PhoneCredentials = {
 export type UserCredentials = EmailCredentials | PhoneCredentials;
 
 export type SignUpData = {
+    role: UserRole;
     name: string;
     email?: string;
     phone?: string;
