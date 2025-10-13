@@ -105,6 +105,8 @@ export default function ProfilePage() {
       </div>
     );
   }
+  
+  const capitalize = (s: string) => (s && s.charAt(0).toUpperCase() + s.slice(1)) || "";
 
   return (
     <div className="space-y-6">
@@ -142,7 +144,7 @@ export default function ProfilePage() {
                         </div>
                         <div>
                             <CardTitle className="text-2xl">{user.name}</CardTitle>
-                            <CardDescription>{user.role}</CardDescription>
+                            <CardDescription>{capitalize(user.role)}</CardDescription>
                         </div>
                     </div>
                      <Button variant="outline" asChild>
@@ -158,27 +160,31 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <InfoField icon={Mail} label="Email Address" value={user.email} />
                     <InfoField icon={Phone} label="Phone Number" value={user.phone} />
-                    {company && (
+                    {company && user.role !== 'system super admin' && (
                         <InfoField icon={Building} label="Company" value={company.name} />
                     )}
                 </div>
-                <Separator />
-                 <Card className="bg-muted/40">
-                    <CardHeader>
-                      <CardTitle className="text-xl">Company Settings</CardTitle>
-                      <CardDescription>
-                        View or edit your company's information, including e-invoicing details.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button asChild>
-                        <Link href="/dashboard/company">
-                          <Building className="mr-2 h-4 w-4" />
-                          Go to Company Settings
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
+                {user.role !== 'system super admin' && (
+                    <>
+                        <Separator />
+                        <Card className="bg-muted/40">
+                            <CardHeader>
+                            <CardTitle className="text-xl">Company Settings</CardTitle>
+                            <CardDescription>
+                                View or edit your company's information, including e-invoicing details.
+                            </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                            <Button asChild>
+                                <Link href="/dashboard/company">
+                                <Building className="mr-2 h-4 w-4" />
+                                Go to Company Settings
+                                </Link>
+                            </Button>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </CardContent>
         </Card>
     </div>
