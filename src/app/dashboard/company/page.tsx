@@ -12,8 +12,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
@@ -187,12 +187,20 @@ export default function CompanyPage() {
             });
         }
     } catch (error) {
-        console.error("Error during license activation:", error);
-        toast({
-            variant: "destructive",
-            title: "Activation Error",
-            description: "An unexpected error occurred. Please try again.",
-        });
+        if (error instanceof FirestoreError && error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: licenseDocRef.path,
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error during license activation:", error);
+            toast({
+                variant: "destructive",
+                title: "Activation Error",
+                description: "An unexpected error occurred. Please try again.",
+            });
+        }
     }
   };
 
@@ -365,5 +373,3 @@ export default function CompanyPage() {
     </div>
   );
 }
-
-    
