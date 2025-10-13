@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -25,12 +26,30 @@ import { Company } from '@/types';
 
 
 const formSchema = z.object({
-    companyId: z.string().min(1, 'A company selection is required.'),
+    purchaserType: z.enum(['existing', 'new']),
+    companyId: z.string().optional(),
+    purchaserName: z.string().optional(),
     maxDirectors: z.coerce.number().min(1, 'At least one director is required.'),
     maxAdmins: z.coerce.number().min(1, 'At least one admin is required.'),
     maxEngineers: z.coerce.number().min(1, 'At least one engineer is required.'),
     duration: z.enum(['unlimited', 'specific']),
     expiresAt: z.date().optional(),
+}).refine(data => {
+    if (data.purchaserType === 'existing') {
+        return !!data.companyId;
+    }
+    return true;
+}, {
+    message: 'A company selection is required.',
+    path: ['companyId'],
+}).refine(data => {
+    if (data.purchaserType === 'new') {
+        return !!data.purchaserName && data.purchaserName.length >= 2;
+    }
+    return true;
+}, {
+    message: 'Purchaser name must be at least 2 characters.',
+    path: ['purchaserName'],
 }).refine(data => {
     if (data.duration === 'specific' && !data.expiresAt) {
         return false;
@@ -69,7 +88,9 @@ export default function LicenseGenerator({ onLicenseGenerated, companies }: Lice
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
+            purchaserType: 'existing',
             companyId: '',
+            purchaserName: '',
             maxDirectors: 2,
             maxAdmins: 1,
             maxEngineers: 5,
@@ -78,16 +99,25 @@ export default function LicenseGenerator({ onLicenseGenerated, companies }: Lice
     });
 
     const duration = form.watch('duration');
-    const selectedCompanyId = form.watch('companyId');
-    const selectedCompany = companies.find(c => c.id === selectedCompanyId);
+    const purchaserType = form.watch('purchaserType');
 
     const onSubmit = (values: FormValues) => {
-        if (!selectedCompany) {
-            toast({
-                variant: "destructive",
-                title: "No Company Selected",
-                description: "Please select a company to generate a license for.",
-            });
+        let purchaser: string;
+        let companyId: string | undefined;
+
+        if (values.purchaserType === 'existing' && values.companyId) {
+            const selectedCompany = companies.find(c => c.id === values.companyId);
+            if (!selectedCompany) {
+                 toast({ variant: "destructive", title: "Company not found." });
+                 return;
+            }
+            purchaser = selectedCompany.name;
+            companyId = selectedCompany.id;
+        } else if (values.purchaserType === 'new' && values.purchaserName) {
+            purchaser = values.purchaserName;
+            companyId = undefined;
+        } else {
+            toast({ variant: "destructive", title: "Invalid purchaser information." });
             return;
         }
 
@@ -98,38 +128,46 @@ export default function LicenseGenerator({ onLicenseGenerated, companies }: Lice
             
         const expiryString = expiryDate ? format(expiryDate, 'yyyyMMdd') : 'UNLIMITED';
 
-        const key = `SP-VALID-${selectedCompany.name.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
+        const key = `SP-VALID-${purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
         
         const newLicense: License = {
             id: key,
-            purchaser: selectedCompany.name,
+            purchaser: purchaser,
             maxDirectors: values.maxDirectors,
             maxAdmins: values.maxAdmins,
             maxEngineers: values.maxEngineers,
             expiresAt: expiryDate ? expiryDate.toISOString() : null,
             createdAt: now.toISOString(),
-            activatedAt: now.toISOString(),
-            companyId: selectedCompany.id,
-        }
+        };
 
         if (firestore) {
             const licenseDocRef = doc(firestore, 'licenses', newLicense.id);
+            if (companyId) {
+                newLicense.companyId = companyId;
+                newLicense.activatedAt = now.toISOString();
+
+                const companyDocRef = doc(firestore, 'companies', companyId);
+                updateDocumentNonBlocking(companyDocRef, {
+                    activated: true,
+                    licenseKey: key,
+                });
+                
+                toast({
+                    title: 'License Key Generated & Activated',
+                    description: `A license for ${purchaser} has been created and activated.`,
+                });
+            } else {
+                 toast({
+                    title: 'License Key Generated',
+                    description: `A license for ${purchaser} has been created.`,
+                });
+            }
             setDocumentNonBlocking(licenseDocRef, newLicense);
-            
-            const companyDocRef = doc(firestore, 'companies', selectedCompany.id);
-            updateDocumentNonBlocking(companyDocRef, {
-                activated: true,
-                licenseKey: key,
-            });
         }
 
         onLicenseGenerated(newLicense);
         setGeneratedKey(key);
         setHasCopied(false);
-        toast({
-            title: 'License Key Generated & Activated',
-            description: `A license for ${selectedCompany.name} has been created and activated.`,
-        });
     };
 
     const copyToClipboard = async () => {
@@ -170,58 +208,122 @@ export default function LicenseGenerator({ onLicenseGenerated, companies }: Lice
             <CardContent className="px-4 sm:px-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Company Selection Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        {/* Purchaser Selection Section */}
+                         <div className="space-y-4">
+                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                 <Building2 className="h-4 w-4" />
-                                <span>Company Information</span>
+                                <span>Purchaser Information</span>
                             </div>
-                            <FormField
+                             <FormField
                                 control={form.control}
-                                name="companyId"
+                                name="purchaserType"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-base">Select Company</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    className={cn("w-full justify-between h-11 text-base", !field.value && "text-muted-foreground")}
-                                                >
-                                                    {field.value ? companies.find(c => c.id === field.value)?.name : "Select a company..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                <Command>
-                                                <CommandInput placeholder="Search companies..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No companies found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                    {companies.map((company) => (
-                                                        <CommandItem
-                                                            key={company.id}
-                                                            value={company.name}
-                                                            onSelect={() => {
-                                                                form.setValue("companyId", company.id)
-                                                            }}
-                                                            >
-                                                            <Check className={cn("mr-2 h-4 w-4", field.value === company.id ? "opacity-100" : "opacity-0")}/>
-                                                            {company.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
+                                    <FormItem className="space-y-3">
+                                        <FormControl>
+                                            <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                className="grid grid-cols-1 gap-3 md:grid-cols-2"
+                                            >
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <Label className={cn(
+                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                            field.value === 'existing' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                        )}>
+                                                            <RadioGroupItem value="existing" />
+                                                            <span className="font-medium flex-1">
+                                                                Existing Company
+                                                            </span>
+                                                        </Label>
+                                                    </FormControl>
+                                                </FormItem>
+                                                <FormItem>
+                                                     <FormControl>
+                                                        <Label className={cn(
+                                                            "flex items-center space-x-3 space-y-0 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-accent",
+                                                            field.value === 'new' ? 'border-primary bg-primary/5' : 'border-muted'
+                                                        )}>
+                                                            <RadioGroupItem value="new" />
+                                                            <span className="font-medium flex-1">
+                                                                New Purchaser
+                                                            </span>
+                                                        </Label>
+                                                     </FormControl>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
+                             {purchaserType === 'existing' ? (
+                                <FormField
+                                    control={form.control}
+                                    name="companyId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-base">Select Company</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className={cn("w-full justify-between h-11 text-base", !field.value && "text-muted-foreground")}
+                                                    >
+                                                        {field.value ? companies.find(c => c.id === field.value)?.name : "Select a company..."}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                    <Command>
+                                                    <CommandInput placeholder="Search companies..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No companies found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                        {companies.map((company) => (
+                                                            <CommandItem
+                                                                key={company.id}
+                                                                value={company.name}
+                                                                onSelect={() => {
+                                                                    form.setValue("companyId", company.id)
+                                                                }}
+                                                                >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === company.id ? "opacity-100" : "opacity-0")}/>
+                                                                {company.name}
+                                                            </CommandItem>
+                                                        ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             ) : (
+                                <FormField
+                                    control={form.control}
+                                    name="purchaserName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-base">Purchaser Name</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    placeholder="Enter purchaser name..."
+                                                    className="h-11 text-base"
+                                                    {...field} 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             )}
                         </div>
 
                         <Separator />
@@ -369,7 +471,7 @@ export default function LicenseGenerator({ onLicenseGenerated, companies }: Lice
                             size="lg"
                         >
                             <ShieldCheck className="mr-2 h-5 w-5"/>
-                            Generate and Activate License
+                            Generate License
                         </Button>
                     </form>
                 </Form>
