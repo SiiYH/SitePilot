@@ -12,7 +12,7 @@ import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search } f
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -47,7 +47,7 @@ export default function ProjectsPage() {
   
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
+    return query(collection(firestore, 'projects'), where('companyId', '==', company.id), orderBy('createdAt', 'desc'));
   }, [firestore, company?.id]);
 
   const usersQuery = useMemoFirebase(() => {
