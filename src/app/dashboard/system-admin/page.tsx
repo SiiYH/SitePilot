@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, orderBy, query } from 'firebase/firestore';
+import { Company } from '@/types';
 
 
 export default function SystemAdminPage() {
@@ -19,14 +19,20 @@ export default function SystemAdminPage() {
     if (!firestore) return null;
     return query(collection(firestore, 'licenses'), orderBy('createdAt', 'desc'));
   }, [firestore]);
+  
+  const companiesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'companies'));
+  }, [firestore]);
 
   const { data: licenses, isLoading: licensesLoading } = useCollection<License>(licensesQuery);
+  const { data: companies, isLoading: companiesLoading } = useCollection<Company>(companiesQuery);
 
   const handleLicenseGenerated = (newLicense: License) => {
     // The useCollection hook will automatically update the list
   };
 
-  const pageLoading = loading || licensesLoading;
+  const pageLoading = loading || licensesLoading || companiesLoading;
 
   if (pageLoading) {
     return (
@@ -56,11 +62,9 @@ export default function SystemAdminPage() {
           Manage system-level settings and generate licenses.
         </p>
       </div>
-      <LicenseGenerator onLicenseGenerated={handleLicenseGenerated} />
+      <LicenseGenerator onLicenseGenerated={handleLicenseGenerated} companies={companies || []} />
       <Separator />
       <LicenseList licenses={licenses || []} />
     </div>
   );
 }
-
-    

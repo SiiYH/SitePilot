@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -13,17 +12,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DateInput } from '@/components/ui/date-input';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { CalendarIcon, Copy, Check, ShieldCheck, Building2, Users, Wrench } from 'lucide-react';
+import { CalendarIcon, Copy, Check, ShieldCheck, Building2, Users, Wrench, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Company } from '@/types';
 
 
 const formSchema = z.object({
-    purchaser: z.string().min(3, 'Purchaser name is required.'),
+    companyId: z.string().min(1, 'A company selection is required.'),
     maxDirectors: z.coerce.number().min(1, 'At least one director is required.'),
     maxAdmins: z.coerce.number().min(1, 'At least one admin is required.'),
     maxEngineers: z.coerce.number().min(1, 'At least one engineer is required.'),
@@ -55,9 +57,10 @@ export type License = {
 
 interface LicenseGeneratorProps {
     onLicenseGenerated: (newLicense: License) => void;
+    companies: Company[];
 }
 
-export default function LicenseGenerator({ onLicenseGenerated }: LicenseGeneratorProps) {
+export default function LicenseGenerator({ onLicenseGenerated, companies }: LicenseGeneratorProps) {
     const [generatedKey, setGeneratedKey] = useState<string | null>(null);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
@@ -66,7 +69,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            purchaser: '',
+            companyId: '',
             maxDirectors: 2,
             maxAdmins: 1,
             maxEngineers: 5,
@@ -75,37 +78,57 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
     });
 
     const duration = form.watch('duration');
+    const selectedCompanyId = form.watch('companyId');
+    const selectedCompany = companies.find(c => c.id === selectedCompanyId);
 
     const onSubmit = (values: FormValues) => {
+        if (!selectedCompany) {
+            toast({
+                variant: "destructive",
+                title: "No Company Selected",
+                description: "Please select a company to generate a license for.",
+            });
+            return;
+        }
+
+        const now = new Date();
         const expiryDate = values.duration === 'specific' && values.expiresAt 
             ? values.expiresAt
             : null;
             
         const expiryString = expiryDate ? format(expiryDate, 'yyyyMMdd') : 'UNLIMITED';
 
-        const key = `SP-VALID-${values.purchaser.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
+        const key = `SP-VALID-${selectedCompany.name.toUpperCase().replace(/\s/g, '_')}-D${values.maxDirectors}-A${values.maxAdmins}-E${values.maxEngineers}-EXP${expiryString}-${Date.now()}`;
         
         const newLicense: License = {
-            id: key, // The key itself is the document ID
-            purchaser: values.purchaser,
+            id: key,
+            purchaser: selectedCompany.name,
             maxDirectors: values.maxDirectors,
             maxAdmins: values.maxAdmins,
             maxEngineers: values.maxEngineers,
             expiresAt: expiryDate ? expiryDate.toISOString() : null,
-            createdAt: new Date().toISOString(),
+            createdAt: now.toISOString(),
+            activatedAt: now.toISOString(),
+            companyId: selectedCompany.id,
         }
 
         if (firestore) {
             const licenseDocRef = doc(firestore, 'licenses', newLicense.id);
             setDocumentNonBlocking(licenseDocRef, newLicense);
+            
+            const companyDocRef = doc(firestore, 'companies', selectedCompany.id);
+            updateDocumentNonBlocking(companyDocRef, {
+                activated: true,
+                licenseKey: key,
+            });
         }
 
         onLicenseGenerated(newLicense);
         setGeneratedKey(key);
         setHasCopied(false);
         toast({
-            title: 'License Key Generated',
-            description: 'The license key has been created and saved to Firestore.',
+            title: 'License Key Generated & Activated',
+            description: `A license for ${selectedCompany.name} has been created and activated.`,
         });
     };
 
@@ -118,7 +141,6 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
           toast({ title: 'Copied!', description: 'License key copied to clipboard.' });
         } catch (error) {
           console.error('Clipboard write failed:', error);
-          // Fallback for restricted environments
           const textarea = document.createElement('textarea');
           textarea.value = generatedKey;
           document.body.appendChild(textarea);
@@ -148,7 +170,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
             <CardContent className="px-4 sm:px-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {/* Purchaser Section */}
+                        {/* Company Selection Section */}
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                 <Building2 className="h-4 w-4" />
@@ -156,17 +178,46 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                             </div>
                             <FormField
                                 control={form.control}
-                                name="purchaser"
+                                name="companyId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-base">Purchaser Name</FormLabel>
-                                        <FormControl>
-                                            <Input 
-                                                placeholder="e.g., Acme Corporation" 
-                                                className="h-11 text-base"
-                                                {...field} 
-                                            />
-                                        </FormControl>
+                                        <FormLabel className="text-base">Select Company</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className={cn("w-full justify-between h-11 text-base", !field.value && "text-muted-foreground")}
+                                                >
+                                                    {field.value ? companies.find(c => c.id === field.value)?.name : "Select a company..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                <CommandInput placeholder="Search companies..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No companies found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                    {companies.map((company) => (
+                                                        <CommandItem
+                                                            key={company.id}
+                                                            value={company.name}
+                                                            onSelect={() => {
+                                                                form.setValue("companyId", company.id)
+                                                            }}
+                                                            >
+                                                            <Check className={cn("mr-2 h-4 w-4", field.value === company.id ? "opacity-100" : "opacity-0")}/>
+                                                            {company.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -318,7 +369,7 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
                             size="lg"
                         >
                             <ShieldCheck className="mr-2 h-5 w-5"/>
-                            Generate License Key
+                            Generate and Activate License
                         </Button>
                     </form>
                 </Form>
@@ -370,5 +421,3 @@ export default function LicenseGenerator({ onLicenseGenerated }: LicenseGenerato
         </Card>
     );
 }
-
-    
