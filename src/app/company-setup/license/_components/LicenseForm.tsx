@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc, getDoc, FirestoreError } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
 export default function LicenseForm() {
@@ -87,13 +87,21 @@ export default function LicenseForm() {
             });
             setIsLoading(false);
         }
-    } catch (error) {
-        console.error("Error activating license:", error);
-        toast({
-            variant: "destructive",
-            title: "Activation Failed",
-            description: "An error occurred while activating the license. Please try again.",
-        });
+    } catch (error: any) {
+        if (error instanceof FirestoreError && error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: licenseDocRef.path,
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error activating license:", error);
+            toast({
+                variant: "destructive",
+                title: "Activation Failed",
+                description: "An error occurred while activating the license. Please try again.",
+            });
+        }
         setIsLoading(false);
     }
   };
