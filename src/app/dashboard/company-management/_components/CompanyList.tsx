@@ -13,6 +13,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Company, User as UserType } from '@/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 
 interface CompanyListProps {
     companies: Company[];
@@ -32,6 +34,19 @@ const getStatus = (activated: boolean, license?: License | null): { text: 'Activ
     }
     return { text: 'Active', variant: 'default' };
 }
+
+const InfoRow = ({ icon, label, children }: { icon: React.ElementType, label: string, children: React.ReactNode }) => {
+    const Icon = icon;
+    return (
+        <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+            </div>
+            <div className="font-medium text-right">{children}</div>
+        </div>
+    )
+};
 
 export default function CompanyList({ companies, allUsers }: CompanyListProps) {
     const router = useRouter();
@@ -65,11 +80,52 @@ export default function CompanyList({ companies, allUsers }: CompanyListProps) {
             <CardHeader>
                 <CardTitle>All Companies</CardTitle>
                 <CardDescription>
-                    List of all companies created by users. Click on a row to view details.
+                    List of all companies created by users. Click on an item to view details.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="overflow-x-auto">
+                {/* Mobile View */}
+                <div className="space-y-4 md:hidden">
+                    {companies.length > 0 && !licensesLoading ? (
+                       <Accordion type="single" collapsible className="w-full space-y-3">
+                         {[...companies].reverse().map(company => {
+                            const license = licenses?.find(l => l.id === company.licenseKey);
+                            const status = getStatus(company.activated, license);
+                            const usage = companyUsage[company.id];
+
+                            return (
+                                <AccordionItem value={company.id} key={company.id} className="border-0 rounded-xl overflow-hidden shadow-sm bg-muted/20 hover:shadow-md transition-shadow">
+                                    <AccordionTrigger 
+                                        className="p-4 hover:no-underline [&[data-state=open]]:bg-muted/30"
+                                        onClick={() => handleRowClick(company.id)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRowClick(company.id)}}
+                                    >
+                                         <div className="flex items-center gap-3 text-left">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                                <Building2 className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold">{company.name}</p>
+                                                <Badge variant={status.variant} className={status.variant === 'default' ? 'bg-green-100 text-green-800' : ''}>
+                                                    {status.text}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                     {/* The accordion content can be removed if direct navigation is preferred */}
+                                </AccordionItem>
+                             )
+                         })}
+                       </Accordion>
+                    ) : (
+                        <div className="h-24 text-center flex items-center justify-center">
+                            <p>No companies found.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop View */}
+                <div className="overflow-x-auto hidden md:block">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -94,7 +150,7 @@ export default function CompanyList({ companies, allUsers }: CompanyListProps) {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={status.variant}>
+                                                <Badge variant={status.variant} className={status.variant === 'default' ? 'bg-green-100 text-green-800' : ''}>
                                                     {status.text}
                                                 </Badge>
                                             </TableCell>
