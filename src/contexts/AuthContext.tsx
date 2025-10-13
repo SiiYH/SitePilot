@@ -48,96 +48,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchCompanyUsers = async (companyId: string, isSystemAdmin: boolean) => {
-        if (!firestore) return;
-        const usersCol = collection(firestore, 'users');
-        
-        // System admin gets all users, others get users for their company
-        const q = isSystemAdmin ? query(usersCol) : query(usersCol, where('companyId', '==', companyId));
-        
-        getDocs(q)
-          .then(usersSnapshot => {
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setAllUsers(usersList);
-          })
-          .catch(serverError => {
-              const permissionError = new FirestorePermissionError({
-                path: usersCol.path,
-                operation: 'list',
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
-      };
+      if (!firestore) return;
+      const usersCol = collection(firestore, 'users');
+      
+      // System admin gets all users, others get users for their company
+      const q = isSystemAdmin ? query(usersCol) : query(usersCol, where('companyId', '==', companyId));
+      
+      try {
+        const usersSnapshot = await getDocs(q);
+        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setAllUsers(usersList);
+      } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+          path: usersCol.path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      }
+    };
     
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         try {
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              const userData = { id: userDoc.id, ...userDoc.data() } as User;
-              setUser(userData);
-              const isSystemAdmin = userData.role === 'system super admin';
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = { id: userDoc.id, ...userDoc.data() } as User;
+            setUser(userData);
+            const isSystemAdmin = userData.role === 'system super admin';
 
-              if (userData.companyId || isSystemAdmin) {
-                if (userData.companyId) {
-                  const companyDocRef = doc(firestore, 'companies', userData.companyId);
-                  const companyDoc = await getDoc(companyDocRef);
-                  if (companyDoc.exists()) {
-                    const companyData = { id: companyDoc.id, ...companyDoc.data() };
-                    setCompany(companyData);
-                    
-                    // Fetch users for the company or all users for sys admin
-                    await fetchCompanyUsers(userData.companyId, isSystemAdmin);
+            // Now that we have the authenticated user's data, we can fetch other data.
+            await fetchCompanyUsers(userData.companyId || '', isSystemAdmin);
 
-                    // Load license limits
-                    if (companyData.activated && companyData.licenseKey) {
-                        const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
-                        const licenseDoc = await getDoc(licenseDocRef);
-                        if (licenseDoc.exists()) {
-                            const activeLicense = licenseDoc.data() as License;
-                            setLicenseLimits({
-                                'system super admin': Infinity,
-                                admin: activeLicense.maxAdmins,
-                                director: activeLicense.maxDirectors,
-                                engineer: activeLicense.maxEngineers,
-                            });
-                        } else {
-                           setLicenseLimits(defaultLimits); // Fallback if key is invalid
-                        }
-                    } else {
-                      setLicenseLimits(defaultLimits); // Fallback if not activated
-                    }
+            if (userData.companyId) {
+              const companyDocRef = doc(firestore, 'companies', userData.companyId);
+              const companyDoc = await getDoc(companyDocRef);
+              if (companyDoc.exists()) {
+                const companyData = { id: companyDoc.id, ...companyDoc.data() };
+                setCompany(companyData);
+
+                // Load license limits
+                if (companyData.activated && companyData.licenseKey) {
+                  const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
+                  const licenseDoc = await getDoc(licenseDocRef);
+                  if (licenseDoc.exists()) {
+                    const activeLicense = licenseDoc.data() as License;
+                    setLicenseLimits({
+                      'system super admin': Infinity,
+                      admin: activeLicense.maxAdmins,
+                      director: activeLicense.maxDirectors,
+                      engineer: activeLicense.maxEngineers,
+                    });
                   } else {
-                    setCompany(null);
+                    setLicenseLimits(defaultLimits); // Fallback if key is invalid
                   }
-                } else if (isSystemAdmin) {
-                   // System admin gets all users
-                   await fetchCompanyUsers('', true);
-                   setCompany(null);
-                   setLicenseLimits(defaultLimits);
+                } else {
+                  setLicenseLimits(defaultLimits); // Fallback if not activated
                 }
               } else {
                 setCompany(null);
-                setLicenseLimits(defaultLimits);
               }
             } else {
-              await auth.signOut();
-              setUser(null);
               setCompany(null);
+              setLicenseLimits(defaultLimits);
             }
-        } catch (e: any) {
-             if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            } else {
-                console.error("Error fetching user document:", e);
-            }
+          } else {
             await auth.signOut();
             setUser(null);
             setCompany(null);
+          }
+        } catch (e: any) {
+          if (e instanceof FirestoreError && e.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          } else {
+            console.error("Error fetching user document:", e);
+          }
+          await auth.signOut();
+          setUser(null);
+          setCompany(null);
         }
       } else {
         setUser(null);
