@@ -67,7 +67,7 @@ service cloud.firestore {
      */
     match /companies/{companyId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && isAdminOrDirector();
+      allow create, update, delete: if isSignedIn() && (isAdminOrDirector() || isSuperSystemAdmin());
     }
 
     /**

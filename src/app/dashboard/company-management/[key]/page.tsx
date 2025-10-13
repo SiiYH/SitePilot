@@ -12,7 +12,7 @@ import { format, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import type { Company, User as UserType } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -60,7 +60,7 @@ export default function CompanyDetailsPage() {
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore || !companyId) return null;
-        return query(collection(firestore, `users`), where => where('companyId', '==', companyId));
+        return query(collection(firestore, `users`), where('companyId', '==', companyId));
     }, [firestore, companyId]);
     const { data: users, isLoading: usersLoading } = useCollection<UserType>(usersQuery);
 
