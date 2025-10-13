@@ -33,7 +33,7 @@ export default function EngineerSummaryPage() {
         <div className="space-y-6">
           <div className="print-hidden flex flex-col gap-4">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">engineer Summary Report</h2>
+                <h2 className="text-2xl font-bold tracking-tight">Engineer Summary Report</h2>
                 <p className="text-muted-foreground">
                 A summary of performance and financial metrics for each engineer.
                 </p>

@@ -112,11 +112,36 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
     return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
   }
 
-  const handleRowClick = (task: Task) => {
+  /* const handleRowClick = (task: Task) => {
     if (!task.projectId) return;
     // Construct the path that matches what the details page expects
-    const fullId = `projects/${task.projectId}/tasks/${task.id}`;
-    router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
+    // const fullId = `${task.projectId}/tasks/${task.id}`;
+    router.push(`/dashboard/work-items/${task.id}`);
+    // router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
+    // router.push(`/dashboard/work-items/projects/${task.projectId}/tasks/${task.id}`);
+  }; */
+  const handleRowClick = (task: Task) => {
+    console.log('=== Task Click Debug ===');
+    console.log('Task object:', task);
+    console.log('Task ID:', task.id);
+    console.log('Project ID:', task.projectId);
+    
+    if (!task.projectId) {
+      console.error('Missing projectId!');
+      return;
+    }
+    
+    // Construct the path exactly as the detail page expects
+    const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
+    console.log('Full path before encoding:', fullPath);
+    
+    const encodedPath = encodeURIComponent(fullPath);
+    console.log('Encoded path:', encodedPath);
+    
+    const finalUrl = `/dashboard/work-items/${encodedPath}`;
+    console.log('Final URL:', finalUrl);
+    
+    router.push(finalUrl);
   };
 
   const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);

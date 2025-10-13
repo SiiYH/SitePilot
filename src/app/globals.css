@@ -147,3 +147,17 @@
 
   }
 }
+
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  @page {
+    margin: 20mm;
+  }
+}

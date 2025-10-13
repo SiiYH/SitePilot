@@ -45,10 +45,15 @@ export default function ProjectsPage() {
     }
   }, []);
   
-  const projectsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'projects'), where('companyId', '==', company.id), orderBy('createdAt', 'desc'));
-  }, [firestore, company?.id]);
+// Replace your projectsQuery with this version
+const projectsQuery = useMemoFirebase(() => {
+  if (!firestore || !company?.id) return null;
+  // Remove orderBy temporarily - we'll sort client-side
+  return query(
+    collection(firestore, 'projects'), 
+    where('companyId', '==', company.id)
+  );
+}, [firestore, company?.id]);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -58,7 +63,19 @@ export default function ProjectsPage() {
   const { data: firestoreProjects, isLoading: loadingProjects } = useCollection<Project>(projectsQuery);
   const { data: companyUsers, isLoading: loadingUsers } = useCollection<User>(usersQuery);
 
-  const projects = firestoreProjects || localProjects;
+  // const projects = firestoreProjects || localProjects;
+  // Then modify the projects assignment to sort after fetching
+// Then modify the projects assignment to sort after fetching
+const projects = useMemo(() => {
+  if (!firestoreProjects) return localProjects;
+  // Sort by createdAt descending on the client side
+  return [...firestoreProjects].sort((a, b) => {
+    // Handle ISO string dates
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime; // Descending order (newest first)
+  });
+}, [firestoreProjects, localProjects]);
   
   const loading = loadingProjects || loadingUsers;
 

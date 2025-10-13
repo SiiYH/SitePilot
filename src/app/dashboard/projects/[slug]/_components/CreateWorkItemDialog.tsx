@@ -86,6 +86,8 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       dueDate: values.dueDate.toISOString(),
       type: values.type,
       createdAt: new Date().toISOString(),
+      projectId: project.id,
+      projectName: project.name
     };
 
     if (values.owner && values.owner !== 'unassigned') {

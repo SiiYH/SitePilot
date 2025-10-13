@@ -309,12 +309,12 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   
   const exportSummaryToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(summaryData);
-    exportToExcel(worksheet, 'engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
+    exportToExcel(worksheet, 'Engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
   };
   
   const exportPerformanceToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(performanceData);
-    exportToExcel(worksheet, 'engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
+    exportToExcel(worksheet, 'Engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
   };
   
   const exportDetailedClaimsToExcel = () => {
@@ -343,8 +343,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     const workbook = XLSX.utils.book_new();
     
     XLSX.utils.book_append_sheet(workbook, projectStatusWorksheet, 'Project Status');
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'engineer Summary');
-    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'engineer Performance');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
+    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
     XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
     XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task & Milestone Details');
     

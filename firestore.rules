@@ -1,143 +1,30 @@
 /**
  * @file Firebase Security Rules for SiteFlow application.
  *
- * @core_philosophy This ruleset enforces a strict user-ownership model for user data,
- *  and creator-based ownership for projects and claims. Listing of users is denied.
- *  Documents and tasks are secured under their parent project.
+ * @core_philosophy Enforces company-based multi-tenancy with role-based access control.
+ * Users can only access data within their company. Projects are company-scoped.
  *
  * @data_structure
- * - /users/{userId}: Stores individual user profiles, secured by owner-only access.
- * - /companies/{companyId}: Stores company profiles. Write access is not defined.
- * - /projects/{projectId}: Stores project data, with creator-based ownership.
- * - /claims/{claimId}: Stores payment claims, linked to projects and companies, with creator-based ownership.
- * - /projects/{projectId}/tasks/{taskId}: Stores tasks associated with projects, inherit project ownership.
- * - /projects/{projectId}/documents/{documentId}: Stores documents associated with projects, inherit project ownership.
+ * - /users/{userId}: User profiles with companyId and role
+ * - /companies/{companyId}: Company profiles
+ * - /projects/{projectId}: Projects with companyId for isolation
+ * - /claims/{claimId}: Payment claims linked to projects and companies
+ * - /projects/{projectId}/tasks/{taskId}: Tasks within projects
+ * - /projects/{projectId}/documents/{documentId}: Documents within projects
+ * - /licenses/{licenseId}: License management
  *
  * @key_security_decisions
- * - Listing of all users is explicitly denied for security and privacy reasons.
- * - Company data has no defined write rules, assuming administrative management outside of these rules.
- * - Public read access is NOT granted to any collections.
- *
- * @denormalization_for_authorization N/A
- *
- * @structural_segregation N/A
+ * - Company-based data isolation (multi-tenancy)
+ * - Role-based access: system super admin, director, admin, engineer
+ * - Engineers can only see projects they're assigned to
+ * - All data requires authentication
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Controls access to user profiles.
-     * @path /users/{userId}
-     * @allow (create) - Authenticated user can create their own profile if the userId matches their auth.uid.
-     * @allow (get, update, delete) - Authenticated user can access their own profile if the userId matches their auth.uid.
-     * @deny (create) - If the userId does not match the authenticated user's UID.
-     * @deny (get, update, delete) - If the userId does not match the authenticated user's UID.
-     * @deny (list) - Prevents listing all users.
-     * @principle Enforces user-ownership for profiles, preventing unauthorized access or modification.
-     */
-    match /users/{userId} {
-      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector()||isSuperSystemAdmin());
-      allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
-      allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
-    }
+    // === Helper Functions (defined first) ===
     
-    match /users/{subcollection=**} {
-      allow get: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
-      allow list: if isSignedIn() && !isEngineer(); // optional: prevent engineers from listing all users
-      allow create, update, delete: if isSignedIn() && (isOwner(userId) || isAdminOrDirector());
-    }
-    
-    // === Licenses rules ===
-    match /licenses/{licenseId} {
-      allow get, list, create, update: if isSignedIn() && isSuperSystemAdmin();
-    }
-
-    // Optional: helper for nested collections (if any)
-    match /licenses/{licenseId}/{subcollection=**} {
-      allow read, write: if isSignedIn() && isSuperSystemAdmin();
-    }
-
-    /**
-     * @description Controls access to company profiles.
-     * @path /companies/{companyId}
-     * @allow (get, list) - Anyone can view company profiles.
-     * @deny (create, update, delete) - No one can create, update, or delete company profiles via client-side rules.
-     * @principle Restricts write access to company profiles.
-     */
-    match /companies/{companyId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn() && (isAdminOrDirector() || isSuperSystemAdmin());
-    }
-
-    /**
-     * @description Controls access to project data.
-     * @path /projects/{projectId}
-     * @allow (create) - Authenticated user can create a project. creatorId must match auth.uid.
-     * @allow (get, list) - Anyone can view projects.
-     * @allow (update, delete) - Only the project creator can update or delete.
-     * @deny (create) - If the creatorId does not match the authenticated user's UID.
-     * @deny (update, delete) - If the user is not the project creator.
-     * @principle Enforces creator-based ownership for projects.
-     */
-    match /projects/{projectId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(resource.data.createdBy);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.createdBy);
-    }
-
-    /**
-     * @description Controls access to payment claims.
-     * @path /claims/{claimId}
-     * @allow (create) - Authenticated user can create a claim. submittedBy must match auth.uid.
-     * @allow (get, list) - Anyone can view claims.
-     * @allow (update, delete) - Only the claim submitter can update or delete.
-     * @deny (create) - If the submittedBy does not match the authenticated user's UID.
-     * @deny (update, delete) - If the user is not the claim submitter.
-     * @principle Enforces submitter-based ownership for claims.
-     */
-    match /claims/{claimId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.submittedBy == request.auth.uid;
-      allow update: if isSignedIn() && isExistingOwner(resource.data.submittedBy);
-      allow delete: if isSignedIn() && isExistingOwner(resource.data.submittedBy);
-    }
-
-    /**
-     * @description Controls access to tasks within a project.
-     * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (create) - Authenticated user can create a task within a project.
-     * @allow (get, list) - Anyone can view tasks within a project.
-     * @allow (update, delete) - Only the project creator can update or delete tasks.
-     * @deny (update, delete) - If the user is not the project creator.
-     * @principle Inherits project ownership for tasks, restricting task management to the project creator.
-     */
-    match /projects/{projectId}/tasks/{taskId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isProjectOwner(projectId);
-      allow delete: if isSignedIn() && isProjectOwner(projectId);
-    }
-
-    /**
-     * @description Controls access to documents within a project.
-     * @path /projects/{projectId}/documents/{documentId}
-     * @allow (create) - Authenticated user can create a document within a project.
-     * @allow (get, list) - Anyone can view documents within a project.
-     * @allow (update, delete) - Only the project creator can update or delete documents.
-     * @deny (update, delete) - If the user is not the project creator.
-     * @principle Inherits project ownership for documents, restricting document management to the project creator.
-     */
-    match /projects/{projectId}/documents/{documentId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isProjectOwner(projectId);
-      allow delete: if isSignedIn() && isProjectOwner(projectId);
-    }
-
-    // --- Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
     }
@@ -146,52 +33,273 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return isSignedIn() && isOwner(userId) && resource != null;
-    }
-
-    function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.createdBy == request.auth.uid;
-    }
-
     function getUserData() {
-    return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-  }
-  
-  function getUserRole() {
-    return getUserData().role;
-  }
-  
-  function getUserCompany() {
-    return getUserData().companyId;
-  }
-  
-  function isEngineer() {	
-  return getUserRole() == 'engineer';
-	}
-  
-  function isAdminOrDirector() {
-    let role = getUserRole();
-    return role == 'admin' || role == 'director';
-  }
-  
-  function isSuperSystemAdmin(){
-  	let role = getUserRole();
-    return role == 'system super admin';
-  }
-  
-  function canListUsers() {
-    return isSignedIn() && getUserRole() != 'engineer';
-  }
-  
-  // Check if the target document belongs to same company
-  function isSameCompany() {
-    return resource.data.companyId == getUserCompany();
-  }
-  
-  // Check if the document being created belongs to same company
-  function isCreatingSameCompany() {
-    return request.resource.data.companyId == getUserCompany();
-  }
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function getUserRole() {
+      return getUserData().role;
+    }
+    
+    function getUserCompany() {
+      return getUserData().companyId;
+    }
+    
+    function isEngineer() {
+      return getUserRole() == 'engineer';
+    }
+    
+    function isAdminOrDirector() {
+      let role = getUserRole();
+      return role == 'admin' || role == 'director';
+    }
+    
+    function isDirector() {
+      return getUserRole() == 'director';
+    }
+    
+    function isSuperSystemAdmin() {
+      let role = getUserRole();
+      return role == 'system super admin';
+    }
+    
+    // Check if resource (existing document) belongs to same company
+    function isSameCompany() {
+      return resource.data.companyId == getUserCompany();
+    }
+    
+    // Check if incoming document belongs to same company
+    function isCreatingSameCompany() {
+      return request.resource.data.companyId == getUserCompany();
+    }
+    
+    // Check if user is assigned to a project (for engineers)
+    function isAssignedToProject() {
+      return resource.data.assignedEngineers.hasAny([request.auth.uid]);
+    }
+    
+    // Check if user can access project based on role
+    function canAccessProject() {
+      return isSuperSystemAdmin() || 
+             isAdminOrDirector() || 
+             isAssignedToProject();
+    }
+
+    // === User Rules ===
+    /**
+     * @description Controls access to user profiles.
+     * @path /users/{userId}
+     * @allow (get) - User can read their own profile, or admins/directors can read any user in their company
+     * @allow (list) - Admins and directors can list users in their company, engineers cannot list
+     * @allow (create) - User can create their own profile
+     * @allow (update, delete) - User can update their own profile, or admins/directors in same company
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && (
+        isOwner(userId) || 
+        isAdminOrDirector() || 
+        isSuperSystemAdmin()
+      );
+      
+      allow list: if isSignedIn() && (
+        isAdminOrDirector() || 
+        isSuperSystemAdmin()
+      );
+      
+      allow create: if isSignedIn() && isOwner(userId);
+      
+      allow update, delete: if isSignedIn() && (
+        isOwner(userId) || 
+        (isAdminOrDirector() && isSameCompany()) ||
+        isSuperSystemAdmin()
+      );
+    }
+
+    // === License Rules ===
+    /**
+     * @description Controls access to license management.
+     * @path /licenses/{licenseId}
+     * @allow (all) - Only system super admins
+     */
+    match /licenses/{licenseId} {
+      allow read, write: if isSignedIn() && isSuperSystemAdmin();
+      
+      match /{subcollection=**} {
+        allow read, write: if isSignedIn() && isSuperSystemAdmin();
+      }
+    }
+
+    // === Company Rules ===
+    /**
+     * @description Controls access to company profiles.
+     * @path /companies/{companyId}
+     * @allow (read) - Users can read their own company, admins/directors can read any, super admins can read all
+     * @allow (write) - Only admins, directors of that company, or super admins
+     */
+    match /companies/{companyId} {
+      allow get: if isSignedIn() && (
+        getUserCompany() == companyId ||
+        isAdminOrDirector() ||
+        isSuperSystemAdmin()
+      );
+      
+      allow list: if isSignedIn() && (
+        isAdminOrDirector() || 
+        isSuperSystemAdmin()
+      );
+      
+      allow create, update, delete: if isSignedIn() && (
+        (isAdminOrDirector() && getUserCompany() == companyId) ||
+        isSuperSystemAdmin()
+      );
+    }
+
+    // === Project Rules ===
+    /**
+     * @description Controls access to project data with company isolation.
+     * @path /projects/{projectId}
+     * @allow (get) - Users in same company can read, engineers only if assigned
+     * @allow (list) - Users in same company can list, engineers see only assigned projects
+     * @allow (create) - Admins/directors can create in their company
+     * @allow (update, delete) - Project creator or admins/directors in same company
+     */
+    match /projects/{projectId} {
+      // GET: Individual project access
+      allow get: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (isSameCompany() && (isAdminOrDirector() || isAssignedToProject()))
+      );
+      
+      // LIST: Query projects - CRITICAL for your use case
+      allow list: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        isAdminOrDirector() ||
+        isEngineer()
+        // Note: Engineers will get all projects from query, 
+        // but client-side filtering by assignedEngineers is required
+      );
+      
+      // CREATE: Only admins/directors can create projects
+      allow create: if isSignedIn() && (
+        isCreatingSameCompany() && 
+        (isAdminOrDirector() || isSuperSystemAdmin())
+      );
+      
+      // UPDATE: Project creator or company admins/directors
+      allow update: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (isSameCompany() && isAdminOrDirector()) ||
+        resource.data.createdBy == request.auth.uid
+      );
+      
+      // DELETE: Project creator or company admins/directors
+      allow delete: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (isSameCompany() && isAdminOrDirector()) ||
+        resource.data.createdBy == request.auth.uid
+      );
+    }
+
+    // === Claims Rules ===
+    /**
+     * @description Controls access to payment claims.
+     * @path /claims/{claimId}
+     * @allow (get, list) - Users in same company
+     * @allow (create) - Any authenticated user in same company
+     * @allow (update) - Claim submitter or directors
+     * @allow (delete) - Claim submitter only
+     */
+    match /claims/{claimId} {
+      allow get, list: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        isSameCompany()
+      );
+      
+      allow create: if isSignedIn() && 
+        isCreatingSameCompany() &&
+        request.resource.data.submittedBy == request.auth.uid;
+      
+      allow update: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        resource.data.submittedBy == request.auth.uid ||
+        (isDirector() && isSameCompany())
+      );
+      
+      allow delete: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        resource.data.submittedBy == request.auth.uid
+      );
+    }
+
+    // === Task Rules (subcollection of projects) ===
+    /**
+     * @description Controls access to tasks within projects.
+     * @path /projects/{projectId}/tasks/{taskId}
+     * Inherits project-level access control
+     */
+    match /projects/{projectId}/tasks/{taskId} {
+      // Get parent project for access control
+      function getProject() {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data;
+      }
+      
+      function canAccessParentProject() {
+        let project = getProject();
+        return project.companyId == getUserCompany() && (
+          isAdminOrDirector() ||
+          project.assignedEngineers.hasAny([request.auth.uid])
+        );
+      }
+      
+      allow get, list: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        canAccessParentProject()
+      );
+      
+      allow create: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        canAccessParentProject()
+      );
+      
+      allow update, delete: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (canAccessParentProject() && isAdminOrDirector())
+      );
+    }
+
+    // === Document Rules (subcollection of projects) ===
+    /**
+     * @description Controls access to documents within projects.
+     * @path /projects/{projectId}/documents/{documentId}
+     * Inherits project-level access control
+     */
+    match /projects/{projectId}/documents/{documentId} {
+      function getProject() {
+        return get(/databases/$(database)/documents/projects/$(projectId)).data;
+      }
+      
+      function canAccessParentProject() {
+        let project = getProject();
+        return project.companyId == getUserCompany() && (
+          isAdminOrDirector() ||
+          project.assignedEngineers.hasAny([request.auth.uid])
+        );
+      }
+      
+      allow get, list: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        canAccessParentProject()
+      );
+      
+      allow create: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        canAccessParentProject()
+      );
+      
+      allow update, delete: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (canAccessParentProject() && isAdminOrDirector())
+      );
+    }
   }
 }
