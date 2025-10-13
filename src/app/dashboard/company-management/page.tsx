@@ -5,19 +5,28 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import CompanyList from './_components/CompanyList';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { Company, User } from '@/types';
 
 export default function CompanyManagementPage() {
-  const { user } = useAuth();
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    const storedCompanies = localStorage.getItem('sitepilot-all-companies');
-    if (storedCompanies) {
-      setCompanies(JSON.parse(storedCompanies));
-    }
-    setLoading(false);
-  }, []);
+  const companiesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'companies'));
+  }, [firestore]);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+
+  const { data: companies, isLoading: companiesLoading } = useCollection<Company>(companiesQuery);
+  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
+
+  const loading = authLoading || companiesLoading || usersLoading;
 
   if (loading) {
     return (
@@ -46,7 +55,7 @@ export default function CompanyManagementPage() {
           An overview of all companies created in the system.
         </p>
       </div>
-      <CompanyList companies={companies} />
+      <CompanyList companies={companies || []} allUsers={users || []} />
     </div>
   );
 }

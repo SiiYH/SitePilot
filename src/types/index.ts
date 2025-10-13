@@ -17,7 +17,7 @@ export interface User {
   role: UserRole;
   avatarUrl: string;
   status: UserStatus;
-  createdAt: string; // Changed from serverTimestamp() to string
+  createdAt: string; 
   history: UserChange[];
   companyId?: string;
 }
@@ -151,3 +151,15 @@ export type License = {
   activatedAt?: string;
   companyId?: string;
 };
+
+export interface Company {
+    id: string;
+    name: string;
+    industryCode: string;
+    industryDescription: string;
+    description?: string;
+    activated: boolean;
+    licenseKey?: string;
+    ownerId?: string;
+    eInvoicing?: any;
+}
