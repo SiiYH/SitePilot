@@ -49,7 +49,7 @@ async function getAssignedUsers(userIds: string[]): Promise<User[]> {
 export default function ProjectDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const { user, loading: authLoading } = useAuth();
+  const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -76,13 +76,20 @@ export default function ProjectDetailsPage() {
   const { data: documents, isLoading: documentsLoading } = useCollection<DocType>(documentsQuery);
   
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !project?.id) return null;
-    let q = query(collection(firestore, 'claims'), where('projectId', '==', project.id));
-    if (user?.role === 'engineer') {
+    if (!firestore || !project?.id || !user?.companyId) return null;
+  
+    // Always filter by companyId for security
+    let q = query(collection(firestore, 'claims'), 
+                  where('projectId', '==', project.id),
+                  where('companyId', '==', user.companyId));
+  
+    // For engineers, add a filter for their own claims
+    if (user.role === 'engineer') {
       q = query(q, where('submittedBy', '==', user.id));
     }
+    
     return q;
-  }, [firestore, project?.id, user?.id, user?.role]);
+  }, [firestore, project?.id, user?.id, user?.role, user?.companyId]);
 
   const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
 
