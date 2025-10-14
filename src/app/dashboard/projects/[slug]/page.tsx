@@ -4,7 +4,7 @@
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockClaims, mockUsers, defaultProjectStatuses } from '@/lib/data';
+import { mockUsers, defaultProjectStatuses } from '@/lib/data';
 import { Project, User, Claim, Task, ProjectStatus, Document as DocType } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -41,10 +41,6 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
   return undefined;
 }
 
-async function getClaimsForProject(projectId: string): Promise<Claim[]> {
-  return mockClaims.filter(claim => claim.projectId === projectId);
-}
-
 async function getAssignedUsers(userIds: string[]): Promise<User[]> {
     return mockUsers.filter(user => userIds.includes(user.id));
 }
@@ -60,7 +56,6 @@ export default function ProjectDetailsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [project, setProject] = useState<Project | undefined>(undefined);
-  const [claims, setClaims] = useState<Claim[]>([]);
   const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -79,6 +74,18 @@ export default function ProjectDetailsPage() {
   }, [firestore, project?.id]);
 
   const { data: documents, isLoading: documentsLoading } = useCollection<DocType>(documentsQuery);
+  
+  const claimsQuery = useMemoFirebase(() => {
+    if (!firestore || !project?.id) return null;
+    let q = query(collection(firestore, 'claims'), where('projectId', '==', project.id));
+    if (user?.role === 'engineer') {
+      q = query(q, where('submittedBy', '==', user.id));
+    }
+    return q;
+  }, [firestore, project?.id, user?.id, user?.role]);
+
+  const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+
 
   const canManageSettings = user?.role === 'admin' || user?.role === 'director';
   const canManageWorkItems = user?.role === 'admin' || user?.role === 'director';
@@ -113,13 +120,6 @@ export default function ProjectDetailsPage() {
           const projectData = { id: projectDoc.id, ...projectDoc.data() } as Project;
           setProject(projectData);
           
-          // Fetch claims
-          let claimsData = await getClaimsForProject(projectData.id);
-          if (user.role === 'engineer') {
-            claimsData = claimsData.filter(claim => claim.submittedBy === user.id);
-          }
-          setClaims(claimsData);
-          
           // Fetch assigned users
           const usersData = await getAssignedUsers(projectData.assignedEngineers);
           setAssignedUsers(usersData);
@@ -151,7 +151,7 @@ export default function ProjectDetailsPage() {
   }, [project, tasks]);
 
   const handleClaimCreated = (newClaim: Claim) => {
-    setClaims(prevClaims => [newClaim, ...prevClaims]);
+    // This is handled by useCollection now
   };
   
   const handleWorkItemCreated = (newTask: Task) => {
@@ -325,7 +325,7 @@ export default function ProjectDetailsPage() {
           <OverviewTab project={projectWithTasks} assignedUsers={assignedUsers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
-          <ClaimsTab claims={claims} project={projectWithTasks} onClaimCreated={handleClaimCreated} />
+          <ClaimsTab claims={claims || []} project={projectWithTasks} onClaimCreated={handleClaimCreated} />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
