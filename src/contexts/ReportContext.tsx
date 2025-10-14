@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
@@ -8,7 +6,6 @@ import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
-
 
 interface ReportDataContext {
   users: User[];
@@ -34,38 +31,37 @@ interface PerformanceData {
 }
 
 interface DetailedClaimData {
-    "engineer Name": string;
-    "Site Name": string;
-    "e-Invoice No.": string;
-    "Claim Title": string;
-    "Amount": number;
-    "Currency": string;
-    "Date": string;
-    "Status": string;
+  "engineer Name": string;
+  "Site Name": string;
+  "e-Invoice No.": string;
+  "Claim Title": string;
+  "Amount": number;
+  "Currency": string;
+  "Date": string;
+  "Status": string;
 }
 
 interface ProjectStatusData {
-    "Project Name": string;
-    "Progress": number;
-    "Status": string;
-    "Work Items": string;
-    "Start Date": string;
-    "End Date": string;
-    "Assigned Engineers": string;
-    "Gross Profit": number;
-    "Margin Profit (%)": number;
-    "Currency": string;
+  "Project Name": string;
+  "Progress": number;
+  "Status": string;
+  "Work Items": string;
+  "Start Date": string;
+  "End Date": string;
+  "Assigned Engineers": string;
+  "Gross Profit": number;
+  "Margin Profit (%)": number;
+  "Currency": string;
 }
 
 interface TaskMilestoneData {
-    "Work Item Title": string;
-    "Type": 'Task' | 'Milestone';
-    "Project Name": string;
-    "Owner": string;
-    "Due Date": string;
-    "Status": string;
+  "Work Item Title": string;
+  "Type": 'Task' | 'Milestone';
+  "Project Name": string;
+  "Owner": string;
+  "Due Date": string;
+  "Status": string;
 }
-
 
 interface ReportContextType {
   reportData: ReportDataContext;
@@ -76,11 +72,11 @@ interface ReportContextType {
   projectStatusData: ProjectStatusData[];
   taskMilestoneData: TaskMilestoneData[];
   exportAllToExcel: () => void;
-  exportSummaryToExcel: () => void;
-  exportPerformanceToExcel: () => void;
-  exportDetailedClaimsToExcel: () => void;
-  exportProjectStatusToExcel: () => void;
-  exportTaskMilestoneToExcel: () => void;
+  exportSummaryToExcel: () => XLSX.WorkBook;
+  exportPerformanceToExcel: () => XLSX.WorkBook;
+  exportDetailedClaimsToExcel: () => XLSX.WorkBook;
+  exportProjectStatusToExcel: () => XLSX.WorkBook;
+  exportTaskMilestoneToExcel: () => XLSX.WorkBook;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
@@ -123,15 +119,15 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       projectsToFilter = projectsToFilter.filter(p => p.assignedEngineers.includes(selectedEngineerId));
     }
     if (interval) {
-        projectsToFilter = projectsToFilter.filter(p => {
-          try {
-            return isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)
-          } catch {
-            return false;
-          }
-        });
+      projectsToFilter = projectsToFilter.filter(p => {
+        try {
+          return isWithinInterval(parseISO(p.startDate), interval) || isWithinInterval(parseISO(p.endDate), interval)
+        } catch {
+          return false;
+        }
+      });
     }
-     if (selectedProjectStatus && selectedProjectStatus !== 'all') {
+    if (selectedProjectStatus && selectedProjectStatus !== 'all') {
       projectsToFilter = projectsToFilter.filter(p => p.status === selectedProjectStatus);
     }
 
@@ -139,24 +135,24 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData.projects, interval, selectedEngineerId, selectedProjectId, selectedProjectStatus]);
   
   const filteredClaims = useMemo(() => {
-     let claimsToFilter = reportData.claims;
+    let claimsToFilter = reportData.claims;
 
-     if (selectedEngineerId) {
-        claimsToFilter = claimsToFilter.filter(c => c.submittedBy === selectedEngineerId);
-     }
-     if (selectedProjectId) {
+    if (selectedEngineerId) {
+      claimsToFilter = claimsToFilter.filter(c => c.submittedBy === selectedEngineerId);
+    }
+    if (selectedProjectId) {
       claimsToFilter = claimsToFilter.filter(c => c.projectId === selectedProjectId);
     }
-     if (interval) {
-        claimsToFilter = claimsToFilter.filter(c => {
-          try {
-            return isWithinInterval(parseISO(c.date), interval)
-          } catch {
-            return false;
-          }
-        });
-     }
-     return claimsToFilter;
+    if (interval) {
+      claimsToFilter = claimsToFilter.filter(c => {
+        try {
+          return isWithinInterval(parseISO(c.date), interval)
+        } catch {
+          return false;
+        }
+      });
+    }
+    return claimsToFilter;
   }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
@@ -175,14 +171,12 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         try {
           return isWithinInterval(parseISO(t.dueDate), interval);
         } catch (e) {
-          // Ignore tasks with invalid dates
           return false;
         }
       });
     }
     return tasksToFilter;
   }, [reportData.projects, interval, selectedEngineerId, selectedProjectId]);
-
 
   const summaryData: SummaryData[] = useMemo(() => {
     if (!engineers.length) return [];
@@ -199,11 +193,11 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
 
       const dueSites = assignedProjects.filter(p => {
         try {
-            const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
-            const hasOverdueTasks = p.tasks.some(t => t.owner === engineer.id && t.status === 'Overdue');
-            return isOverdue || hasOverdueTasks;
+          const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
+          const hasOverdueTasks = p.tasks.some(t => t.owner === engineer.id && t.status === 'Overdue');
+          return isOverdue || hasOverdueTasks;
         } catch {
-            return false;
+          return false;
         }
       }).length;
 
@@ -228,13 +222,12 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const overdueTasks = assignedTasks.filter(t => t.status === 'Overdue').length;
       
       const onTimeTasks = assignedTasks.filter(t => {
-          try {
-            return t.status === 'Completed' && new Date(t.dueDate) >= new Date() // Simplified logic
-          } catch {
-              return false;
-          }
+        try {
+          return t.status === 'Completed' && new Date(t.dueDate) >= new Date()
+        } catch {
+          return false;
         }
-      ).length;
+      }).length;
 
       const onTimeRate = completedTasks > 0 ? (onTimeTasks / completedTasks) * 100 : 0;
 
@@ -250,107 +243,271 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
 
   const detailedClaimsData: DetailedClaimData[] = useMemo(() => {
     return filteredClaims.map(claim => {
-        const engineer = reportData.users.find(u => u.id === claim.submittedBy);
-        const project = reportData.projects.find(p => p.id === claim.projectId);
-        return {
-            "engineer Name": engineer?.name || 'N/A',
-            "Site Name": project?.name || 'N/A',
-            "e-Invoice No.": claim.eInvoiceNo || 'N/A',
-            "Claim Title": claim.title,
-            "Amount": claim.amount,
-            "Currency": claim.currency,
-            "Date": claim.date,
-            "Status": claim.status,
-        };
+      const engineer = reportData.users.find(u => u.id === claim.submittedBy);
+      const project = reportData.projects.find(p => p.id === claim.projectId);
+      return {
+        "engineer Name": engineer?.name || 'N/A',
+        "Site Name": project?.name || 'N/A',
+        "e-Invoice No.": claim.eInvoiceNo || 'N/A',
+        "Claim Title": claim.title,
+        "Amount": claim.amount,
+        "Currency": claim.currency,
+        "Date": claim.date,
+        "Status": claim.status,
+      };
     });
   }, [filteredClaims, reportData.users, reportData.projects]);
 
   const projectStatusData: ProjectStatusData[] = useMemo(() => {
     return filteredProjects.map(project => {
-        const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
-        const totalWorkItems = project.tasks.length;
-        const completedWorkItems = project.tasks.filter(t => t.status === 'Completed').length;
+      const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
+      const totalWorkItems = project.tasks.length;
+      const completedWorkItems = project.tasks.filter(t => t.status === 'Completed').length;
 
-        return {
-            "Project Name": project.name,
-            "Progress": getProjectProgress(project),
-            "Status": project.status,
-            "Work Items": `${completedWorkItems}/${totalWorkItems}`,
-            "Start Date": project.startDate,
-            "End Date": project.endDate,
-            "Assigned Engineers": assignedEngineers,
-            "Gross Profit": project.grossProfit || 0,
-            "Margin Profit (%)": project.marginProfit || 0,
-            "Currency": project.currency || 'N/A',
-        }
+      return {
+        "Project Name": project.name,
+        "Progress": getProjectProgress(project),
+        "Status": project.status,
+        "Work Items": `${completedWorkItems}/${totalWorkItems}`,
+        "Start Date": project.startDate,
+        "End Date": project.endDate,
+        "Assigned Engineers": assignedEngineers,
+        "Gross Profit": project.grossProfit || 0,
+        "Margin Profit (%)": project.marginProfit || 0,
+        "Currency": project.currency || 'N/A',
+      }
     });
   }, [filteredProjects, reportData.users]);
 
   const taskMilestoneData: TaskMilestoneData[] = useMemo(() => {
     return filteredTasks.map(task => {
-        const owner = reportData.users.find(u => u.id === task.owner);
-        return {
-            "Work Item Title": task.title,
-            "Type": task.type,
-            "Project Name": task.projectName,
-            "Owner": owner?.name || 'N/A',
-            "Due Date": task.dueDate,
-            "Status": task.status,
-        };
+      const owner = reportData.users.find(u => u.id === task.owner);
+      return {
+        "Work Item Title": task.title,
+        "Type": task.type,
+        "Project Name": task.projectName,
+        "Owner": owner?.name || 'N/A',
+        "Due Date": task.dueDate,
+        "Status": task.status,
+      };
     });
   }, [filteredTasks, reportData.users]);
 
-
-  const exportToExcel = (worksheet: XLSX.WorkSheet, sheetName: string, fileName: string) => {
+  // Helper function to create formatted Excel workbook
+  const createFormattedWorkbook = (
+    data: any[],
+    sheetName: string,
+    title: string,
+    columnWidths?: { [key: string]: number }
+  ): XLSX.WorkBook => {
     const workbook = XLSX.utils.book_new();
+    
+    // Create worksheet data with title and metadata
+    const worksheetData: any[][] = [];
+    
+    // Add title row
+    worksheetData.push([title]);
+    worksheetData.push([]); // Empty row
+    
+    // Add metadata
+    worksheetData.push(['Generated Date:', new Date().toLocaleDateString()]);
+    if (dateRange?.from || dateRange?.to) {
+      const dateRangeStr = `${dateRange?.from?.toLocaleDateString() || 'N/A'} - ${dateRange?.to?.toLocaleDateString() || 'N/A'}`;
+      worksheetData.push(['Date Range:', dateRangeStr]);
+    }
+    worksheetData.push([]); // Empty row
+    
+    // Convert data to worksheet
+    const dataWorksheet = XLSX.utils.json_to_sheet(data);
+    const dataRows = XLSX.utils.sheet_to_json(dataWorksheet, { header: 1 });
+    
+    // Add data rows to worksheet data
+    worksheetData.push(...dataRows);
+    
+    // Create final worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    
+    // Apply column widths
+    if (columnWidths) {
+      const cols = Object.keys(data[0] || {}).map((key, index) => ({
+        wch: columnWidths[key] || 15
+      }));
+      worksheet['!cols'] = cols;
+    } else {
+      // Auto-calculate column widths
+      const cols = Object.keys(data[0] || {}).map(key => {
+        const maxLength = Math.max(
+          key.length,
+          ...data.map(row => String(row[key] || '').length)
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      worksheet['!cols'] = cols;
+    }
+    
+    // Style header row (row 5 after title and metadata)
+    const headerRow = 5;
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    
+    // Apply bold to title
+    const titleCell = worksheet['A1'];
+    if (titleCell) {
+      titleCell.s = {
+        font: { bold: true, sz: 14 },
+        alignment: { horizontal: 'left' }
+      };
+    }
+    
+    // Apply formatting to header row
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: headerRow, c: col });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: 'D3D3D3' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+      }
+    }
+    
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    XLSX.writeFile(workbook, fileName);
-  };
-  
-  const exportSummaryToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(summaryData);
-    exportToExcel(worksheet, 'Engineer Summary', 'SitePilot_Engineer_Summary.xlsx');
-  };
-  
-  const exportPerformanceToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(performanceData);
-    exportToExcel(worksheet, 'Engineer Performance', 'SitePilot_Engineer_Performance.xlsx');
-  };
-  
-  const exportDetailedClaimsToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
-    exportToExcel(worksheet, 'Detailed Claims', 'SitePilot_Detailed_Claims.xlsx');
+    return workbook;
   };
 
-  const exportProjectStatusToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(projectStatusData);
-    exportToExcel(worksheet, 'Project Status', 'SitePilot_Project_Status.xlsx');
+  // Enhanced export functions that return workbooks
+  const exportSummaryToExcel = (): XLSX.WorkBook => {
+    return createFormattedWorkbook(
+      summaryData,
+      'Engineer Summary',
+      'SitePilot - Engineer Summary Report',
+      {
+        'engineer Name': 20,
+        'Completed Sites': 15,
+        'Total Amount (RM)': 18,
+        'Claim (RM)': 15,
+        'Ongoing Sites': 15,
+        'Due Sites': 12,
+      }
+    );
+  };
+  
+  const exportPerformanceToExcel = (): XLSX.WorkBook => {
+    return createFormattedWorkbook(
+      performanceData,
+      'Engineer Performance',
+      'SitePilot - Engineer Performance Report',
+      {
+        'engineer Name': 20,
+        'Total Tasks': 12,
+        'Completed Tasks': 15,
+        'Overdue Tasks': 15,
+        'On-Time Rate': 15,
+      }
+    );
+  };
+  
+  const exportDetailedClaimsToExcel = (): XLSX.WorkBook => {
+    return createFormattedWorkbook(
+      detailedClaimsData,
+      'Detailed Claims',
+      'SitePilot - Detailed Claims Report',
+      {
+        'engineer Name': 20,
+        'Site Name': 25,
+        'e-Invoice No.': 15,
+        'Claim Title': 30,
+        'Amount': 12,
+        'Currency': 10,
+        'Date': 12,
+        'Status': 12,
+      }
+    );
   };
 
-  const exportTaskMilestoneToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(taskMilestoneData);
-    exportToExcel(worksheet, 'Task & Milestone Details', 'SitePilot_Task_Milestone_Report.xlsx');
-  }
+  const exportProjectStatusToExcel = (): XLSX.WorkBook => {
+    return createFormattedWorkbook(
+      projectStatusData,
+      'Project Status',
+      'SitePilot - Project Status Report',
+      {
+        'Project Name': 25,
+        'Progress': 12,
+        'Status': 12,
+        'Work Items': 12,
+        'Start Date': 12,
+        'End Date': 12,
+        'Assigned Engineers': 25,
+        'Gross Profit': 15,
+        'Margin Profit (%)': 15,
+        'Currency': 10,
+      }
+    );
+  };
+
+  const exportTaskMilestoneToExcel = (): XLSX.WorkBook => {
+    return createFormattedWorkbook(
+      taskMilestoneData,
+      'Task & Milestone Details',
+      'SitePilot - Task & Milestone Report',
+      {
+        'Work Item Title': 30,
+        'Type': 12,
+        'Project Name': 25,
+        'Owner': 20,
+        'Due Date': 12,
+        'Status': 12,
+      }
+    );
+  };
   
   const exportAllToExcel = () => {
-    const projectStatusWorksheet = XLSX.utils.json_to_sheet(projectStatusData);
-    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
-    const performanceWorksheet = XLSX.utils.json_to_sheet(performanceData);
-    const detailedClaimsWorksheet = XLSX.utils.json_to_sheet(detailedClaimsData);
-    const taskMilestoneWorksheet = XLSX.utils.json_to_sheet(taskMilestoneData);
-
-    
     const workbook = XLSX.utils.book_new();
     
-    XLSX.utils.book_append_sheet(workbook, projectStatusWorksheet, 'Project Status');
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Engineer Summary');
-    XLSX.utils.book_append_sheet(workbook, performanceWorksheet, 'Engineer Performance');
-    XLSX.utils.book_append_sheet(workbook, detailedClaimsWorksheet, 'Detailed Claims');
-    XLSX.utils.book_append_sheet(workbook, taskMilestoneWorksheet, 'Task & Milestone Details');
+    // Helper to add formatted sheet
+    const addFormattedSheet = (data: any[], sheetName: string, title: string) => {
+      const worksheetData: any[][] = [];
+      
+      // Title
+      worksheetData.push([title]);
+      worksheetData.push([]);
+      
+      // Metadata
+      worksheetData.push(['Generated Date:', new Date().toLocaleDateString()]);
+      if (dateRange?.from || dateRange?.to) {
+        const dateRangeStr = `${dateRange?.from?.toLocaleDateString() || 'N/A'} - ${dateRange?.to?.toLocaleDateString() || 'N/A'}`;
+        worksheetData.push(['Date Range:', dateRangeStr]);
+      }
+      worksheetData.push([]);
+      
+      // Data
+      const dataWorksheet = XLSX.utils.json_to_sheet(data);
+      const dataRows = XLSX.utils.sheet_to_json(dataWorksheet, { header: 1 });
+      worksheetData.push(...dataRows);
+      
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      
+      // Auto width
+      const cols = Object.keys(data[0] || {}).map(key => {
+        const maxLength = Math.max(
+          key.length,
+          ...data.map(row => String(row[key] || '').length)
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      worksheet['!cols'] = cols;
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    };
     
-    XLSX.writeFile(workbook, 'SitePilot_All_Reports.xlsx');
+    // Add all sheets
+    addFormattedSheet(projectStatusData, 'Project Status', 'Project Status Report');
+    addFormattedSheet(summaryData, 'Engineer Summary', 'Engineer Summary Report');
+    addFormattedSheet(performanceData, 'Engineer Performance', 'Engineer Performance Report');
+    addFormattedSheet(detailedClaimsData, 'Detailed Claims', 'Detailed Claims Report');
+    addFormattedSheet(taskMilestoneData, 'Tasks & Milestones', 'Task & Milestone Report');
+    
+    XLSX.writeFile(workbook, `SitePilot_All_Reports_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
-
 
   const value = {
     reportData,

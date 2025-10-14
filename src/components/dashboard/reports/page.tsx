@@ -5,12 +5,13 @@
 import Link from 'next/link';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, ArrowRight, LineChart, FileText, FolderKanban, GanttChartSquare } from 'lucide-react';
-import ReportsPageLayout from './ReportsPageLayout';
+// import ReportsPageLayout from './ReportsPageLayout';
 import EngineerSummaryReport from '@/components/dashboard/views/admin/EngineerSummaryReport';
 import EngineerPerformanceReport from '@/components/dashboard/views/admin/EngineerPerformanceReport';
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
 import TaskMilestoneReport from '@/components/dashboard/views/admin/TaskMilestoneReport';
+import ReportsPageLayout from '@/app/dashboard/reports/ReportsPageLayout';
 
 const reports = [
   {
