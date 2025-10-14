@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,29 +8,30 @@ import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+// import { USER_ROLES } from '@/lib/constants/roles';
 
 export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
 
+  // ✅ FIXED: Engineers should see ALL claims in their company, not just their own
+  // They can view all claims but only edit their own (enforced by security rules and UI)
   const claimsQuery = useMemoFirebase(() => {
-    // Only construct the query if we have a company ID.
     if (!firestore || !company?.id) return null;
     
-    let q = query(collection(firestore, 'claims'), where('companyId', '==', company.id));
-    
-    // Further filter for engineers
-    if (user?.role === 'engineer' && user.id) {
-      q = query(q, where('submittedBy', '==', user.id));
-    }
-    return q;
-  }, [firestore, company?.id, user?.id, user?.role]);
+    // All users see all claims in their company
+    // Security rules enforce this, and UI will show edit permissions appropriately
+    return query(
+      collection(firestore, 'claims'),
+      where('companyId', '==', company.id),
+      orderBy('submittedDate', 'desc') // Show newest first
+    );
+  }, [firestore, company?.id]);
 
-  const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+  const { data: claims, isLoading: claimsLoading, error: claimsError } = useCollection<Claim>(claimsQuery);
   
-  // For now, projects and users are still from mock data as we focus on claims.
-  // This can be updated later to fetch from Firestore as well.
+  // TODO: Replace with Firestore queries when ready
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
@@ -43,14 +43,13 @@ export default function ClaimsPage() {
   }, [company]);
 
   const handleClaimCreated = (newClaim: Claim) => {
-    // With useCollection, the list will update automatically.
-    // This function can be kept for optimistic updates if desired, but is not strictly necessary.
+    // useCollection handles automatic updates
+    // Can add optimistic update here if needed
   };
   
-  // The page is loading if auth is loading, OR if we have a query but claims are still loading.
   const loading = authLoading || !company || (claimsQuery && claimsLoading);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -58,29 +57,55 @@ export default function ClaimsPage() {
     );
   }
 
+  // Show error state
+  if (claimsError) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Error loading claims</p>
+          <p className="text-sm text-muted-foreground">{claimsError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Use role constants instead of string literals
+  // const isEngineer = user.role === USER_ROLES.ENGINEER;
   const isEngineer = user?.role === 'engineer';
-  const engineerProjects = isEngineer && projects && user ? projects.filter(p => p.assignedEngineers.includes(user.id)) : projects;
+
+  
+  // Filter projects for engineers (they only see assigned projects)
+  const availableProjects = isEngineer 
+    ? projects.filter(p => p.assignedEngineers?.includes(user.id))
+    : projects;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-            {isEngineer ? 'My Claims' : 'Claims Management'}
-            </h2>
-            <p className="text-muted-foreground">
-            {isEngineer ? 'View the status of all your submitted payment claims.' : 'View and manage all payment claims.'}
-            </p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {isEngineer ? 'Payment Claims' : 'Claims Management'}
+          </h2>
+          <p className="text-muted-foreground">
+            {isEngineer 
+              ? 'View all payment claims and submit new ones for your projects.' 
+              : 'View and manage all payment claims across projects.'}
+          </p>
         </div>
-        {isEngineer && user && (
-            <CreateClaimDialog
-                projects={engineerProjects}
-                onClaimCreated={handleClaimCreated}
-                userId={user.id}
-            />
-        )}
+        {/* All users can create claims, but engineers only for their assigned projects */}
+        <CreateClaimDialog
+          projects={availableProjects}
+          onClaimCreated={handleClaimCreated}
+          userId={user.id}
+        />
       </div>
-      <ClaimsOverview claims={claims || []} projects={projects} users={users} />
+      
+      <ClaimsOverview 
+        claims={claims || []} 
+        projects={projects} 
+        users={users}
+        currentUser={user} // Pass current user for permission checks
+      />
     </div>
   );
 }

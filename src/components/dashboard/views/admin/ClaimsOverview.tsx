@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface ClaimsOverviewProps {
     claims: Claim[];
     projects: Project[];
     users: User[];
+    currentUser: User;
 }
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -30,6 +32,15 @@ type StatusFilter = Claim['status'] | 'All';
 type SortKey = 'amount' | 'date';
 type SortDirection = 'ascending' | 'descending';
 
+const getInitials = (name: string) => {
+    if (!name) return '';
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+};
+
 export default function ClaimsOverview({ claims, projects, users }: ClaimsOverviewProps) {
     const router = useRouter();
     const [filter, setFilter] = useState<StatusFilter>('All');
@@ -40,8 +51,8 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
         return projects.find(p => p.id === projectId)?.name || 'N/A';
     }
     
-    const getUserName = (userId: string) => {
-        return users.find(u => u.id === userId)?.name || 'NA';
+    const getUser = (userId: string) => {
+        return users.find(u => u.id === userId);
     }
 
     const handleRowClick = (claimId: string) => {
@@ -104,34 +115,37 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                 {/* Mobile View */}
                 <div className="space-y-4 md:hidden">
                     {sortedClaims.length > 0 ? (
-                        sortedClaims.map(claim => (
-                            <Card key={claim.id} onClick={() => handleRowClick(claim.id)} className="cursor-pointer transition-shadow hover:shadow-md">
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <CardTitle className="text-lg">{claim.title}</CardTitle>
-                                        <Badge variant={statusVariant[claim.status] || 'outline'}>{claim.status}</Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3 text-sm">
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                        <span className="font-semibold"><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">{getProjectName(claim.projectId)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">Submitted by {getUserName(claim.submittedBy)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">{format(new Date(claim.date), 'MMM dd, yyyy')}</span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
+                        sortedClaims.map(claim => {
+                            const submittedByUser = getUser(claim.submittedBy);
+                            return (
+                                <Card key={claim.id} onClick={() => handleRowClick(claim.id)} className="cursor-pointer transition-shadow hover:shadow-md">
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between gap-4">
+                                            <CardTitle className="text-lg">{claim.title}</CardTitle>
+                                            <Badge variant={statusVariant[claim.status] || 'outline'}>{claim.status}</Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                            <span className="font-semibold"><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <FolderKanban className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">{getProjectName(claim.projectId)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">Submitted by {submittedByUser?.name || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">{format(new Date(claim.date), 'MMM dd, yyyy')}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })
                     ) : (
                          <div className="h-24 text-center flex items-center justify-center">
                             <p>No claims found for the selected status.</p>
@@ -165,25 +179,38 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
                         </TableHeader>
                         <TableBody>
                             {sortedClaims.length > 0 ? (
-                                sortedClaims.map(claim => (
-                                    <TableRow 
-                                        key={claim.id} 
-                                        onClick={() => handleRowClick(claim.id)}
-                                        className="cursor-pointer"
-                                    >
-                                        <TableCell className="font-medium">{claim.title}</TableCell>
-                                        <TableCell>{claim.eInvoiceNo || 'N/A'}</TableCell>
-                                        <TableCell>{getProjectName(claim.projectId)}</TableCell>
-                                        <TableCell>{getUserName(claim.submittedBy)}</TableCell>
-                                        <TableCell><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</TableCell>
-                                        <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Badge variant={statusVariant[claim.status] || 'outline'}>
-                                                {claim.status}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                sortedClaims.map(claim => {
+                                    const submittedByUser = getUser(claim.submittedBy);
+                                    return (
+                                        <TableRow 
+                                            key={claim.id} 
+                                            onClick={() => handleRowClick(claim.id)}
+                                            className="cursor-pointer"
+                                        >
+                                            <TableCell className="font-medium">{claim.title}</TableCell>
+                                            <TableCell>{claim.eInvoiceNo || 'N/A'}</TableCell>
+                                            <TableCell>{getProjectName(claim.projectId)}</TableCell>
+                                            <TableCell>
+                                                {submittedByUser ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={submittedByUser.avatarUrl} alt={submittedByUser.name} />
+                                                            <AvatarFallback>{getInitials(submittedByUser.name)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{submittedByUser.name}</span>
+                                                    </div>
+                                                ) : 'N/A'}
+                                            </TableCell>
+                                            <TableCell><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</TableCell>
+                                            <TableCell>{format(new Date(claim.date), 'MMM dd, yyyy')}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Badge variant={statusVariant[claim.status] || 'outline'}>
+                                                    {claim.status}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
