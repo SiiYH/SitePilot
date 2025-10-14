@@ -20,10 +20,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Loader2, Upload, X } from 'lucide-react';
 import { Claim, CreateClaimDialogProps } from '@/types';
-import { mockClaims } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
+import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { collection, doc } from 'firebase/firestore';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 
@@ -43,6 +45,8 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { company } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -93,11 +97,23 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   }, [selectedProjectId, projects, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!firestore || !company) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Cannot create claim. Database or company not found.",
+        });
+        return;
+    }
     setIsLoading(true);
 
-    const newClaim: Claim = {
-      id: `claim-${Date.now()}`,
+    const claimId = `claim-${Date.now()}`;
+    const newClaimDocRef = doc(firestore, 'claims', claimId);
+    
+    const newClaimData = {
+      id: claimId,
       projectId: values.projectId,
+      companyId: company.id,
       title: values.title,
       eInvoiceNo: values.eInvoiceNo,
       description: values.description,
@@ -106,18 +122,18 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       status: 'Pending',
       date: new Date().toISOString(),
       submittedBy: userId,
-      receiptImageUrls: imagePreviews,
+      receiptImageUrls: imagePreviews, // Note: For a real app, upload files to storage and save URLs.
     };
-    
-    mockClaims.unshift(newClaim);
+
+    setDocumentNonBlocking(newClaimDocRef, newClaimData);
 
     setTimeout(() => {
-      onClaimCreated(newClaim);
+      onClaimCreated(newClaimData as Claim); // Optimistic update
       setIsLoading(false);
       setOpen(false);
       toast({
         title: 'Claim Created',
-        description: `Your claim "${newClaim.title}" has been submitted for review.`,
+        description: `Your claim "${newClaimData.title}" has been submitted for review.`,
       });
     }, 1000);
   };
