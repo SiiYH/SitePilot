@@ -13,13 +13,13 @@ import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown } fro
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 interface ClaimsOverviewProps {
     claims: Claim[];
     projects: Project[];
-    users: User[];
-    currentUser: User;
 }
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -41,10 +41,18 @@ const getInitials = (name: string) => {
     return name.substring(0, 2).toUpperCase();
 };
 
-export default function ClaimsOverview({ claims, projects, users }: ClaimsOverviewProps) {
+export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps) {
     const router = useRouter();
+    const { company } = useAuth();
+    const firestore = useFirestore();
     const [filter, setFilter] = useState<StatusFilter>('All');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
+
+    const usersQuery = useMemoFirebase(() => {
+      if (!firestore || !company?.id) return null;
+      return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+    }, [firestore, company?.id]);
+    const { data: users } = useCollection<User>(usersQuery);
 
 
     const getProjectName = (projectId: string) => {
@@ -52,7 +60,7 @@ export default function ClaimsOverview({ claims, projects, users }: ClaimsOvervi
     }
     
     const getUser = (userId: string) => {
-        return users.find(u => u.id === userId);
+        return users?.find(u => u.id === userId);
     }
 
     const handleRowClick = (claimId: string) => {

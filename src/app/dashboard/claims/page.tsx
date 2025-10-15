@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +26,7 @@ export default function ClaimsPage() {
     return query(
       collection(firestore, 'claims'),
       where('companyId', '==', company.id),
-      orderBy('submittedDate', 'desc') // Show newest first
+      orderBy('date', 'desc') // Show newest first
     );
   }, [firestore, company?.id]);
 
@@ -103,8 +104,6 @@ export default function ClaimsPage() {
       <ClaimsOverview 
         claims={claims || []} 
         projects={projects} 
-        users={users}
-        currentUser={user} // Pass current user for permission checks
       />
     </div>
   );

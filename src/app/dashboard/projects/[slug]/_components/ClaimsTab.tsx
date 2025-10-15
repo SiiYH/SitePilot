@@ -7,18 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { mockUsers } from "@/lib/data";
-import { DollarSign, User as UserIcon, Calendar } from 'lucide-react';
+import { DollarSign, User as UserIcon, Calendar, Users } from 'lucide-react';
 import CreateClaimDialog from "@/components/dashboard/CreateClaimDialog";
 import { useAuth } from "@/hooks/use-auth";
 
 interface ClaimsTabProps {
-  claims: Claim[];
-  project: Project;
-  onClaimCreated: (newClaim: Claim) => void;
-}
+    claims: Claim[];
+    project: Project;
+    onClaimCreated: (newClaim: Claim) => void;
+    users: User[];
+  }
+  
 
-export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTabProps) {
+export default function ClaimsTab({ claims, project, onClaimCreated, users }: ClaimsTabProps) {
     const router = useRouter();
     const { user } = useAuth();
 
@@ -27,7 +28,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated }: ClaimsTab
     }
     
     const getUserName = (userId: string) => {
-        return mockUsers.find(u => u.id === userId)?.name || 'N/A';
+        return users.find(u => u.id === userId)?.name || 'N/A';
     }
 
     const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {

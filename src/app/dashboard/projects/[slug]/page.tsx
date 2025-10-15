@@ -4,7 +4,7 @@
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { mockUsers, defaultProjectStatuses } from '@/lib/data';
+import { defaultProjectStatuses } from '@/lib/data';
 import { Project, User, Claim, Task, ProjectStatus, Document as DocType } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -41,9 +41,17 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
   return undefined;
 }
 
-async function getAssignedUsers(userIds: string[]): Promise<User[]> {
+/* async function getAssignedUsers(userIds: string[]): Promise<User[]> {
     return mockUsers.filter(user => userIds.includes(user.id));
+} */
+async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
+  if (!firestore || !userIds?.length) return [];
+  const usersRef = collection(firestore, 'users');
+  const q = query(usersRef, where('id', 'in', userIds));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
 }
+
 
 
 export default function ProjectDetailsPage() {
@@ -54,40 +62,40 @@ export default function ProjectDetailsPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [project, setProject] = useState<Project | undefined>(undefined);
   const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
-  
+
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore || !project?.id) return null;
     return query(collection(firestore, 'projects', project.id, 'tasks'), orderBy('createdAt', 'desc'));
   }, [firestore, project?.id]);
 
   const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
-  
+
   const documentsQuery = useMemoFirebase(() => {
     if (!firestore || !project?.id) return null;
     return query(collection(firestore, 'projects', project.id, 'documents'), orderBy('uploadedAt', 'desc'));
   }, [firestore, project?.id]);
 
   const { data: documents, isLoading: documentsLoading } = useCollection<DocType>(documentsQuery);
-  
+
   const claimsQuery = useMemoFirebase(() => {
     if (!firestore || !project?.id || !user?.companyId) return null;
-  
+
     // Always filter by companyId for security
-    let q = query(collection(firestore, 'claims'), 
-                  where('projectId', '==', project.id),
-                  where('companyId', '==', user.companyId));
-  
+    let q = query(collection(firestore, 'claims'),
+      where('projectId', '==', project.id),
+      where('companyId', '==', user.companyId));
+
     // For engineers, add a filter for their own claims
     if (user.role === 'engineer') {
       q = query(q, where('submittedBy', '==', user.id));
     }
-    
+
     return q;
   }, [firestore, project?.id, user?.id, user?.role, user?.companyId]);
 
@@ -115,10 +123,10 @@ export default function ProjectDetailsPage() {
     if (!slug || !user || !firestore) return;
 
     setLoading(true);
-    
+
     const projectsRef = collection(firestore, 'projects');
     const q = query(projectsRef, where('slug', '==', slug), limit(1));
-    
+
     const unsubscribe = onSnapshot(
       q,
       async (snapshot) => {
@@ -126,9 +134,10 @@ export default function ProjectDetailsPage() {
           const projectDoc = snapshot.docs[0];
           const projectData = { id: projectDoc.id, ...projectDoc.data() } as Project;
           setProject(projectData);
-          
+
           // Fetch assigned users
-          const usersData = await getAssignedUsers(projectData.assignedEngineers);
+          // const usersData = await getAssignedUsers(projectData.assignedEngineers);
+          const usersData = await getAssignedUsers(projectData.assignedEngineers, firestore);
           setAssignedUsers(usersData);
         } else {
           notFound();
@@ -148,7 +157,7 @@ export default function ProjectDetailsPage() {
 
     return () => unsubscribe();
   }, [slug, user, firestore, toast]);
-  
+
   const projectWithTasks = useMemo(() => {
     if (!project) return null;
     return {
@@ -160,7 +169,7 @@ export default function ProjectDetailsPage() {
   const handleClaimCreated = (newClaim: Claim) => {
     // This is handled by useCollection now
   };
-  
+
   const handleWorkItemCreated = (newTask: Task) => {
     // The real-time listener will automatically update the task list
     toast({
@@ -170,7 +179,7 @@ export default function ProjectDetailsPage() {
   };
 
   const handleDocumentUploaded = (newDocument: DocType) => {
-     // The real-time listener for the documents collection will handle the UI update.
+    // The real-time listener for the documents collection will handle the UI update.
     toast({
       title: "Document Uploaded",
       description: "Your document has been successfully uploaded.",
@@ -180,32 +189,32 @@ export default function ProjectDetailsPage() {
   const handleImageUploadClick = () => {
     fileInputRef.current?.click();
   };
-  
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !project) return;
-  
+
     setIsUploading(true);
     toast({ title: "Uploading Image...", description: "Please wait." });
-    
+
     const fileName = `header-image`;
     const storageRef = ref(storage, `projects/${project.id}/${fileName}`);
-    
+
     try {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       const projectDocRef = doc(firestore, "projects", project.id);
       const updateData = { imageUrl: downloadURL };
-      
+
       await updateDoc(projectDocRef, updateData).catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: projectDocRef.path,
-            operation: 'update',
-            requestResourceData: updateData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          throw permissionError;
+        const permissionError = new FirestorePermissionError({
+          path: projectDocRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw permissionError;
       });
 
       // Update local state for immediate UI feedback
@@ -218,12 +227,12 @@ export default function ProjectDetailsPage() {
 
     } catch (error) {
       if (!(error instanceof FirestorePermissionError)) {
-          console.error("Error during image upload process:", error);
-          toast({
-            variant: "destructive",
-            title: "Upload Failed",
-            description: "Could not upload the new image. Please try again.",
-          });
+        console.error("Error during image upload process:", error);
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Could not upload the new image. Please try again.",
+        });
       }
     } finally {
       setIsUploading(false);
@@ -232,7 +241,7 @@ export default function ProjectDetailsPage() {
 
 
   if (loading || authLoading || !projectWithTasks) {
-     return (
+    return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
@@ -242,7 +251,7 @@ export default function ProjectDetailsPage() {
   if (!user) {
     notFound();
   }
-  
+
   const canEditProject = user.role === 'admin' || user.role === 'director';
   const canUploadImage = user.role === 'director' || user.role === 'admin';
   const currentStatus = projectStatuses.find(s => s.id === projectWithTasks.status);
@@ -251,9 +260,9 @@ export default function ProjectDetailsPage() {
   return (
     <div className="space-y-6">
       <Dialog>
-      <div className="group relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:h-60 sm:w-[calc(100%+3rem)]">
-        <DialogTrigger asChild>
-          <div className="absolute inset-0 cursor-pointer">
+        <div className="group relative -mx-4 -mt-4 h-48 w-[calc(100%+2rem)] sm:-mx-6 sm:-mt-6 sm:h-60 sm:w-[calc(100%+3rem)]">
+          <DialogTrigger asChild>
+            <div className="absolute inset-0 cursor-pointer">
               <Image
                 src={projectWithTasks.imageUrl}
                 alt={projectWithTasks.name}
@@ -261,65 +270,65 @@ export default function ProjectDetailsPage() {
                 className="object-cover"
                 data-ai-hint={projectWithTasks.imageHint}
               />
-               {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                    <Loader2 className="h-10 w-10 animate-spin text-white" />
-                  </div>
-                )}
-          </div>
-        </DialogTrigger>
-
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-         {canUploadImage && (
-          <>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*"
-              disabled={isUploading}
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button onClick={handleImageUploadClick} disabled={isUploading}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Image
-              </Button>
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                  <Loader2 className="h-10 w-10 animate-spin text-white" />
+                </div>
+              )}
             </div>
-          </>
-        )}
-      </div>
-      <DialogContent className="p-0 sm:max-w-4xl border-0 bg-transparent shadow-none">
+          </DialogTrigger>
+
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+          {canUploadImage && (
+            <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+                disabled={isUploading}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button onClick={handleImageUploadClick} disabled={isUploading}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Image
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+        <DialogContent className="p-0 sm:max-w-4xl border-0 bg-transparent shadow-none">
           <DialogTitle className="sr-only">{projectWithTasks.name} - Site Image</DialogTitle>
           <div className="relative aspect-video w-full">
-              <Image
-                  src={projectWithTasks.imageUrl}
-                  alt={projectWithTasks.name}
-                  fill
-                  className="object-contain"
-              />
+            <Image
+              src={projectWithTasks.imageUrl}
+              alt={projectWithTasks.name}
+              fill
+              className="object-contain"
+            />
           </div>
-      </DialogContent>
+        </DialogContent>
       </Dialog>
-      
+
       <div className="space-y-2">
-          {currentStatus && <Badge>{currentStatus.name}</Badge>}
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-             <h1 className="text-3xl font-bold tracking-tight">{projectWithTasks.name}</h1>
-             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                {canEditProject && (
-                  <Button variant="outline" asChild className="w-full sm:w-auto">
-                      <Link href={`/dashboard/projects/${projectWithTasks.slug}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Project
-                      </Link>
-                  </Button>
-                )}
-                <GenerateReportButton project={projectWithTasks} />
-             </div>
+        {currentStatus && <Badge>{currentStatus.name}</Badge>}
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <h1 className="text-3xl font-bold tracking-tight">{projectWithTasks.name}</h1>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            {canEditProject && (
+              <Button variant="outline" asChild className="w-full sm:w-auto">
+                <Link href={`/dashboard/projects/${projectWithTasks.slug}/edit`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Project
+                </Link>
+              </Button>
+            )}
+            <GenerateReportButton project={projectWithTasks} />
           </div>
+        </div>
       </div>
-      
+
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10 sm:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -332,7 +341,13 @@ export default function ProjectDetailsPage() {
           <OverviewTab project={projectWithTasks} assignedUsers={assignedUsers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
-          <ClaimsTab claims={claims || []} project={projectWithTasks} onClaimCreated={handleClaimCreated} />
+          {/* <ClaimsTab claims={claims || []} project={projectWithTasks} onClaimCreated={handleClaimCreated} users={users || []} /> */}
+          <ClaimsTab
+            claims={claims || []}
+            project={projectWithTasks}
+            onClaimCreated={handleClaimCreated}
+            users={assignedUsers}
+          />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
           <Card>
@@ -342,10 +357,10 @@ export default function ProjectDetailsPage() {
                 <CardDescription>All work items associated with this project.</CardDescription>
               </div>
               {canManageWorkItems && (
-                <CreateWorkItemDialog 
+                <CreateWorkItemDialog
                   project={projectWithTasks}
-                  engineers={assignedUsers} 
-                  onWorkItemCreated={handleWorkItemCreated} 
+                  engineers={assignedUsers}
+                  onWorkItemCreated={handleWorkItemCreated}
                 />
               )}
             </CardHeader>
@@ -362,15 +377,15 @@ export default function ProjectDetailsPage() {
         </TabsContent>
         <TabsContent value="documents" className="mt-6">
           <Card>
-             <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle>Document Repository</CardTitle>
                 <CardDescription>All documents related to this project.</CardDescription>
               </div>
-               <UploadDocumentDialog project={projectWithTasks} onDocumentUploaded={handleDocumentUploaded} />
+              <UploadDocumentDialog project={projectWithTasks} onDocumentUploaded={handleDocumentUploaded} />
             </CardHeader>
             <CardContent>
-               {documentsLoading ? (
+              {documentsLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
@@ -380,10 +395,10 @@ export default function ProjectDetailsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-         {canManageSettings && (
-            <TabsContent value="settings" className="mt-6">
-                <SettingsTab project={projectWithTasks} onProjectUpdate={updateProjectState} user={user} />
-            </TabsContent>
+        {canManageSettings && (
+          <TabsContent value="settings" className="mt-6">
+            <SettingsTab project={projectWithTasks} onProjectUpdate={updateProjectState} user={user} />
+          </TabsContent>
         )}
       </Tabs>
     </div>
