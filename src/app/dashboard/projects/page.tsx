@@ -30,7 +30,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
     if (storedStatuses) {
@@ -38,22 +38,22 @@ export default function ProjectsPage() {
     } else {
       setProjectStatuses(defaultProjectStatuses);
     }
-    
+
     const savedViewMode = localStorage.getItem('sitepilot-project-view') as ViewMode;
     if (savedViewMode) {
-        setViewMode(savedViewMode);
+      setViewMode(savedViewMode);
     }
   }, []);
-  
-// Replace your projectsQuery with this version
-const projectsQuery = useMemoFirebase(() => {
-  if (!firestore || !company?.id) return null;
-  // Remove orderBy temporarily - we'll sort client-side
-  return query(
-    collection(firestore, 'projects'), 
-    where('companyId', '==', company.id)
-  );
-}, [firestore, company?.id]);
+
+  // Replace your projectsQuery with this version
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    // Remove orderBy temporarily - we'll sort client-side
+    return query(
+      collection(firestore, 'projects'),
+      where('companyId', '==', company.id)
+    );
+  }, [firestore, company?.id]);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -65,18 +65,18 @@ const projectsQuery = useMemoFirebase(() => {
 
   // const projects = firestoreProjects || localProjects;
   // Then modify the projects assignment to sort after fetching
-// Then modify the projects assignment to sort after fetching
-const projects = useMemo(() => {
-  if (!firestoreProjects) return localProjects;
-  // Sort by createdAt descending on the client side
-  return [...firestoreProjects].sort((a, b) => {
-    // Handle ISO string dates
-    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return bTime - aTime; // Descending order (newest first)
-  });
-}, [firestoreProjects, localProjects]);
-  
+  // Then modify the projects assignment to sort after fetching
+  const projects = useMemo(() => {
+    if (!firestoreProjects) return localProjects;
+    // Sort by createdAt descending on the client side
+    return [...firestoreProjects].sort((a, b) => {
+      // Handle ISO string dates
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime; // Descending order (newest first)
+    });
+  }, [firestoreProjects, localProjects]);
+
   const loading = loadingProjects || loadingUsers;
 
   const canManageSettings = user?.role === 'admin' || user?.role === 'director';
@@ -84,13 +84,13 @@ const projects = useMemo(() => {
   const handleProjectCreated = (newProject: Project) => {
     // Optimistically add the new project to the local state
     if (newProject.companyId === company?.id) {
-        if (user?.role === 'engineer') {
-          if (newProject.assignedEngineers.includes(user.id)) {
-            setLocalProjects(prevProjects => [newProject, ...prevProjects]);
-          }
-        } else {
+      if (user?.role === 'engineer') {
+        if (newProject.assignedEngineers.includes(user.id)) {
           setLocalProjects(prevProjects => [newProject, ...prevProjects]);
         }
+      } else {
+        setLocalProjects(prevProjects => [newProject, ...prevProjects]);
+      }
     }
   };
 
@@ -103,25 +103,25 @@ const projects = useMemo(() => {
     let userProjects = user?.role === 'engineer'
       ? projects.filter(p => p.assignedEngineers.includes(user.id))
       : projects;
-    
+
     if (statusFilter !== 'all') {
       userProjects = userProjects.filter(p => p.status === statusFilter);
     }
 
     if (searchQuery) {
-        const lowercasedQuery = searchQuery.toLowerCase();
-        userProjects = userProjects.filter(p => 
-            p.name.toLowerCase().includes(lowercasedQuery) ||
-            p.description.toLowerCase().includes(lowercasedQuery) ||
-            p.jobNo.toLowerCase().includes(lowercasedQuery)
-        );
+      const lowercasedQuery = searchQuery.toLowerCase();
+      userProjects = userProjects.filter(p =>
+        p.name.toLowerCase().includes(lowercasedQuery) ||
+        p.description.toLowerCase().includes(lowercasedQuery) ||
+        p.jobNo.toLowerCase().includes(lowercasedQuery)
+      );
     }
 
     return userProjects;
   }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
 
   if (loading) {
-     return (
+    return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
@@ -130,62 +130,64 @@ const projects = useMemo(() => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {user?.role === 'engineer' ? 'My Assigned Projects' : 'All Projects'}
-            </h2>
-            <p className="text-muted-foreground">
-                View, manage, and create new projects.
-            </p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {user?.role === 'engineer' ? 'My Assigned Projects' : 'All Projects'}
+          </h2>
+          <p className="text-muted-foreground">
+            View, manage, and create new projects.
+          </p>
         </div>
-        <div className='flex items-center gap-2 flex-wrap'>
-             <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                    type="search"
-                    placeholder="Search projects..."
-                    className="pl-9 w-full sm:w-64"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
-             <div className="w-full sm:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                        <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Filter by status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        {projectStatuses.map(status => (
-                            <SelectItem key={status.id} value={status.id}>
-                                {status.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewModeChange('grid')}
-                    aria-label="Grid view"
-                    className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
-                >
-                    <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewModeChange('list')}
-                    aria-label="List view"
-                    className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
-                >
-                    <List className="h-4 w-4" />
-                </Button>
-            </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search projects..."
+              className="pl-9 w-full sm:w-64"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by status..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {projectStatuses.map(status => (
+                  <SelectItem key={status.id} value={status.id}>
+                    {status.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewModeChange('grid')}
+              aria-label="Grid view"
+              className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewModeChange('list')}
+              aria-label="List view"
+              className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
             {user?.role !== 'engineer' && company && (
               company.activated ? (
                 <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
@@ -194,25 +196,27 @@ const projects = useMemo(() => {
               )
             )}
             {canManageSettings && (
-                <Button variant="outline" asChild>
-                    <Link href="/dashboard/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                    </Link>
-                </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </Button>
             )}
+          </div>
         </div>
       </div>
 
+
       {filteredProjects.length > 0 ? (
         viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProjects.map(project => (
-                <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project.id} project={project} />
             ))}
-            </div>
+          </div>
         ) : (
-            <ProjectList projects={filteredProjects} />
+          <ProjectList projects={filteredProjects} />
         )
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
