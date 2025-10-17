@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { getFirestore, doc, getDoc, updateDoc, Firestore } from 'firebase/firestore';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-
+import { onSnapshot } from 'firebase/firestore';
 
 async function getClaim(firestore: Firestore, id: string): Promise<{ claim: Claim; project?: Project; submittedBy?: User; approvedBy?: User } | undefined> {
     const claimRef = doc(firestore, 'claims', id);
@@ -87,7 +87,7 @@ export default function ClaimDetailsPage() {
   const [remark, setRemark] = useState('');
   const [isEditingRemark, setIsEditingRemark] = useState(false);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (id && firestore) {
         getClaim(firestore, id).then(data => {
             if (data) {
@@ -98,7 +98,21 @@ export default function ClaimDetailsPage() {
             }
         });
     }
-  }, [id, firestore]);
+  }, [id, firestore]); */
+  useEffect(() => {
+    if (!id) return;
+    const claimRef = doc(firestore, 'claims', id);
+    const unsub = onSnapshot(claimRef, async (snapshot) => {
+      if (!snapshot.exists()) return;
+      const claim = { id: snapshot.id, ...snapshot.data() } as Claim;
+      const projectRef = doc(firestore, 'projects', claim.projectId);
+      const projectSnap = await getDoc(projectRef);
+      const project = projectSnap.exists() ? { id: projectSnap.id, ...projectSnap.data() } as Project : undefined;
+      setClaimData({ claim, project });
+      setRemark(claim.remark || '');
+    });
+    return () => unsub();
+  }, [id]);
 
   if (!claimData || !user) {
     return null;

@@ -10,25 +10,28 @@ import { Loader2 } from 'lucide-react';
 import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-// import { USER_ROLES } from '@/lib/constants/roles';
 
 export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
 
-  // ✅ FIXED: Engineers should see ALL claims in their company, not just their own
-  // They can view all claims but only edit their own (enforced by security rules and UI)
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
+    if (!firestore || !company?.id || !user) return null;
     
-    // All users see all claims in their company
-    // Security rules enforce this, and UI will show edit permissions appropriately
-    return query(
+    let q = query(
       collection(firestore, 'claims'),
-      where('companyId', '==', company.id),
-      orderBy('date', 'desc') // Show newest first
+      where('companyId', '==', company.id)
     );
-  }, [firestore, company?.id]);
+
+    // Engineers can only see claims they submitted.
+    if (user.role === 'engineer') {
+      q = query(q, where('submittedBy', '==', user.id));
+    }
+    
+    q = query(q, orderBy('date', 'desc'));
+
+    return q;
+  }, [firestore, company?.id, user]);
 
   const { data: claims, isLoading: claimsLoading, error: claimsError } = useCollection<Claim>(claimsQuery);
   
@@ -70,8 +73,6 @@ export default function ClaimsPage() {
     );
   }
 
-  // ✅ Use role constants instead of string literals
-  // const isEngineer = user.role === USER_ROLES.ENGINEER;
   const isEngineer = user?.role === 'engineer';
 
   
@@ -85,11 +86,11 @@ export default function ClaimsPage() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
-            {isEngineer ? 'Payment Claims' : 'Claims Management'}
+            {isEngineer ? 'My Submitted Claims' : 'Claims Management'}
           </h2>
           <p className="text-muted-foreground">
             {isEngineer 
-              ? 'View all payment claims and submit new ones for your projects.' 
+              ? 'View the status of all your submitted payment claims.' 
               : 'View and manage all payment claims across projects.'}
           </p>
         </div>
