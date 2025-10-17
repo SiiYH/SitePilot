@@ -67,24 +67,24 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
 
   useEffect(() => {
     if (open) {
-        form.reset({
-            projectId: defaultProjectId || '',
-            title: '',
-            eInvoiceNo: '',
-            description: '',
-            amount: '',
-            currency: 'MYR',
-        });
-        const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
-        if (projectCurrency) {
-            form.setValue('currency', projectCurrency);
-        } else {
-            form.setValue('currency', 'MYR');
-        }
-        setImagePreviews([]);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+      form.reset({
+        projectId: defaultProjectId || '',
+        title: '',
+        eInvoiceNo: '',
+        description: '',
+        amount: '',
+        currency: 'MYR',
+      });
+      const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
+      if (projectCurrency) {
+        form.setValue('currency', projectCurrency);
+      } else {
+        form.setValue('currency', 'MYR');
+      }
+      setImagePreviews([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   }, [open, defaultProjectId, form, projects, selectedProjectId]);
 
@@ -95,24 +95,24 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         form.setValue('currency', projectCurrency);
       }
     } else {
-        form.setValue('currency', 'MYR');
+      form.setValue('currency', 'MYR');
     }
   }, [selectedProjectId, projects, form]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!firestore || !company) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Cannot create claim. Database or company not found.",
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Cannot create claim. Database or company not found.",
+      });
+      return;
     }
     setIsLoading(true);
 
     const claimId = `claim-${Date.now()}`;
     const newClaimDocRef = doc(firestore, 'claims', claimId);
-    
+
     const newClaimData = {
       id: claimId,
       projectId: values.projectId,
@@ -140,7 +140,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       });
     }, 1000);
   };
-  
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
@@ -149,9 +149,9 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
 
       if (files.length > remainingSlots) {
         toast({
-            variant: 'destructive',
-            title: 'Upload Limit Exceeded',
-            description: `You can only upload up to 3 images. ${filesToProcess.length} images were added.`,
+          variant: 'destructive',
+          title: 'Upload Limit Exceeded',
+          description: `You can only upload up to 3 images. ${filesToProcess.length} images were added.`,
         });
       }
 
@@ -168,14 +168,14 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const removeImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   }
-  
-  const formatAmount = (value: string) => {
+
+  /* const formatAmount = (value: string) => {
     const numberValue = parseFloat(value.replace(/,/g, ''));
     if (isNaN(numberValue)) {
       return '';
     }
     return new Intl.NumberFormat('en-US').format(numberValue);
-  };
+  }; */
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -255,116 +255,148 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                 )}
               />
               <div className="flex gap-2">
-                   <FormField
-                      control={form.control}
-                      name="currency"
-                      render={({ field }) => (
-                          <FormItem className="w-24">
-                          <FormLabel>Currency</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                              <SelectTrigger>
-                                  <SelectValue placeholder="CUR" />
-                              </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                              {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                              </SelectContent>
-                          </Select>
-                          <FormMessage />
-                          </FormItem>
-                      )}
-                  />
-                  <FormField
+                <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem className="w-24">
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="CUR" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField // Replace your current amount FormField with this updated version:
                   control={form.control}
                   name="amount"
                   render={({ field }) => (
-                      <FormItem className="flex-grow">
+                    <FormItem className="flex-grow">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                          <Input 
-                              type="text" 
-                              placeholder="e.g., 1,500.00" 
-                              {...field}
-                              onChange={(e) => {
-                                const rawValue = e.target.value.replace(/[^0-9.]/g, '');
-                                field.onChange(rawValue);
-                              }}
-                              onBlur={(e) => {
-                                field.onChange(formatAmount(e.target.value));
-                              }}
-                           />
+                        <Input
+                          type="text"
+                          placeholder="e.g., 1,500.00"
+                          value={field.value}
+                          onChange={(e) => {
+                            // Get raw input value
+                            let input = e.target.value;
+
+                            // Remove all non-digit and non-decimal characters
+                            let cleaned = input.replace(/[^0-9.]/g, '');
+
+                            // Ensure only one decimal point
+                            const parts = cleaned.split('.');
+                            if (parts.length > 2) {
+                              cleaned = parts[0] + '.' + parts.slice(1).join('');
+                            }
+
+                            // Split into integer and decimal parts
+                            const [integerPart, decimalPart] = cleaned.split('.');
+
+                            // Format integer part with thousand separators
+                            let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+                            // Add decimal part back if it exists
+                            if (decimalPart !== undefined) {
+                              formatted += '.' + decimalPart.slice(0, 2); // Limit to 2 decimal places
+                            }
+
+                            // Update the field value
+                            field.onChange(formatted);
+                          }}
+                          onBlur={(e) => {
+                            // Optional: Format on blur to ensure proper decimal places
+                            const value = e.target.value.replace(/,/g, '');
+                            if (value && !isNaN(parseFloat(value))) {
+                              const num = parseFloat(value);
+                              const formatted = new Intl.NumberFormat('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(num);
+                              field.onChange(formatted);
+                            }
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
-                      </FormItem>
+                    </FormItem>
                   )}
-                  />
+                />
               </div>
-               <FormField
-                  control={form.control}
-                  name="receiptImages"
-                  render={({ field }) => (
+              <FormField
+                control={form.control}
+                name="receiptImages"
+                render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Receipt(s) (Max 3)</FormLabel>
-                      <FormControl>
+                    <FormLabel>Receipt(s) (Max 3)</FormLabel>
+                    <FormControl>
                       <div>
-                          <input
+                        <input
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
                           className="hidden"
                           accept="image/*"
                           multiple
-                          />
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={imagePreviews.length >= 3}
-                          >
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Image(s)
-                          </Button>
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={imagePreviews.length >= 3}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Image(s)
+                        </Button>
                       </div>
-                      </FormControl>
-                      <FormMessage />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
-                  )}
+                )}
               />
               {imagePreviews.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                     {imagePreviews.map((preview, index) => (
-                         <div key={index} className="relative mt-2">
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                <div className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
-                                    <Image src={preview} alt={`Receipt preview ${index + 1}`} fill className="object-cover"/>
-                                </div>
-                                </DialogTrigger>
-                                <DialogContent className="p-0 sm:max-w-2xl border-0 bg-transparent shadow-none">
-                                    <DialogTitle className="sr-only">Enlarged Receipt Preview</DialogTitle>
-                                    <div className="relative aspect-video w-full">
-                                        <Image
-                                            src={preview}
-                                            alt={`Receipt preview ${index + 1}`}
-                                            fill
-                                            className="object-contain"
-                                        />
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                onClick={() => removeImage(index)}
-                            >
-                                <X className="h-4 w-4 fill-destructive-foreground" />
-                            </Button>
-                        </div>
-                     ))}
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative mt-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg border transition-shadow hover:shadow-lg">
+                            <Image src={preview} alt={`Receipt preview ${index + 1}`} fill className="object-cover" />
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="p-0 sm:max-w-2xl border-0 bg-transparent shadow-none">
+                          <DialogTitle className="sr-only">Enlarged Receipt Preview</DialogTitle>
+                          <div className="relative aspect-video w-full">
+                            <Image
+                              src={preview}
+                              alt={`Receipt preview ${index + 1}`}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-4 w-4 fill-destructive-foreground" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             <DialogFooter className="pt-4">
@@ -382,4 +414,3 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     </Dialog>
   );
 }
-  

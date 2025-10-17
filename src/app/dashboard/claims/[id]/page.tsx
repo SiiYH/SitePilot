@@ -19,19 +19,33 @@ import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { getFirestore, doc, getDoc, updateDoc, Firestore } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 
 
-async function getClaim(id: string): Promise<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | undefined> {
-  // In a real app, this would be a database call. We find the index to modify it later.
-  const claim = mockClaims.find(c => c.id === id);
-  if (!claim) {
-    return undefined;
+async function getClaim(firestore: Firestore, id: string): Promise<{ claim: Claim; project?: Project; submittedBy?: User; approvedBy?: User } | undefined> {
+    const claimRef = doc(firestore, 'claims', id);
+    const claimSnap = await getDoc(claimRef);
+  
+    if (!claimSnap.exists()) return undefined;
+  
+    const claim = { id: claimSnap.id, ...claimSnap.data() } as Claim;
+  
+    // Fetch project, submittedBy, approvedBy if present
+    const [projectSnap, submittedSnap, approvedSnap] = await Promise.all([
+      claim.projectId ? getDoc(doc(firestore, 'projects', claim.projectId)) : Promise.resolve(null),
+      claim.submittedBy ? getDoc(doc(firestore, 'users', claim.submittedBy)) : Promise.resolve(null),
+      claim.approvedBy ? getDoc(doc(firestore, 'users', claim.approvedBy)) : Promise.resolve(null),
+    ]);
+  
+    return {
+      claim,
+      project: projectSnap?.exists() ? ({ id: projectSnap.id, ...projectSnap.data() } as Project) : undefined,
+      submittedBy: submittedSnap?.exists() ? ({ id: submittedSnap.id, ...submittedSnap.data() } as User) : undefined,
+      approvedBy: approvedSnap?.exists() ? ({ id: approvedSnap.id, ...approvedSnap.data() } as User) : undefined,
+    };
   }
-  const project = mockProjects.find(p => p.id === claim.projectId);
-  const submittedBy = mockUsers.find(u => u.id === claim.submittedBy);
-  const approvedBy = claim.approvedBy ? mockUsers.find(u => u.id === claim.approvedBy) : undefined;
-  return { claim, project, submittedBy, approvedBy };
-}
+  
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -68,13 +82,14 @@ export default function ClaimDetailsPage() {
   const id = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | null>(null);
   const [remark, setRemark] = useState('');
   const [isEditingRemark, setIsEditingRemark] = useState(false);
 
   useEffect(() => {
-    if (id) {
-        getClaim(id).then(data => {
+    if (id && firestore) {
+        getClaim(firestore, id).then(data => {
             if (data) {
                 setClaimData(data);
                 setRemark(data.claim.remark || '');
@@ -83,7 +98,7 @@ export default function ClaimDetailsPage() {
             }
         });
     }
-  }, [id]);
+  }, [id, firestore]);
 
   if (!claimData || !user) {
     return null;
@@ -92,39 +107,65 @@ export default function ClaimDetailsPage() {
   const { claim, project, submittedBy, approvedBy } = claimData;
   const canManageClaim = user.role === 'director';
 
-  const handleStatusChange = (newStatus: Claim['status']) => {
+  const handleStatusChange = async (newStatus: Claim['status']) => {
     if (!canManageClaim) return;
-    const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
-    if(claimIndex !== -1) {
-        const updatedClaim = { ...mockClaims[claimIndex], status: newStatus };
-        if (newStatus === 'Paid') {
-            updatedClaim.approvedBy = user.id;
-            updatedClaim.approvedAt = new Date().toISOString();
-        } else {
-            // If status is changed from Paid to something else, clear approval info
-            delete updatedClaim.approvedBy;
-            delete updatedClaim.approvedAt;
-        }
-        mockClaims[claimIndex] = updatedClaim;
-
-        getClaim(id).then(data => {
-            if (data) setClaimData(data);
-        });
+  
+    try {
+      const claimRef = doc(firestore, 'claims', claim.id);
+  
+      const updateData: any = { status: newStatus };
+  
+      if (newStatus === 'Paid') {
+        updateData.approvedBy = user.id;
+        updateData.approvedAt = new Date().toISOString();
+      } else {
+        updateData.approvedBy = null;
+        updateData.approvedAt = null;
+      }
+  
+      await updateDoc(claimRef, updateData);
+  
+      toast({
+        title: "Claim updated",
+        description: `Claim status changed to ${newStatus}.`,
+      });
+  
+      const refreshed = await getClaim(firestore, claim.id);
+      if (refreshed) setClaimData(refreshed);
+  
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to update claim status.",
+        variant: "destructive",
+      });
     }
   };
   
-  const handleSaveRemark = () => {
-    const claimIndex = mockClaims.findIndex(c => c.id === claim.id);
-    if(claimIndex !== -1) {
-        mockClaims[claimIndex].remark = remark;
-    }
-     setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, remark: remark } } : null);
-     setIsEditingRemark(false);
-     toast({
+  
+  const handleSaveRemark = async () => {
+    try {
+      const claimRef = doc(firestore, 'claims', claim.id);
+  
+      await updateDoc(claimRef, { remark });
+  
+      setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, remark } } : null);
+      setIsEditingRemark(false);
+      toast({
         title: "Remark Saved",
         description: "The remark has been successfully updated.",
-    });
-  }
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to save remark.",
+        variant: "destructive",
+      });
+    }
+  };
+  
 
   return (
     <div className="space-y-6">
