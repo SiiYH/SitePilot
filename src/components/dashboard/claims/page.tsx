@@ -16,7 +16,7 @@ export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
 
-  const claimsQuery = useMemoFirebase(() => {
+  /* const claimsQuery = useMemoFirebase(() => {
     // Only construct the query if we have a company ID.
     if (!firestore || !company?.id) return null;
     
@@ -27,7 +27,17 @@ export default function ClaimsPage() {
       q = query(q, where('submittedBy', '==', user.id));
     }
     return q;
-  }, [firestore, company?.id, user?.id, user?.role]);
+  }, [firestore, company?.id, user?.id, user?.role]); */
+  const baseRef = collection(firestore, 'claims');
+  const filters = [where('companyId', '==', company.id)];
+  if (user?.role === 'engineer' && user.id) {
+    filters.push(where('submittedBy', '==', user.id));
+  }
+  const claimsQuery = useMemoFirebase(
+    () => firestore && company?.id ? query(baseRef, ...filters) : null,
+    [firestore, company?.id, user?.id, user?.role]
+  );
+
 
   const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
   

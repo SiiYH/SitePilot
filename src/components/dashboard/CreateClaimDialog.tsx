@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -34,7 +33,11 @@ const formSchema = z.object({
   title: z.string().min(3, 'Claim title must be at least 3 characters.'),
   eInvoiceNo: z.string().optional(),
   description: z.string().optional(),
-  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0.'),
+  amount: z.string().refine(val => !isNaN(parseFloat(val.replace(/,/g, ''))), {
+    message: "Amount must be a number."
+  }).refine(val => parseFloat(val.replace(/,/g, '')) > 0, {
+    message: "Amount must be greater than 0."
+  }),
   currency: z.string().min(3, 'Currency is required.'),
   receiptImages: z.any().optional(),
 });
@@ -55,7 +58,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       title: '',
       eInvoiceNo: '',
       description: '',
-      amount: '' as any, // Use empty string for controlled input
+      amount: '',
       currency: 'MYR',
     },
   });
@@ -69,7 +72,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
             title: '',
             eInvoiceNo: '',
             description: '',
-            amount: '' as any,
+            amount: '',
             currency: 'MYR',
         });
         const projectCurrency = projects.find(p => p.id === (defaultProjectId || selectedProjectId))?.currency;
@@ -117,9 +120,9 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       title: values.title,
       eInvoiceNo: values.eInvoiceNo,
       description: values.description,
-      amount: values.amount,
+      amount: parseFloat(values.amount.replace(/,/g, '')),
       currency: values.currency,
-      status: 'Pending',
+      status: 'Pending' as const,
       date: new Date().toISOString(),
       submittedBy: userId,
       receiptImageUrls: imagePreviews, // Note: For a real app, upload files to storage and save URLs.
@@ -165,6 +168,14 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const removeImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   }
+  
+  const formatAmount = (value: string) => {
+    const numberValue = parseFloat(value.replace(/,/g, ''));
+    if (isNaN(numberValue)) {
+      return '';
+    }
+    return new Intl.NumberFormat('en-US').format(numberValue);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -271,7 +282,18 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                       <FormItem className="flex-grow">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                          <Input type="number" placeholder="e.g., 1500.00" {...field} value={field.value || ''} />
+                          <Input 
+                              type="text" 
+                              placeholder="e.g., 1,500.00" 
+                              {...field}
+                              onChange={(e) => {
+                                const rawValue = e.target.value.replace(/[^0-9.]/g, '');
+                                field.onChange(rawValue);
+                              }}
+                              onBlur={(e) => {
+                                field.onChange(formatAmount(e.target.value));
+                              }}
+                           />
                       </FormControl>
                       <FormMessage />
                       </FormItem>
@@ -360,3 +382,4 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     </Dialog>
   );
 }
+  

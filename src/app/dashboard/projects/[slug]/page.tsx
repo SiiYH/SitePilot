@@ -23,7 +23,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
 import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy, documentId } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import UploadDocumentDialog from './_components/UploadDocumentDialog';
@@ -44,15 +44,49 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
 /* async function getAssignedUsers(userIds: string[]): Promise<User[]> {
     return mockUsers.filter(user => userIds.includes(user.id));
 } */
-async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
+/* async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
   if (!firestore || !userIds?.length) return [];
   const usersRef = collection(firestore, 'users');
   const q = query(usersRef, where('id', 'in', userIds));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
+} */
+
+async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
+  if (!firestore || !userIds?.length) return [];
+  const usersRef = collection(firestore, 'users');
+  const q = query(usersRef, where(documentId(), 'in', userIds));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
 }
 
+// Add this new function to fetch users from claims
+async function getUsersFromClaims(claims: Claim[], firestore: any): Promise<User[]> {
+  if (!firestore || !claims?.length) return [];
 
+  // Get unique user IDs from claims
+  const userIds = [...new Set(claims.map(claim => claim.submittedBy).filter(Boolean))];
+
+  if (userIds.length === 0) return [];
+
+  // Firestore 'in' query has a limit of 10, so batch if needed
+  const batches = [];
+  for (let i = 0; i < userIds.length; i += 10) {
+    const batch = userIds.slice(i, i + 10);
+    batches.push(batch);
+  }
+
+  const usersRef = collection(firestore, 'users');
+  const allUsers: User[] = [];
+
+  for (const batch of batches) {
+    const q = query(usersRef, where(documentId(), 'in', batch));
+    const snapshot = await getDocs(q);
+    allUsers.push(...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+  }
+
+  return allUsers;
+}
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -68,6 +102,8 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  // Add state for claim users
+  const [claimUsers, setClaimUsers] = useState<User[]>([]);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore || !project?.id) return null;
@@ -139,6 +175,7 @@ export default function ProjectDetailsPage() {
           // const usersData = await getAssignedUsers(projectData.assignedEngineers);
           const usersData = await getAssignedUsers(projectData.assignedEngineers, firestore);
           setAssignedUsers(usersData);
+          console.log(usersData);
         } else {
           notFound();
         }
@@ -157,6 +194,15 @@ export default function ProjectDetailsPage() {
 
     return () => unsubscribe();
   }, [slug, user, firestore, toast]);
+
+  useEffect(() => {
+    if (!claims || !firestore) return;
+
+    getUsersFromClaims(claims, firestore).then(users => {
+      setClaimUsers(users);
+    });
+  }, [claims, firestore]);
+
 
   const projectWithTasks = useMemo(() => {
     if (!project) return null;
@@ -341,12 +387,14 @@ export default function ProjectDetailsPage() {
           <OverviewTab project={projectWithTasks} assignedUsers={assignedUsers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
+
           {/* <ClaimsTab claims={claims || []} project={projectWithTasks} onClaimCreated={handleClaimCreated} users={users || []} /> */}
+
           <ClaimsTab
             claims={claims || []}
             project={projectWithTasks}
             onClaimCreated={handleClaimCreated}
-            users={assignedUsers}
+            users={claimUsers}  // Changed from assignedUsers
           />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">

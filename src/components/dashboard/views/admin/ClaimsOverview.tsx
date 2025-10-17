@@ -169,7 +169,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                 <TableHead>Claim</TableHead>
                                 <TableHead>e-Inv No.</TableHead>
                                 <TableHead>Project</TableHead>
-                                <TableHead>Submitted By</TableHead>
+                                <TableHead>Submitted Byyy</TableHead>
                                 <TableHead>
                                     <Button variant="ghost" onClick={() => requestSort('amount')}>
                                         Amount
