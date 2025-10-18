@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -69,6 +69,14 @@ const roleColors: { [key in UserRole]: string } = {
 
 const roles: UserRole[] = ['admin', 'director', 'engineer'];
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+const roleIcons: { [key in UserRole]: React.ElementType } = {
+  director: User,
+  admin: UserCog,
+  engineer: UserCheck,
+  'system super admin': Briefcase,
+  '': Users,
+};
 
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser, licenseUsage, licenseLimits } = useAuth();
@@ -256,6 +264,30 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
               </div>
             </div>
           </div>
+           <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(['director', 'admin', 'engineer'] as UserRole[]).map(role => {
+                const Icon = roleIcons[role];
+                const used = licenseUsage[role];
+                const limit = licenseLimits[role];
+                const isOverLimit = used > limit;
+                return (
+                    <div key={role} className="flex items-center gap-3 rounded-lg border bg-background/50 p-3 shadow-sm backdrop-blur-sm">
+                        <div className="p-2 bg-primary/10 rounded-md">
+                            <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-sm">{capitalize(role)}s</p>
+                            <p className={cn(
+                                "text-sm font-bold",
+                                isOverLimit ? "text-destructive" : "text-muted-foreground"
+                            )}>
+                                {used} / {limit === Infinity ? '∞' : limit}
+                            </p>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
         </div>
       </CardHeader>
       <CardContent className="pt-6 px-3 sm:px-6">

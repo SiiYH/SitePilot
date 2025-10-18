@@ -175,7 +175,6 @@ export default function ProjectDetailsPage() {
           // const usersData = await getAssignedUsers(projectData.assignedEngineers);
           const usersData = await getAssignedUsers(projectData.assignedEngineers, firestore);
           setAssignedUsers(usersData);
-          console.log(usersData);
         } else {
           notFound();
         }
