@@ -88,27 +88,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                   // Load license limits
                   if (companyData.activated && companyData.licenseKey) {
-                    const storedLicenses = localStorage.getItem('sitepilot-licenses');
-                    if (storedLicenses) {
-                        const licenses: License[] = JSON.parse(storedLicenses);
-                        const activeLicense = licenses.find(lic => lic.id === companyData.licenseKey);
-                        if (activeLicense) {
-                            setLicenseLimits({
-                                'system super admin': Infinity, // System admin is not governed by license
-                                admin: activeLicense.maxAdmins,
-                                director: activeLicense.maxDirectors,
-                                engineer: activeLicense.maxEngineers,
-                                '' : Infinity
-                            });
-                        } else {
-                           setLicenseLimits(defaultLimits); // Fallback if key is invalid
-                        }
-                    } else {
-                       setLicenseLimits(defaultLimits); // Fallback if no licenses stored
+                    try {
+                      const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
+                      const licenseDoc = await getDoc(licenseDocRef);
+                  
+                      if (licenseDoc.exists()) {
+                        const activeLicense = licenseDoc.data() as License;
+                        console.log('Active license:', activeLicense);
+                  
+                        setLicenseLimits({
+                          'system super admin': Infinity, // System admin is not governed by license
+                          admin: activeLicense.maxAdmins,
+                          director: activeLicense.maxDirectors,
+                          engineer: activeLicense.maxEngineers,
+                          '' : Infinity,
+                        });
+                      } else {
+                        console.warn('License not found, using default limits');
+                        setLicenseLimits(defaultLimits);
+                      }
+                    } catch (e) {
+                      console.error('Error fetching license:', e);
+                      setLicenseLimits(defaultLimits);
                     }
                   } else {
-                    setLicenseLimits(defaultLimits); // Fallback if not activated
+                    setLicenseLimits(defaultLimits);
                   }
+                  
 
                 } else {
                   setCompany(null);
