@@ -1,10 +1,9 @@
-
 'use client';
 
 import { ReportProvider } from '@/contexts/ReportContext';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, QueryConstraint } from 'firebase/firestore';
 import { Claim, Project, User } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { mockUsers } from '@/lib/data';
@@ -14,7 +13,7 @@ export default function ReportsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { company, loading: authLoading } = useAuth();
+  const { company, loading: authLoading, user } = useAuth();
   const firestore = useFirestore();
 
   const projectsQuery = useMemoFirebase(() => {
@@ -23,9 +22,18 @@ export default function ReportsLayout({
   }, [firestore, company?.id]);
 
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'claims'), where('companyId', '==', company.id));
-  }, [firestore, company?.id]);
+    if (!firestore || !company?.id || !user?.id) return null;
+
+    const constraints: QueryConstraint[] = [
+      where('companyId', '==', company.id),
+    ];
+
+    if (user.role === 'engineer') {
+      constraints.push(where('submittedBy', '==', user.id));
+    }
+
+    return query(collection(firestore, 'claims'), ...constraints);
+  }, [firestore, company?.id, user?.id, user?.role]);
   
   // Note: users are still from mock data as there's no /companies/{id}/users collection yet.
   // This can be updated when user management is fully on Firestore.
@@ -46,6 +54,15 @@ export default function ReportsLayout({
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (user?.role === 'engineer') {
+      return (
+          <div className="space-y-6">
+              <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
+              <p className="text-muted-foreground">This page is only available for admin or director roles.</p>
+          </div>
+      )
   }
 
   return (
