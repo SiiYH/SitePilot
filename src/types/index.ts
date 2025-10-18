@@ -106,6 +106,7 @@ export interface Project {
 export interface Claim {
   id: string;
   projectId: string;
+  companyId: string;
   title: string;
   description?: string;
   amount: number;
@@ -113,6 +114,7 @@ export interface Claim {
   status: 'Pending' | 'Paid' | 'Overdue';
   date: string;
   submittedBy: string; // User ID
+  submittedAt: string;
   receiptImageUrls?: string[];
   receiptImageHint?: string;
   remark?: string;

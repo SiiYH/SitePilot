@@ -112,6 +112,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
 
     const claimId = `claim-${Date.now()}`;
     const newClaimDocRef = doc(firestore, 'claims', claimId);
+    const now = new Date().toISOString();
 
     const newClaimData = {
       id: claimId,
@@ -123,8 +124,9 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       amount: parseFloat(values.amount.replace(/,/g, '')),
       currency: values.currency,
       status: 'Pending' as const,
-      date: new Date().toISOString(),
+      date: now,
       submittedBy: userId,
+      submittedAt: now,
       receiptImageUrls: imagePreviews, // Note: For a real app, upload files to storage and save URLs.
     };
 

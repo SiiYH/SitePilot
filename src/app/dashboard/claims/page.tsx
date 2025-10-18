@@ -13,25 +13,22 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
-  const firestore = useFirestore();
+  const firestore = useFirestore(); 
 
   const claimsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id || !user) return null;
-    
-    let q = query(
-      collection(firestore, 'claims'),
-      where('companyId', '==', company.id)
-    );
-
-    // Engineers can only see claims they submitted.
+  
+    let constraints = [where('companyId', '==', company.id)];
+  
+    // Engineers can only see their own claims
     if (user.role === 'engineer') {
-      q = query(q, where('submittedBy', '==', user.id));
+      constraints.push(where('submittedBy', '==', user.id));
     }
+  
+    constraints.push(orderBy('createdAt', 'desc'));
     
-    q = query(q, orderBy('date', 'desc'));
-
-    return q;
-  }, [firestore, company?.id, user]);
+    return query(collection(firestore, 'claims'), ...constraints);
+  }, [firestore, company?.id, user]);  
 
   const { data: claims, isLoading: claimsLoading, error: claimsError } = useCollection<Claim>(claimsQuery);
   
