@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -11,11 +10,10 @@ import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-
 
 interface ClaimsOverviewProps {
     claims: Claim[];
@@ -29,7 +27,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 type StatusFilter = Claim['status'] | 'All';
-type SortKey = 'amount' | 'date';
+type SortKey = 'amount' | 'submittedAt';
 type SortDirection = 'ascending' | 'descending';
 
 const getInitials = (name: string) => {
@@ -48,12 +46,15 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
     const [filter, setFilter] = useState<StatusFilter>('All');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
 
+    // console.log(company?.id);
+    // console.log(claims);
+    // Query users from the same company
     const usersQuery = useMemoFirebase(() => {
-      if (!firestore || !company?.id) return null;
-      return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+        if (!firestore || !company?.id) return null;
+        return query(collection(firestore, 'users'), where('companyId', '==', company.id));
     }, [firestore, company?.id]);
-    const { data: users } = useCollection<User>(usersQuery);
 
+    const { data: users } = useCollection<User>(usersQuery);
 
     const getProjectName = (projectId: string) => {
         return projects.find(p => p.id === projectId)?.name || 'N/A';
@@ -169,7 +170,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                 <TableHead>Claim</TableHead>
                                 <TableHead>e-Inv No.</TableHead>
                                 <TableHead>Project</TableHead>
-                                <TableHead>Submitted Byyy</TableHead>
+                                <TableHead>Submitted By</TableHead>
                                 <TableHead>
                                     <Button variant="ghost" onClick={() => requestSort('amount')}>
                                         Amount
@@ -177,7 +178,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                     </Button>
                                 </TableHead>
                                 <TableHead>
-                                     <Button variant="ghost" onClick={() => requestSort('date')}>
+                                     <Button variant="ghost" onClick={() => requestSort('submittedAt')}>
                                         Date
                                         <ArrowUpDown className="ml-2 h-4 w-4" />
                                     </Button>

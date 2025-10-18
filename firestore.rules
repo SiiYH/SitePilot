@@ -84,6 +84,12 @@ service cloud.firestore {
              isAdminOrDirector() || 
              isAssignedToProject();
     }
+    
+    function isQueryingOwnCompany() {
+      return request.query.where.companyId == getUserCompany();
+    }
+    
+    
 
     // === User Rules ===
     /**
@@ -103,7 +109,8 @@ service cloud.firestore {
       
       allow list: if isSignedIn() && (
         isAdminOrDirector() || 
-        isSuperSystemAdmin()
+        isSuperSystemAdmin() ||
+        isEngineer()
       );
       
       allow create: if isSignedIn() && isOwner(userId);
@@ -210,25 +217,40 @@ service cloud.firestore {
      * @allow (delete) - Claim submitter only
      */
     match /claims/{claimId} {
-      allow get, list: if isSignedIn() && (
+      // All authenticated users in the same company can view claims
+      allow get: if isSignedIn() && isSameCompany();
+      
+      // List claims - must query by companyId
+      // allow list: if isSignedIn() && (
+      //   isSuperSystemAdmin() ||
+      //   (
+      //     isSameCompany()
+      //     // resource.data.companyId == getUserCompany() 
+      //     &&(isAdminOrDirector() || isEngineer())
+      //   )
+      // );
+      
+      // List claims - must query by companyId
+      allow list: if isSignedIn() && (
         isSuperSystemAdmin() ||
-        isSameCompany()
+        isAdminOrDirector() ||
+        isEngineer()
       );
       
+      // Create claim - must be in user's own company and set submittedBy correctly
       allow create: if isSignedIn() && 
-        isCreatingSameCompany() &&
-        request.resource.data.submittedBy == request.auth.uid;
+                       isCreatingSameCompanyAsSelf() &&
+                       request.resource.data.submittedBy == request.auth.uid;
       
-      allow update: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        resource.data.submittedBy == request.auth.uid ||
-        (isDirector() && isSameCompany())
-      );
+      // Update claim - submitter can update their own OR Director/Admin can update any in their company
+      allow update: if isSignedIn() && 
+                       isSameCompany() &&
+                       (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
       
-      allow delete: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        resource.data.submittedBy == request.auth.uid
-      );
+      // Delete claim - only submitter OR Director/Admin can delete
+      allow delete: if isSignedIn() && 
+                       isSameCompany() &&
+                       (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
     }
 
     // === Task Rules (subcollection of projects) ===

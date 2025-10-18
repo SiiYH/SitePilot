@@ -87,7 +87,8 @@ export default function DirectorDashboard({
       
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
-            <ClaimsOverview claims={claims} projects={projects} users={users} />
+            {/* <ClaimsOverview claims={claims} projects={projects} users={users} /> */}
+            <ClaimsOverview claims={claims} projects={projects} />
         </div>
         <div className="md:col-span-1">
             <AttendanceSummary attendance={attendance} users={users} />

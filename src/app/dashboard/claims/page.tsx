@@ -1,56 +1,72 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { mockProjects, mockUsers } from '@/lib/data';
 import { Project, Claim, User } from '@/types';
 import ClaimsOverview from '@/components/dashboard/views/admin/ClaimsOverview';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, QueryConstraint } from 'firebase/firestore';
 
 export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
-  const firestore = useFirestore(); 
+  const firestore = useFirestore();
 
+  // Query for projects in the user's company
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+
+    return query(
+      collection(firestore, 'projects'),
+      where('companyId', '==', company.id)
+    );
+  }, [firestore, company?.id]);
+
+
+  const { data: allProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+
+  console.log(allProjects);
+
+  // Query for users in the user's company
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+
+    return query(
+      collection(firestore, 'users'),
+      where('companyId', '==', company.id)
+    );
+  }, [firestore, company?.id]);
+
+  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
+
+  // Build claims query based on user role and company
   const claimsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id || !user) return null;
-  
-    let constraints = [where('companyId', '==', company.id)];
-  
-    // Engineers can only see their own claims
+    if (!firestore || !company?.id || !user?.id) return null;
+
+    const constraints: QueryConstraint[] = [
+      where('companyId', '==', company.id),
+    ];
+
+    // Engineers only see their own claims
     if (user.role === 'engineer') {
       constraints.push(where('submittedBy', '==', user.id));
     }
-  
-    constraints.push(orderBy('createdAt', 'desc'));
-    
+
+    // Sort by latest submission
+    constraints.push(orderBy('submittedAt', 'desc'));
+
     return query(collection(firestore, 'claims'), ...constraints);
-  }, [firestore, company?.id, user]);  
+  }, [firestore, company?.id, user?.id, user?.role]);
 
   const { data: claims, isLoading: claimsLoading, error: claimsError } = useCollection<Claim>(claimsQuery);
-  
-  // TODO: Replace with Firestore queries when ready
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-
-  useEffect(() => {
-    if (company) {
-      setProjects(mockProjects.filter(p => p.companyId === company.id));
-      setUsers(mockUsers.filter(u => u.companyId === company.id));
-    }
-  }, [company]);
 
   const handleClaimCreated = (newClaim: Claim) => {
-    // useCollection handles automatic updates
-    // Can add optimistic update here if needed
+    // useCollection handles automatic updates via real-time listener
+    console.log('Claim created:', newClaim);
   };
-  
-  const loading = authLoading || !company || (claimsQuery && claimsLoading);
 
-  if (loading || !user) {
+  // Show loading spinner while auth is loading
+  if (authLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -58,7 +74,30 @@ export default function ClaimsPage() {
     );
   }
 
-  // Show error state
+  // Show error if no user or company
+  if (!user || !company) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Access Denied</p>
+          <p className="text-sm text-muted-foreground">
+            {!user ? 'No user found. Please sign in.' : 'No company associated with your account.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while data is being fetched
+  if (projectsLoading || usersLoading || claimsLoading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show claims error
   if (claimsError) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -70,13 +109,14 @@ export default function ClaimsPage() {
     );
   }
 
-  const isEngineer = user?.role === 'engineer';
+  const isEngineer = user.role === 'engineer';
 
-  
-  // Filter projects for engineers (they only see assigned projects)
-  const availableProjects = isEngineer 
-    ? projects.filter(p => p.assignedEngineers?.includes(user.id))
-    : projects;
+  // Filter projects based on user role
+  // Engineers only see projects they're assigned to
+  // Admins/Directors see all company projects
+  const availableProjects = isEngineer
+    ? (allProjects || []).filter((p) => p.assignedEngineers?.includes(user.id))
+    : (allProjects || []);
 
   return (
     <div className="space-y-6">
@@ -86,8 +126,8 @@ export default function ClaimsPage() {
             {isEngineer ? 'My Submitted Claims' : 'Claims Management'}
           </h2>
           <p className="text-muted-foreground">
-            {isEngineer 
-              ? 'View the status of all your submitted payment claims.' 
+            {isEngineer
+              ? 'View the status of all your submitted payment claims.'
               : 'View and manage all payment claims across projects.'}
           </p>
         </div>
@@ -98,10 +138,10 @@ export default function ClaimsPage() {
           userId={user.id}
         />
       </div>
-      
+
       <ClaimsOverview 
         claims={claims || []} 
-        projects={projects} 
+        projects={allProjects || []} 
       />
     </div>
   );
