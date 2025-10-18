@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, QueryConstraint } from 'firebase/firestore';
+import { DebugAuth } from '@/components/debug-auth';
 
 export default function ClaimsPage() {
   const { user, company, loading: authLoading } = useAuth();
@@ -118,31 +119,38 @@ export default function ClaimsPage() {
     ? (allProjects || []).filter((p) => p.assignedEngineers?.includes(user.id))
     : (allProjects || []);
 
+  // return (
+  //   <div className="space-y-6">
+  //     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+  //       <div>
+  //         <h2 className="text-2xl font-bold tracking-tight">
+  //           {isEngineer ? 'My Submitted Claims' : 'Claims Management'}
+  //         </h2>
+  //         <p className="text-muted-foreground">
+  //           {isEngineer
+  //             ? 'View the status of all your submitted payment claims.'
+  //             : 'View and manage all payment claims across projects.'}
+  //         </p>
+  //       </div>
+  //       {/* All users can create claims, but engineers only for their assigned projects */}
+  //       <CreateClaimDialog
+  //         projects={availableProjects}
+  //         onClaimCreated={handleClaimCreated}
+  //         userId={user.id}
+  //       />
+  //     </div>
+
+  //     <ClaimsOverview 
+  //       claims={claims || []} 
+  //       projects={allProjects || []} 
+  //     />
+  //   </div>
+  // );
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            {isEngineer ? 'My Submitted Claims' : 'Claims Management'}
-          </h2>
-          <p className="text-muted-foreground">
-            {isEngineer
-              ? 'View the status of all your submitted payment claims.'
-              : 'View and manage all payment claims across projects.'}
-          </p>
-        </div>
-        {/* All users can create claims, but engineers only for their assigned projects */}
-        <CreateClaimDialog
-          projects={availableProjects}
-          onClaimCreated={handleClaimCreated}
-          userId={user.id}
-        />
-      </div>
-
-      <ClaimsOverview 
-        claims={claims || []} 
-        projects={allProjects || []} 
-      />
+      <DebugAuth /> {/* Add this temporarily */}
+      
+      {/* ... rest of your page */}
     </div>
   );
 }

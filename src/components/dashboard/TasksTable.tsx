@@ -55,8 +55,6 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
-  const canEdit = user.role === 'engineer' || user.role === 'admin' || user.role === 'director';
-
   React.useEffect(() => {
     setTasks(initialTasks);
   }, [initialTasks]);
@@ -185,6 +183,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
             {sortedTasks.map(task => {
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 const dueDate = getSafeDate(task.dueDate);
+                const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
                 return (
                     <Card key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer transition-shadow hover:shadow-md", !task.owner && "bg-yellow-500/5 border-yellow-500/20")}>
                         <CardHeader>
@@ -216,7 +215,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                                 <span className="text-muted-foreground">{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</span>
                             </div>
                              <div className="pt-2" onClick={(e) => e.stopPropagation()}>
-                                {canEdit ? (
+                                {canEditTask ? (
                                     <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Set status" />
@@ -256,6 +255,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                 {sortedTasks.map(task => {
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     const dueDate = getSafeDate(task.dueDate);
+                    const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
                     return (
                     <TableRow key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
                         <TableCell className="font-medium">{task.title}</TableCell>
@@ -279,7 +279,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
                         {showAssignedToColumn && <TableCell className={cn(!task.owner && "font-bold text-yellow-600 dark:text-yellow-400")}>{getUserName(task.owner)}</TableCell>}
                         <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        {canEdit ? (
+                        {canEditTask ? (
                             <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
                             <SelectTrigger className="w-[150px] ml-auto">
                                 <SelectValue placeholder="Set status" />
