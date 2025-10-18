@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog, Users2Icon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -65,15 +65,16 @@ const roleColors: { [key in UserRole]: string } = {
   'director': 'bg-gradient-to-br from-blue-500/10 to-blue-600/10 text-blue-700 dark:from-blue-500/20 dark:to-blue-600/20 dark:text-blue-300 border-blue-500/20',
   'engineer': 'bg-gradient-to-br from-green-500/10 to-green-600/10 text-green-700 dark:from-green-500/20 dark:to-green-600/20 dark:text-green-300 border-green-500/20',
   'system super admin': 'bg-gradient-to-br from-gray-500/10 to-gray-600/10 text-gray-700 dark:from-gray-500/20 dark:to-gray-600/20 dark:text-gray-300 border-gray-500/20',
+  '': ''
 };
 
 const roles: UserRole[] = ['admin', 'director', 'engineer'];
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const roleIcons: { [key in UserRole]: React.ElementType } = {
-  director: User,
+  director: UserCheck,
   admin: UserCog,
-  engineer: UserCheck,
+  engineer: Users2Icon,
   'system super admin': Briefcase,
   '': Users,
 };
