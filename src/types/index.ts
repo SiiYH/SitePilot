@@ -1,6 +1,7 @@
 
 
 
+
 export type UserRole = 'engineer' | 'admin' | 'director' | 'system super admin' | '';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -167,4 +168,12 @@ export interface Company {
     eInvoicing?: any;
 }
 
+export type CreateUserData = {
+    name: string;
+    email?: string;
+    phone?: string;
+    password?: string;
+    role: UserRole;
+    companyId?: string;
+};
     
