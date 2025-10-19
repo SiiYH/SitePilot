@@ -4,12 +4,14 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc, FirestoreError, collection, query, getDocs, where } from 'firebase/firestore';
-import type { Company, User, UserRole } from '@/types';
-import { login, CreateUserData, UserCredentials, SignUpData, signUp } from '@/lib/auth';
-import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError, initiateCreateUser } from '@/firebase';
+import { doc, getDoc, FirestoreError, collection, query, getDocs, where, setDoc } from 'firebase/firestore';
+import type { Company, User, UserRole, CreateUserData } from '@/types';
+import { login, UserCredentials, SignUpData, signUp } from '@/lib/auth';
+import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 
 
 interface AuthContextType {
@@ -192,27 +194,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
     const creatingUser = auth.currentUser;
-    if (!creatingUser) {
+    if (!creatingUser || !data.password || !data.email) {
       return null;
     }
-  
+
     setLoading(true);
     if (licenseUsage[data.role] >= licenseLimits[data.role]) {
-      setLoading(false);
-      return null;
+        setLoading(false);
+        return null;
     }
-  
-    const { success, newUser } = await initiateCreateUser(auth, firestore, data);
-  
-    if (success && newUser) {
-      setAllUsers(prevUsers => [...prevUsers, newUser]);
-      setLoading(false);
-      return newUser;
+
+    const tempAppName = `temp-user-creation-${Date.now()}`;
+    const tempApp = initializeApp(firebaseConfig, tempAppName);
+    const tempAuth = getAuth(tempApp);
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(tempAuth, data.email, data.password);
+        const { user: firebaseUser } = userCredential;
+        
+        const newUser: Omit<User, 'id'> = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            role: data.role,
+            companyId: data.companyId,
+            avatarUrl: `https://picsum.photos/seed/user${Date.now()}/200/200`,
+            status: 'Active',
+            createdAt: new Date().toISOString(),
+            history: [{ status: 'Active', date: new Date().toISOString() }],
+        };
+
+        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+        await setDoc(userDocRef, newUser);
+
+        await deleteApp(tempApp);
+        
+        setAllUsers(prevUsers => [...prevUsers, { id: firebaseUser.uid, ...newUser }]);
+        setLoading(false);
+        return { id: firebaseUser.uid, ...newUser };
+    } catch (error) {
+        console.error("Error creating user:", error);
+        await deleteApp(tempApp);
+        setLoading(false);
+        return null;
     }
-  
-    setLoading(false);
-    return null;
-  };
+};
 
   const handleLogout = async () => {
     await auth.signOut();
