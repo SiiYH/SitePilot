@@ -30,23 +30,11 @@ export default function MyTasksPage() {
   }, []);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore || !company?.id) return null;
-
-    if (user.role === 'engineer') {
-      return query(
-        collection(firestore, 'projects'),
-        where('companyId', '==', company.id),
-        where('assignedEngineers', 'array-contains', user.id)
-      );
-    }
-    
-    return query(
-      collection(firestore, 'projects'),
-      where('companyId', '==', company.id)
-    );
-  }, [user, firestore, company?.id]);
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
   
-  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: allCompanyProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
   const companyUsersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -55,27 +43,26 @@ export default function MyTasksPage() {
   const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
 
   const allTasks = useMemo(() => {
-    if (!projects) return [];
+    if (!allCompanyProjects) return [];
 
-    return projects.flatMap(p => 
+    return allCompanyProjects.flatMap(p => 
       (p.tasks || []).map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
     ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [projects]);
+  }, [allCompanyProjects]);
 
 
   const filteredTasks = useMemo(() => {
     let tasksToDisplay = allTasks;
 
-    if (selectedProjectId !== 'all') {
-      tasksToDisplay = tasksToDisplay.filter(task => task.projectId === selectedProjectId);
-    }
-    
     if (user?.role === 'engineer') {
-      // For engineers, "All Users" still means "My Tasks"
       tasksToDisplay = tasksToDisplay.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
     } else if (selectedUserId !== 'all') {
       // For admins/directors, filter by selected user
       tasksToDisplay = tasksToDisplay.filter(task => task.owner === selectedUserId || task.contributors?.includes(selectedUserId));
+    }
+
+    if (selectedProjectId !== 'all') {
+      tasksToDisplay = tasksToDisplay.filter(task => task.projectId === selectedProjectId);
     }
     
     return tasksToDisplay;
