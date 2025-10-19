@@ -25,6 +25,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['admin', 'director', 'engineer']),
+  companyId: z.string(),
 }).refine(data => data.contactMethod === 'email' ? z.string().email().safeParse(data.email).success : true, {
   message: 'A valid email is required',
   path: ['email'],
@@ -58,6 +59,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
       phone: '',
       password: '',
       role: 'engineer',
+      companyId: companyId,
     },
   });
 
@@ -265,5 +267,3 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
     </Dialog>
   );
 }
-
-    

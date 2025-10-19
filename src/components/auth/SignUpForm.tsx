@@ -64,7 +64,7 @@ export default function SignUpForm() {
        toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: 'The license limit for new engineers has been reached.',
+        description: 'The license limit for new engineers has been reached. Please contact an administrator.',
       });
       setIsLoading(false);
       return;
