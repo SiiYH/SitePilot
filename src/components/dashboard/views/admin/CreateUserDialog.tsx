@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState } from 'react';
@@ -39,7 +40,7 @@ interface CreateUserDialogProps {
 }
 
 const roles: UserRole[] = ['admin', 'director', 'engineer'];
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 
 export default function CreateUserDialog({ onUserCreated, companyId }: CreateUserDialogProps) {
@@ -249,7 +250,7 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
                     </FormItem>
                 )}
                 />
-                </div>
+              </div>
                 <DialogFooter className="pt-4">
                     <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                         Cancel
@@ -265,3 +266,5 @@ export default function CreateUserDialog({ onUserCreated, companyId }: CreateUse
     </Dialog>
   );
 }
+
+    

@@ -36,7 +36,7 @@ const formSchema = z.object({
   owner: z.string().optional(),
   contributors: z.array(z.string()).optional(),
   dueDate: z.date({ required_error: 'A due date is required.' }),
-  status: z.enum(['Not Started', 'In Progress', 'Completed']),
+  status: z.enum(['Not Started', 'In Progress', 'Completed', 'Overdue']),
   type: z.enum(['Task', 'Milestone']),
 });
 
@@ -190,12 +190,15 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
                     <Popover>
                     <PopoverTrigger asChild>
                         <FormControl>
-                        <Button variant="outline" role="combobox" className="w-full justify-between">
-                            {field.value?.length > 0
-                            ? `${field.value.length} engineer(s) selected`
-                            : 'Select contributors...'}
+                          <Button variant="outline" role="combobox" className="w-full justify-between">
+                            {(() => {
+                              const length = field.value?.length ?? 0;
+                              return length > 0
+                                ? `${length} engineer(s) selected`
+                                : 'Select contributors...';
+                            })()}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+                          </Button>
                         </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">

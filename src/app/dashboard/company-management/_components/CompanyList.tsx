@@ -200,3 +200,5 @@ export default function CompanyList({ companies, allUsers }: CompanyListProps) {
         </Card>
     );
 }
+
+    

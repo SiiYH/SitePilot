@@ -224,7 +224,7 @@
           "description": "E-invoicing details for the company."
         }
       },
-      "required": ["id", "name", "industryCode", "industryDescription"]
+      "required": ["id", "name", "industryCode", "industryDescription", "activated"]
     },
     "Claim": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -500,4 +500,5 @@
   }
 }
 
+    
     
