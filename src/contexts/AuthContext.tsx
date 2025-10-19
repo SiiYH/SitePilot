@@ -4,7 +4,7 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc, FirestoreError, collection, query, getDocs, where, setDoc } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError, collection, query, getDocs, where, setDoc, onSnapshot } from 'firebase/firestore';
 import type { Company, User, UserRole, CreateUserData } from '@/types';
 import { login, UserCredentials, SignUpData, signUp } from '@/lib/auth';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -50,27 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const fetchCompanyUsers = async (companyId: string) => {
-        if (!firestore) return;
-        const usersCol = collection(firestore, 'users');
-        // Only fetch users belonging to the specified company
-        const q = query(usersCol, where('companyId', '==', companyId));
-        
-        getDocs(q)
-          .then(usersSnapshot => {
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setAllUsers(usersList);
-          })
-          .catch(serverError => {
-              const permissionError = new FirestorePermissionError({
-                path: usersCol.path,
-                operation: 'list',
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
-      };
-    
-    const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
+    let unsubscribeUsers: (() => void) | null = null;
+  
+    const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
+      // Unsubscribe from previous user listeners if any
+      if (unsubscribeUsers) {
+        unsubscribeUsers();
+        unsubscribeUsers = null;
+      }
+      
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         try {
@@ -86,7 +74,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   const companyData = { id: companyDoc.id, ...companyDoc.data() }as Company;
                   setCompany(companyData);
                   
-                  await fetchCompanyUsers(userData.companyId);
+                  // Setup real-time listener for company users
+                  const usersQuery = query(collection(firestore, 'users'), where('companyId', '==', userData.companyId));
+                  unsubscribeUsers = onSnapshot(usersQuery, 
+                    (snapshot) => {
+                      const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+                      setAllUsers(usersList);
+                    },
+                    (serverError) => {
+                      console.error("Error fetching company users:", serverError);
+                      const permissionError = new FirestorePermissionError({
+                        path: collection(firestore, 'users').path,
+                        operation: 'list',
+                      });
+                      errorEmitter.emit('permission-error', permissionError);
+                    }
+                  );
 
                   // Load license limits
                   if (companyData.activated && companyData.licenseKey) {
@@ -116,13 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setLicenseLimits(defaultLimits);
                   }
                   
-
                 } else {
                   setCompany(null);
                 }
               } else if (userData.role === 'system super admin') {
-                  // System admin doesn't need a company context, but might need to see all users
-                  // For now, we clear company context for them.
                   setCompany(null);
                   setLicenseLimits(defaultLimits);
               } else {
@@ -151,12 +151,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
         setCompany(null);
+        setAllUsers([]);
         setLicenseLimits(defaultLimits);
       }
       setLoading(false);
     });
     
-    return () => unsubscribe();
+    return () => {
+        unsubscribeAuth();
+        if (unsubscribeUsers) {
+          unsubscribeUsers();
+        }
+    };
   }, [auth, firestore]);
   
   const licenseUsage = {
@@ -164,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     'admin': allUsers.filter(u => u.role === 'admin' && u.status === 'Active').length,
     'director': allUsers.filter(u => u.role === 'director' && u.status === 'Active').length,
     'engineer': allUsers.filter(u => u.role === 'engineer' && u.status === 'Active').length,
-    '': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
+    '': allUsers.filter(u => u.role === '' && u.status === 'Active').length,
   };
 
   const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
@@ -193,8 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
-    const creatingUser = auth.currentUser;
-    if (!creatingUser || !data.password || !data.email) {
+    if (!data.password || !data.email) {
       return null;
     }
 
@@ -229,7 +234,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         await deleteApp(tempApp);
         
-        setAllUsers(prevUsers => [...prevUsers, { id: firebaseUser.uid, ...newUser }]);
+        // No need to manually update `allUsers` state here, the onSnapshot listener will handle it.
+        
         setLoading(false);
         return { id: firebaseUser.uid, ...newUser };
     } catch (error) {
