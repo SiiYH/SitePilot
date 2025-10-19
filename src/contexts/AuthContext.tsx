@@ -161,9 +161,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const licenseUsage = {
     'system super admin': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
-    'admin': allUsers.filter(u => u.role === 'admin' && u.status === 'Active' && u.companyId === company?.id).length,
-    'director': allUsers.filter(u => u.role === 'director' && u.status === 'Active' && u.companyId === company?.id).length,
-    'engineer': allUsers.filter(u => u.role === 'engineer' && u.status === 'Active' && u.companyId === company?.id).length,
+    'admin': allUsers.filter(u => u.role === 'admin' && u.status === 'Active').length,
+    'director': allUsers.filter(u => u.role === 'director' && u.status === 'Active').length,
+    'engineer': allUsers.filter(u => u.role === 'engineer' && u.status === 'Active').length,
     '': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
   };
 

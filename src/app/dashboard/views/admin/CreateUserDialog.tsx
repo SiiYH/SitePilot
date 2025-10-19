@@ -62,6 +62,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
 
   const contactMethod = form.watch('contactMethod');
   const selectedRole = form.watch('role');
+  const { licenseLimits } = useAuth();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
