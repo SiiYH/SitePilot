@@ -70,11 +70,12 @@ export default function MyTasksPage() {
       tasksToDisplay = tasksToDisplay.filter(task => task.projectId === selectedProjectId);
     }
     
-    if (selectedUserId !== 'all') {
-      tasksToDisplay = tasksToDisplay.filter(task => task.owner === selectedUserId || task.contributors?.includes(selectedUserId));
-    } else if (user?.role === 'engineer') {
-      // Default filter for engineers if "All Users" is selected
+    if (user?.role === 'engineer') {
+      // For engineers, "All Users" still means "My Tasks"
       tasksToDisplay = tasksToDisplay.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
+    } else if (selectedUserId !== 'all') {
+      // For admins/directors, filter by selected user
+      tasksToDisplay = tasksToDisplay.filter(task => task.owner === selectedUserId || task.contributors?.includes(selectedUserId));
     }
     
     return tasksToDisplay;
