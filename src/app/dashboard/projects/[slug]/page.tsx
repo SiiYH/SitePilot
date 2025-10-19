@@ -41,17 +41,6 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
   return undefined;
 }
 
-/* async function getAssignedUsers(userIds: string[]): Promise<User[]> {
-    return mockUsers.filter(user => userIds.includes(user.id));
-} */
-/* async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
-  if (!firestore || !userIds?.length) return [];
-  const usersRef = collection(firestore, 'users');
-  const q = query(usersRef, where('id', 'in', userIds));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
-} */
-
 async function getAssignedUsers(userIds: string[], firestore: any): Promise<User[]> {
   if (!firestore || !userIds?.length) return [];
   const usersRef = collection(firestore, 'users');
@@ -104,6 +93,13 @@ export default function ProjectDetailsPage() {
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   // Add state for claim users
   const [claimUsers, setClaimUsers] = useState<User[]>([]);
+
+  const companyUsersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+
+  const { data: companyUsers, isLoading: companyUsersLoading } = useCollection<User>(companyUsersQuery);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!firestore || !project?.id) return null;
@@ -172,7 +168,6 @@ export default function ProjectDetailsPage() {
           setProject(projectData);
 
           // Fetch assigned users
-          // const usersData = await getAssignedUsers(projectData.assignedEngineers);
           const usersData = await getAssignedUsers(projectData.assignedEngineers, firestore);
           setAssignedUsers(usersData);
         } else {
@@ -406,7 +401,7 @@ export default function ProjectDetailsPage() {
               {canManageWorkItems && (
                 <CreateWorkItemDialog
                   project={projectWithTasks}
-                  engineers={assignedUsers}
+                  engineers={companyUsers?.filter(u => u.role === 'engineer') || []}
                   onWorkItemCreated={handleWorkItemCreated}
                 />
               )}
