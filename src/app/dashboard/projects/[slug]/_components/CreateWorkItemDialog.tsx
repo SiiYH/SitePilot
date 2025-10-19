@@ -26,8 +26,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, arrayUnion } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 
 
@@ -97,6 +97,18 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
       setDocumentNonBlocking(taskDocRef, newTask);
+
+      // Check if the new owner is already in the project's assigned team
+      if (values.owner && values.owner !== 'unassigned' && !project.assignedEngineers.includes(values.owner)) {
+        const projectDocRef = doc(firestore, 'projects', project.id);
+        updateDocumentNonBlocking(projectDocRef, {
+            assignedEngineers: arrayUnion(values.owner)
+        });
+        toast({
+            title: 'Team Updated',
+            description: `${engineers.find(e => e.id === values.owner)?.name} has been added to the project team.`,
+        });
+      }
     }
 
     setTimeout(() => {

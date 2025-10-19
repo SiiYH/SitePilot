@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, arrayUnion } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 
 
@@ -86,6 +86,18 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', workItem.id);
       updateDocumentNonBlocking(taskDocRef, updatedData);
+
+      // Check if the new owner is already in the project's assigned team
+      if (values.owner && values.owner !== 'unassigned' && !project.assignedEngineers.includes(values.owner)) {
+        const projectDocRef = doc(firestore, 'projects', project.id);
+        updateDocumentNonBlocking(projectDocRef, {
+            assignedEngineers: arrayUnion(values.owner)
+        });
+        toast({
+            title: 'Team Updated',
+            description: `${engineers.find(e => e.id === values.owner)?.name} has been added to the project team.`,
+        });
+      }
     }
     
     setTimeout(() => {
