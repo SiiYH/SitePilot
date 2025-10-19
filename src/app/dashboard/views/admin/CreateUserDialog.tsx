@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
-import { licenseLimits } from '@/lib/license';
+// import { licenseLimits } from '@/lib/license';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const formSchema = z.object({
