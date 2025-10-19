@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Loader2, FolderKanban } from 'lucide-react';
+import { Loader2, FolderKanban, User as UserIcon, LayoutGrid, List } from 'lucide-react';
 import { Project, Task, User } from '@/types';
 import TasksTable from '@/components/dashboard/TasksTable';
 import { useAuth } from '@/hooks/use-auth';
@@ -10,12 +10,24 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
+type ViewMode = 'grid' | 'list';
 
 export default function MyTasksPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('sitepilot-tasks-view') as ViewMode;
+    if (savedViewMode) {
+      setViewMode(savedViewMode);
+    }
+  }, []);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user || !firestore || !company?.id) return null;
@@ -28,7 +40,6 @@ export default function MyTasksPage() {
       );
     }
     
-    // For admin/director, fetch all projects in the company
     return query(
       collection(firestore, 'projects'),
       where('companyId', '==', company.id)
@@ -52,35 +63,43 @@ export default function MyTasksPage() {
   }, [projects]);
 
 
-  const engineerTasks = useMemo(() => {
-    if (user?.role !== 'engineer' || !allTasks) return [];
-    return allTasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
-  }, [allTasks, user]);
+  const filteredTasks = useMemo(() => {
+    let tasksToDisplay = allTasks;
 
-
-  const tasksToDisplay = user?.role === 'engineer' ? engineerTasks : allTasks;
+    if (selectedProjectId !== 'all') {
+      tasksToDisplay = tasksToDisplay.filter(task => task.projectId === selectedProjectId);
+    }
+    
+    if (selectedUserId !== 'all') {
+      tasksToDisplay = tasksToDisplay.filter(task => task.owner === selectedUserId || task.contributors?.includes(selectedUserId));
+    } else if (user?.role === 'engineer') {
+      // Default filter for engineers if "All Users" is selected
+      tasksToDisplay = tasksToDisplay.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
+    }
+    
+    return tasksToDisplay;
+  }, [allTasks, selectedProjectId, selectedUserId, user]);
 
 
   const projectsForFilter = useMemo(() => {
-    if (!tasksToDisplay) return [];
+    if (!allTasks) return [];
     
     const projectMap = new Map<string, { id: string; name: string }>();
-    tasksToDisplay.forEach(task => {
+    allTasks.forEach(task => {
         if (task.projectId && task.projectName && !projectMap.has(task.projectId)) {
             projectMap.set(task.projectId, { id: task.projectId, name: task.projectName });
         }
     });
 
     return Array.from(projectMap.values());
-  }, [tasksToDisplay]);
+  }, [allTasks]);
+  
+  const usersForFilter = companyUsers?.filter(u => u.role === 'engineer') || [];
 
-  const filteredTasks = useMemo(() => {
-    if (selectedProjectId === 'all') {
-      return tasksToDisplay;
-    }
-    return tasksToDisplay.filter(task => task.projectId === selectedProjectId);
-  }, [tasksToDisplay, selectedProjectId]);
-
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('sitepilot-tasks-view', mode);
+  }
 
   if (authLoading || projectsLoading || usersLoading || !user) {
     return (
@@ -106,31 +125,69 @@ export default function MyTasksPage() {
             {pageDescription}
           </p>
         </div>
-        {projectsForFilter.length > 0 && (
-            <div className="w-full sm:w-64">
-                <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger>
-                        <FolderKanban className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Filter by project..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Projects</SelectItem>
-                        {projectsForFilter.map(project => (
-                            <SelectItem key={project.id} value={project.id}>
-                                {project.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <div className='flex items-center gap-2 flex-wrap'>
+          <div className="w-full sm:w-48">
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger>
+                      <FolderKanban className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Filter by project..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">All Projects</SelectItem>
+                      {projectsForFilter.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                          </SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </div>
+          {user.role !== 'engineer' && (
+            <div className="w-full sm:w-48">
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                      <UserIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <SelectValue placeholder="Filter by user..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      {usersForFilter.map(u => (
+                          <SelectItem key={u.id} value={u.id}>
+                              {u.name}
+                          </SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
             </div>
-        )}
+          )}
+           <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewModeChange('grid')}
+                    aria-label="Grid view"
+                    className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
+                >
+                    <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewModeChange('list')}
+                    aria-label="List view"
+                    className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
+                >
+                    <List className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
       </div>
         <Card>
             <CardHeader>
                 <CardTitle>Work Items List</CardTitle>
             </CardHeader>
             <CardContent>
-                <TasksTable tasks={filteredTasks} user={user} users={companyUsers || []} />
+                <TasksTable tasks={filteredTasks} user={user} users={companyUsers || []} viewMode={viewMode} />
             </CardContent>
         </Card>
     </div>
