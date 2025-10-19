@@ -9,11 +9,27 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'grid' | 'list';
+
+async function getAllTasks(firestore: any, companyId: string): Promise<Task[]> {
+  if (!firestore || !companyId) return [];
+  const projectsQuery = query(collection(firestore, 'projects'), where('companyId', '==', companyId));
+  const projectsSnapshot = await getDocs(projectsQuery);
+  
+  let allTasks: Task[] = [];
+  for (const projectDoc of projectsSnapshot.docs) {
+    const project = { id: projectDoc.id, ...projectDoc.data() } as Project;
+    const tasksQuery = query(collection(firestore, 'projects', project.id, 'tasks'));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const projectTasks = tasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, projectId: project.id, projectName: project.name, projectSlug: project.slug } as Task));
+    allTasks = [...allTasks, ...projectTasks];
+  }
+  return allTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
 
 export default function MyTasksPage() {
   const { user, company, loading: authLoading } = useAuth();
@@ -21,7 +37,9 @@ export default function MyTasksPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-tasks-view') as ViewMode;
     if (savedViewMode) {
@@ -29,38 +47,36 @@ export default function MyTasksPage() {
     }
   }, []);
 
-  const projectsQuery = useMemoFirebase(() => {
-    if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
-  }, [firestore, company?.id]);
-  
-  const { data: allCompanyProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
-
   const companyUsersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
     return query(collection(firestore, 'users'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
   const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
-
-  const allTasks = useMemo(() => {
-    if (!allCompanyProjects) return [];
-
-    return allCompanyProjects.flatMap(p => 
-      (p.tasks || []).map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
-    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [allCompanyProjects]);
+  
+  useEffect(() => {
+    if (firestore && company?.id) {
+      setTasksLoading(true);
+      getAllTasks(firestore, company.id).then(tasks => {
+        setAllTasks(tasks);
+        setTasksLoading(false);
+      });
+    }
+  }, [firestore, company?.id]);
 
 
   const filteredTasks = useMemo(() => {
     let tasksToDisplay = allTasks;
 
+    // Default filter for engineers
     if (user?.role === 'engineer') {
       tasksToDisplay = tasksToDisplay.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
-    } else if (selectedUserId !== 'all') {
-      // For admins/directors, filter by selected user
+    } 
+    // Filter by selected user for admins/directors
+    else if (selectedUserId !== 'all') {
       tasksToDisplay = tasksToDisplay.filter(task => task.owner === selectedUserId || task.contributors?.includes(selectedUserId));
     }
 
+    // Filter by selected project for all roles
     if (selectedProjectId !== 'all') {
       tasksToDisplay = tasksToDisplay.filter(task => task.projectId === selectedProjectId);
     }
@@ -89,7 +105,7 @@ export default function MyTasksPage() {
     localStorage.setItem('sitepilot-tasks-view', mode);
   }
 
-  if (authLoading || projectsLoading || usersLoading || !user) {
+  if (authLoading || usersLoading || tasksLoading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
