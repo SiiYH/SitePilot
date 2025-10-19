@@ -130,6 +130,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
       return;
     }
     const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
+    // The dynamic route segment should be URL-encoded to handle special characters.
     const encodedPath = encodeURIComponent(fullPath);
     router.push(`/dashboard/work-items/${encodedPath}`);
   };
