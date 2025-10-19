@@ -15,6 +15,8 @@ import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface TasksTableProps {
   tasks: Task[];
@@ -46,6 +48,15 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
       return null;
     }
   };
+
+const getInitials = (name: string) => {
+    if (!name) return '';
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+};
 
 export default function TasksTable({ tasks: initialTasks, user, users }: TasksTableProps) {
   const router = useRouter();
@@ -105,9 +116,9 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
     });
   };
 
-  const getUserName = (userId: string | undefined) => {
-    if (!userId) return 'Unassigned';
-    return users.find(u => u.id === userId)?.name || 'Unassigned';
+  const getUserFromId = (userId: string | undefined) => {
+    if (!userId) return undefined;
+    return users.find(u => u.id === userId);
   }
 
   const handleRowClick = (task: Task) => {
@@ -136,7 +147,7 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
 
   const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
   
-  const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner);
+  const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner || t.contributors?.length);
   
   const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
@@ -176,6 +187,9 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
                 const Icon = typeIcon[task.type] || GanttChartSquare;
                 const dueDate = getSafeDate(task.dueDate);
                 const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
+                const owner = getUserFromId(task.owner);
+                const contributors = task.contributors?.map(id => getUserFromId(id)).filter(Boolean) as User[] || [];
+
                 return (
                     <Card key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer transition-shadow hover:shadow-md", !task.owner && "bg-yellow-500/5 border-yellow-500/20")}>
                         <CardHeader>
@@ -196,10 +210,39 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
                                     </Link>
                                 </div>
                             )}
-                            {(showAssignedToColumn || !task.owner) && (
+                            {(showAssignedToColumn) && (
                                 <div className="flex items-center gap-2">
                                     <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                    <span className={cn("text-muted-foreground", !task.owner && "font-bold text-yellow-600 dark:text-yellow-400")}>{getUserName(task.owner)}</span>
+                                     <div className="flex items-center gap-2">
+                                        {owner ? (
+                                             <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={owner.avatarUrl} alt={owner.name} />
+                                                            <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{owner.name} (Owner)</TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ) : (
+                                            <span className="text-muted-foreground italic">Unassigned</span>
+                                        )}
+                                        {contributors.map(c => (
+                                            <TooltipProvider key={c.id}>
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={c.avatarUrl} alt={c.name} />
+                                                            <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>{c.name}</TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
@@ -236,7 +279,7 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
                 <TableHead>Work Item</TableHead>
                 <TableHead>Type</TableHead>
                 {showProjectColumn && <TableHead>Project</TableHead>}
-                {showAssignedToColumn && <TableHead>Owner</TableHead>}
+                {showAssignedToColumn && <TableHead>Assigned To</TableHead>}
                 <TableHead>
                    Due Date
                 </TableHead>
@@ -248,6 +291,9 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
                     const Icon = typeIcon[task.type] || GanttChartSquare;
                     const dueDate = getSafeDate(task.dueDate);
                     const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
+                    const owner = getUserFromId(task.owner);
+                    const contributors = task.contributors?.map(id => getUserFromId(id)).filter(Boolean) as User[] || [];
+
                     return (
                     <TableRow key={task.id} onClick={() => handleRowClick(task)} className={cn("cursor-pointer", !task.owner && "bg-yellow-500/5 hover:bg-yellow-500/10")}>
                         <TableCell className="font-medium">{task.title}</TableCell>
@@ -268,7 +314,45 @@ export default function TasksTable({ tasks: initialTasks, user, users }: TasksTa
                             )}
                         </TableCell>
                         )}
-                        {showAssignedToColumn && <TableCell className={cn(!task.owner && "font-bold text-yellow-600 dark:text-yellow-400")}>{getUserName(task.owner)}</TableCell>}
+                        {showAssignedToColumn && 
+                            <TableCell>
+                                <div className="flex items-center -space-x-2">
+                                    {owner ? (
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <Avatar className="h-7 w-7 border-2 border-background">
+                                                        <AvatarImage src={owner.avatarUrl} alt={owner.name} />
+                                                        <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{owner.name} (Owner)</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ) : (
+                                        <span className="text-muted-foreground italic text-xs">Unassigned</span>
+                                    )}
+                                    {contributors.slice(0, 2).map(c => (
+                                        <TooltipProvider key={c.id}>
+                                            <Tooltip>
+                                                <TooltipTrigger>
+                                                    <Avatar className="h-7 w-7 border-2 border-background">
+                                                        <AvatarImage src={c.avatarUrl} alt={c.name} />
+                                                        <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{c.name}</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ))}
+                                    {contributors.length > 2 && (
+                                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium text-muted-foreground">
+                                            +{contributors.length - 2}
+                                        </div>
+                                    )}
+                                </div>
+                            </TableCell>
+                        }
                         <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {canEditTask ? (
