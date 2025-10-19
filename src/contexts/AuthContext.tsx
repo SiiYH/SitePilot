@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
 import { doc, getDoc, FirestoreError, collection, query, getDocs, where } from 'firebase/firestore';
 import type { Company, User, UserRole } from '@/types';
-import { login, createNewUser, CreateUserData, UserCredentials, SignUpData, signUp } from '@/lib/auth';
-import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { login, CreateUserData, UserCredentials, SignUpData, signUp } from '@/lib/auth';
+import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError, initiateCreateUser } from '@/firebase';
 import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 
@@ -94,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   
                       if (licenseDoc.exists()) {
                         const activeLicense = licenseDoc.data() as License;
-                        console.log('Active license:', activeLicense);
                   
                         setLicenseLimits({
                           'system super admin': Infinity, // System admin is not governed by license
@@ -194,24 +193,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
     const creatingUser = auth.currentUser;
     if (!creatingUser) {
-        return null;
+      return null;
     }
-
+  
     setLoading(true);
     if (licenseUsage[data.role] >= licenseLimits[data.role]) {
-       setLoading(false);
-       return null;
+      setLoading(false);
+      return null;
     }
-    const newUser = await createNewUser(data);
-    
-    await auth.updateCurrentUser(creatingUser);
-    
-    if (newUser) {
-        setAllUsers(prevUsers => [...prevUsers, newUser]);
+  
+    const { success, newUser } = await initiateCreateUser(auth, firestore, data);
+  
+    if (success && newUser) {
+      setAllUsers(prevUsers => [...prevUsers, newUser]);
+      setLoading(false);
+      return newUser;
     }
-    
+  
     setLoading(false);
-    return newUser;
+    return null;
   };
 
   const handleLogout = async () => {

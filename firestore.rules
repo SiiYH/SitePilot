@@ -23,7 +23,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // === Helper Functions (defined first) ===
+    // === Helper Functions ===
     
     function isSignedIn() {
       return request.auth != null;
@@ -85,20 +85,33 @@ service cloud.firestore {
              isAssignedToProject();
     }
     
-    function isQueryingOwnCompany() {
-      return request.query.where.companyId == getUserCompany();
+  	// function isCompanyActivatedByLicense(uid, licenseId) {
+  	// let userDoc = get(/databases/$(database)/documents/users/$(uid));
+  	// return (isAdminOrDirector &&
+  	// userDoc.data.companyId != null &&
+  	// get(/databases/$(database)/documents/companies/$(userDoc.data.companyId)).data.licenseKey == licenseId &&
+  	// get(/databases/$(database)/documents/companies/$(userDoc.data.companyId)).data.activated == true
+  	// );
+  	// }
+    
+    function isCompanyActivatedByLicense(uid, licenseId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(uid));
+      let companyDoc = userDoc != null && userDoc.data.companyId != null
+        ? get(/databases/$(database)/documents/companies/$(userDoc.data.companyId))
+        : null;
+
+      return userDoc != null &&
+             companyDoc != null &&
+             isAdminOrDirector() &&
+             companyDoc.data.licenseKey == licenseId &&
+             companyDoc.data.activated == true;
     }
-    
-    
+
 
     // === User Rules ===
     /**
      * @description Controls access to user profiles.
      * @path /users/{userId}
-     * @allow (get) - User can read their own profile, or admins/directors can read any user in their company
-     * @allow (list) - Admins and directors can list users in their company, engineers cannot list
-     * @allow (create) - User can create their own profile
-     * @allow (update, delete) - User can update their own profile, or admins/directors in same company
      */
     match /users/{userId} {
       allow get: if isSignedIn() && (
@@ -129,19 +142,23 @@ service cloud.firestore {
      * @allow (all) - Only system super admins
      */
     match /licenses/{licenseId} {
-      allow read, write: if isSignedIn() && isSuperSystemAdmin();
+      allow read: if isSignedIn() && (
+        isSuperSystemAdmin() ||  // super admin can read allow
+        isCompanyActivatedByLicense(request.auth.uid, licenseId)  // admin/director read their company's license
+      );
+
+      // Write: only super admin
+      allow write: if isSignedIn() && isSuperSystemAdmin();
       
-      match /{subcollection=**} {
-        allow read, write: if isSignedIn() && isSuperSystemAdmin();
-      }
+      // match /{subcollection=**} {
+      //   allow read, write: if isSignedIn() && isSuperSystemAdmin();
+      // }
     }
 
     // === Company Rules ===
     /**
      * @description Controls access to company profiles.
      * @path /companies/{companyId}
-     * @allow (read) - Users can read their own company, admins/directors can read any, super admins can read all
-     * @allow (write) - Only admins, directors of that company, or super admins
      */
     match /companies/{companyId} {
       allow get: if isSignedIn() && (
@@ -165,10 +182,6 @@ service cloud.firestore {
     /**
      * @description Controls access to project data with company isolation.
      * @path /projects/{projectId}
-     * @allow (get) - Users in same company can read, engineers only if assigned
-     * @allow (list) - Users in same company can list, engineers see only assigned projects
-     * @allow (create) - Admins/directors can create in their company
-     * @allow (update, delete) - Project creator or admins/directors in same company
      */
     match /projects/{projectId} {
       // GET: Individual project access
@@ -177,13 +190,13 @@ service cloud.firestore {
         (isSameCompany() && (isAdminOrDirector() || isAssignedToProject()))
       );
       
-      // LIST: Query projects - CRITICAL for your use case
+      // LIST: Query projects
       allow list: if isSignedIn() && (
         isSuperSystemAdmin() ||
         isAdminOrDirector() ||
         isEngineer()
-        // Note: Engineers will get all projects from query, 
-        // but client-side filtering by assignedEngineers is required
+        // Note: Engineers get all projects from query, 
+        // client-side filtering by assignedEngineers is required
       );
       
       // CREATE: Only admins/directors can create projects
@@ -211,43 +224,44 @@ service cloud.firestore {
     /**
      * @description Controls access to payment claims.
      * @path /claims/{claimId}
-     * @allow (get, list) - Users in same company
-     * @allow (create) - Any authenticated user in same company
-     * @allow (update) - Claim submitter or directors
-     * @allow (delete) - Claim submitter only
      */
     match /claims/{claimId} {
-      // All authenticated users in the same company can view claims
-      allow get: if isSignedIn() && isSameCompany();
-      
-      // List claims - must query by companyId
-      // allow list: if isSignedIn() && (
-      //   isSuperSystemAdmin() ||
-      //   (
-      //     isSameCompany()
-      //     // resource.data.companyId == getUserCompany() 
-      //     &&(isAdminOrDirector() || isEngineer())
-      //   )
-      // );
-      
-      // List claims - must query by companyId
-      allow list: if isSignedIn() && (
+      // GET: Individual claim access
+      allow get: if isSignedIn() && (
         isSuperSystemAdmin() ||
-        isAdminOrDirector() ||
-        isEngineer()
+        isSameCompany()
       );
       
-      // Create claim - must be in user's own company and set submittedBy correctly
+      // LIST: Query claims - allows all authenticated users to list
+      // Client-side must filter by companyId in the query
+
+      // allow list: if isSignedIn() && (
+      //   isSuperSystemAdmin() ||
+      //   isAdminOrDirector() ||
+      //   isEngineer()
+      // );
+      
+      allow list: if true;
+      
+      allow read: if request.auth != null &&
+              resource.data.companyId == getUserCompany() &&
+              (
+                resource.data.submittedBy == request.auth.uid || 
+                request.auth.token.role in ['admin', 'director']
+              );
+      
+      
+      // CREATE: Must be in user's own company and set submittedBy correctly
       allow create: if isSignedIn() && 
-                       isCreatingSameCompanyAsSelf() &&
+                       isCreatingSameCompany() &&
                        request.resource.data.submittedBy == request.auth.uid;
       
-      // Update claim - submitter can update their own OR Director/Admin can update any in their company
+      // UPDATE: Claim submitter can update their own OR Admin/Director can update any in their company
       allow update: if isSignedIn() && 
                        isSameCompany() &&
                        (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
       
-      // Delete claim - only submitter OR Director/Admin can delete
+      // DELETE: Claim submitter OR Admin/Director can delete
       allow delete: if isSignedIn() && 
                        isSameCompany() &&
                        (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
@@ -257,7 +271,6 @@ service cloud.firestore {
     /**
      * @description Controls access to tasks within projects.
      * @path /projects/{projectId}/tasks/{taskId}
-     * Inherits project-level access control
      */
     match /projects/{projectId}/tasks/{taskId} {
       // Get parent project for access control
@@ -293,7 +306,6 @@ service cloud.firestore {
     /**
      * @description Controls access to documents within projects.
      * @path /projects/{projectId}/documents/{documentId}
-     * Inherits project-level access control
      */
     match /projects/{projectId}/documents/{documentId} {
       function getProject() {
