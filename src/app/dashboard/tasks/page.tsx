@@ -18,11 +18,9 @@ export default function MyTasksPage() {
   const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
-  const tasksQuery = useMemoFirebase(() => {
+  const projectsQuery = useMemoFirebase(() => {
     if (!user || user.role !== 'engineer' || !firestore || !company?.id) return null;
     
-    // This query is complex and might require composite indexes in a real production app.
-    // For this app, we assume it works or that indexes will be created.
     return query(
       collection(firestore, 'projects'),
       where('companyId', '==', company.id),
@@ -30,15 +28,15 @@ export default function MyTasksPage() {
     );
   }, [user, firestore, company?.id]);
   
-  // This is a bit of a workaround. useCollection fetches projects, then we extract tasks.
-  // A more optimized approach in a real large-scale app might be to query a top-level `tasks` collection.
-  const { data: projectsWithTasks, isLoading: loading } = useCollection<Project>(tasksQuery);
+  const { data: projectsWithTasks, isLoading: loading } = useCollection<Project>(projectsQuery);
 
   const tasks = useMemo(() => {
-    if (!projectsWithTasks) return [];
+    if (!projectsWithTasks || !user?.id) return [];
+    
+    const userId = user.id;
     return projectsWithTasks.flatMap(p => 
       (p.tasks || [])
-        .filter(t => t.owner === user?.id || t.contributors?.includes(user?.id || ''))
+        .filter(t => t.owner === userId || (t.contributors && t.contributors.includes(userId)))
         .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
     ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [projectsWithTasks, user]);
