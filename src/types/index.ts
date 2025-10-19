@@ -2,6 +2,7 @@
 
 
 
+
 export type UserRole = 'engineer' | 'admin' | 'director' | 'system super admin' | '';
 export type UserStatus = 'Active' | 'Inactive';
 
@@ -174,6 +175,6 @@ export type CreateUserData = {
     phone?: string;
     password?: string;
     role: UserRole;
-    companyId?: string;
+    companyId: string;
 };
     
