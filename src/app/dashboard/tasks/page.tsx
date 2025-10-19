@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, FolderKanban } from 'lucide-react';
-import { mockProjects } from '@/lib/data';
 import { Project, Task, User } from '@/types';
 import TasksTable from '@/components/dashboard/TasksTable';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,56 +13,76 @@ import { collection, query, where, orderBy } from 'firebase/firestore';
 
 
 export default function MyTasksPage() {
-  const { user, company } = useAuth();
+  const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || user.role !== 'engineer' || !firestore || !company?.id) return null;
+    if (!user || !firestore || !company?.id) return null;
+
+    if (user.role === 'engineer') {
+      return query(
+        collection(firestore, 'projects'),
+        where('companyId', '==', company.id),
+        where('assignedEngineers', 'array-contains', user.id)
+      );
+    }
     
+    // For admin/director, fetch all projects in the company
     return query(
       collection(firestore, 'projects'),
-      where('companyId', '==', company.id),
-      where('assignedEngineers', 'array-contains', user.id),
+      where('companyId', '==', company.id)
     );
   }, [user, firestore, company?.id]);
   
-  const { data: projectsWithTasks, isLoading: loading } = useCollection<Project>(projectsQuery);
+  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
-  const tasks = useMemo(() => {
-    if (!projectsWithTasks || !user?.id) return [];
-    
-    const userId = user.id;
-    return projectsWithTasks.flatMap(p => 
-      (p.tasks || [])
-        .filter(t => t.owner === userId || (t.contributors && t.contributors.includes(userId)))
-        .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
+  const companyUsersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
+
+  const allTasks = useMemo(() => {
+    if (!projects) return [];
+
+    return projects.flatMap(p => 
+      (p.tasks || []).map(t => ({ ...t, projectName: p.name, projectSlug: p.slug, projectId: p.id }))
     ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [projectsWithTasks, user]);
+  }, [projects]);
+
+
+  const engineerTasks = useMemo(() => {
+    if (user?.role !== 'engineer' || !allTasks) return [];
+    return allTasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id));
+  }, [allTasks, user]);
+
+
+  const tasksToDisplay = user?.role === 'engineer' ? engineerTasks : allTasks;
 
 
   const projectsForFilter = useMemo(() => {
-    if (!projectsWithTasks) return [];
+    if (!tasksToDisplay) return [];
     
     const projectMap = new Map<string, { id: string; name: string }>();
-    tasks.forEach(task => {
+    tasksToDisplay.forEach(task => {
         if (task.projectId && task.projectName && !projectMap.has(task.projectId)) {
             projectMap.set(task.projectId, { id: task.projectId, name: task.projectName });
         }
     });
 
     return Array.from(projectMap.values());
-  }, [tasks, projectsWithTasks]);
+  }, [tasksToDisplay]);
 
   const filteredTasks = useMemo(() => {
     if (selectedProjectId === 'all') {
-      return tasks;
+      return tasksToDisplay;
     }
-    return tasks.filter(task => task.projectId === selectedProjectId);
-  }, [tasks, selectedProjectId]);
+    return tasksToDisplay.filter(task => task.projectId === selectedProjectId);
+  }, [tasksToDisplay, selectedProjectId]);
 
 
-  if (loading || !user) {
+  if (authLoading || projectsLoading || usersLoading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -71,25 +90,20 @@ export default function MyTasksPage() {
     );
   }
 
-  // This page is only for Engineers
-  if (user.role !== 'engineer') {
-      return (
-          <div className="space-y-6">
-              <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
-              <p className="text-muted-foreground">This page is only available for users with the 'engineer' role.</p>
-          </div>
-      )
-  }
+  const pageTitle = user.role === 'engineer' ? 'My Tasks' : 'All Work Items';
+  const pageDescription = user.role === 'engineer' 
+    ? 'All tasks and work items assigned to you. Click a work item to view details.'
+    : 'A comprehensive list of all work items across all projects in the company.';
 
   return (
     <div className="space-y-6">
        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
-            My Tasks
+            {pageTitle}
           </h2>
           <p className="text-muted-foreground">
-            All tasks and work items assigned to you. Click a work item to view details.
+            {pageDescription}
           </p>
         </div>
         {projectsForFilter.length > 0 && (
@@ -113,10 +127,10 @@ export default function MyTasksPage() {
       </div>
         <Card>
             <CardHeader>
-                <CardTitle>All My Work Items</CardTitle>
+                <CardTitle>Work Items List</CardTitle>
             </CardHeader>
             <CardContent>
-                <TasksTable tasks={filteredTasks} user={user} />
+                <TasksTable tasks={filteredTasks} user={user} users={companyUsers || []} />
             </CardContent>
         </Card>
     </div>

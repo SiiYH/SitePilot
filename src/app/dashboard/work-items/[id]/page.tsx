@@ -1,8 +1,8 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockUsers } from '@/lib/data';
 import { Task, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
@@ -55,7 +55,7 @@ export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = decodeURIComponent(params.id as string);
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -65,6 +65,12 @@ export default function WorkItemDetailsPage() {
   // Use useDoc for real-time updates on the work item
   const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
   const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
+
+  const companyUsersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
 
   useEffect(() => {
     const findWorkItem = async () => {
@@ -109,7 +115,7 @@ export default function WorkItemDetailsPage() {
     });
   };
 
-  const loading = workItemLoading || projectLoading || !project;
+  const loading = workItemLoading || projectLoading || usersLoading || !project;
 
   if (loading || !user) {
     return (
@@ -124,8 +130,8 @@ export default function WorkItemDetailsPage() {
   }
 
   const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
-  const owner = mockUsers.find(u => u.id === workItem.owner);
-  const contributors = mockUsers.filter(u => workItem.contributors?.includes(u.id));
+  const owner = companyUsers?.find(u => u.id === workItem.owner);
+  const contributors = companyUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
   const Icon = typeIcon[workItem.type] || GanttChartSquare;
   
   const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
@@ -262,4 +268,3 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-    

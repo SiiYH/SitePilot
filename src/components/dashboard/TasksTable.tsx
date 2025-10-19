@@ -6,7 +6,6 @@ import { Task, User, UserRole } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockUsers } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp, Tags } from 'lucide-react';
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button';
 interface TasksTableProps {
   tasks: Task[];
   user: User;
+  users: User[]; // Add users prop
 }
 
 type SortOrder = 'asc' | 'desc' | 'none';
@@ -47,7 +47,7 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
     }
   };
 
-export default function TasksTable({ tasks: initialTasks, user }: TasksTableProps) {
+export default function TasksTable({ tasks: initialTasks, user, users }: TasksTableProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -77,7 +77,7 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
       if (sortOrder === 'asc') {
         return dateA - dateB;
       } else {
-        return dateB - dateA;
+        return dateB - a.getTime();
       }
     });
     return sortableTasks;
@@ -107,17 +107,9 @@ export default function TasksTable({ tasks: initialTasks, user }: TasksTableProp
 
   const getUserName = (userId: string | undefined) => {
     if (!userId) return 'Unassigned';
-    return mockUsers.find(u => u.id === userId)?.name || 'Unassigned';
+    return users.find(u => u.id === userId)?.name || 'Unassigned';
   }
 
-  /* const handleRowClick = (task: Task) => {
-    if (!task.projectId) return;
-    // Construct the path that matches what the details page expects
-    // const fullId = `${task.projectId}/tasks/${task.id}`;
-    router.push(`/dashboard/work-items/${task.id}`);
-    // router.push(`/dashboard/work-items/${encodeURIComponent(fullId)}`);
-    // router.push(`/dashboard/work-items/projects/${task.projectId}/tasks/${task.id}`);
-  }; */
   const handleRowClick = (task: Task) => {
     console.log('=== Task Click Debug ===');
     console.log('Task object:', task);

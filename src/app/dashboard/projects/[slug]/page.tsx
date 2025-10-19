@@ -381,14 +381,11 @@ export default function ProjectDetailsPage() {
           <OverviewTab project={projectWithTasks} assignedUsers={assignedUsers} user={user} onProjectUpdate={updateProjectState} />
         </TabsContent>
         <TabsContent value="claims" className="mt-6">
-
-          {/* <ClaimsTab claims={claims || []} project={projectWithTasks} onClaimCreated={handleClaimCreated} users={users || []} /> */}
-
           <ClaimsTab
             claims={claims || []}
             project={projectWithTasks}
             onClaimCreated={handleClaimCreated}
-            users={claimUsers}  // Changed from assignedUsers
+            users={companyUsers || []}
           />
         </TabsContent>
         <TabsContent value="tasks" className="mt-6">
@@ -412,7 +409,7 @@ export default function ProjectDetailsPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <TasksTable tasks={tasks || []} user={user} />
+                <TasksTable tasks={tasks || []} user={user} users={companyUsers || []} />
               )}
             </CardContent>
           </Card>

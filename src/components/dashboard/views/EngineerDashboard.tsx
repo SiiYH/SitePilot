@@ -1,5 +1,4 @@
 
-
 import { Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TasksTable from '../TasksTable';
@@ -10,9 +9,10 @@ interface EngineerDashboardProps {
     projects: Project[];
     tasks: Project['tasks'];
     user: User;
+    users: User[];
 }
 
-export default function EngineerDashboard({ projects, tasks, user }: EngineerDashboardProps) {
+export default function EngineerDashboard({ projects, tasks, user, users }: EngineerDashboardProps) {
     return (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-6 md:col-span-2">
@@ -22,7 +22,7 @@ export default function EngineerDashboard({ projects, tasks, user }: EngineerDas
                     </CardHeader>
                     <CardContent>
                         {tasks.length > 0 ? (
-                            <TasksTable tasks={tasks} user={user} />
+                            <TasksTable tasks={tasks} user={user} users={users} />
                         ) : (
                             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
                                 <h3 className="text-lg font-semibold text-muted-foreground">No Tasks Assigned</h3>

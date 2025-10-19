@@ -27,7 +27,6 @@ export default function ClaimsTab({ claims, project, onClaimCreated, users }: Cl
         router.push(`/dashboard/claims/${claimId}`);
     }
     
-    //reflected at the admin dashboard claims
     const getUserName = (userId: string) => {
         return users.find(u => u.id === userId)?.name || 'N/A';
     }
