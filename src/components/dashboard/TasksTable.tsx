@@ -134,11 +134,31 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     const encodedPath = encodeURIComponent(fullPath);
     router.push(`/dashboard/work-items/${encodedPath}`);
   };
+  /* const handleRowClick = (task: Task) => {
+    if (!task.projectId) {
+      console.error('Missing projectId!');
+      return;
+    }
+    // Encode only the individual segments, not the slashes
+    const encodedProjectId = encodeURIComponent(task.projectId);
+    const encodedTaskId = encodeURIComponent(task.id);
+    const fullPath = `projects/${encodedProjectId}/tasks/${encodedTaskId}`;
+    
+    router.push(`/dashboard/work-items/${fullPath}`);
+}; */
+    /* const handleRowClick = (task: Task) => {
+        if (!task.projectId) {
+            console.error('Missing projectId!');
+            return;
+        }
+        // Don't encode - Next.js handles this
+        const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
+        router.push(`/dashboard/work-items/${fullPath}`);
+    }; */
+    const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
 
-  const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
-  
-  const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner || (t.contributors && t.contributors.length > 0));
-  
+    const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner || (t.contributors && t.contributors.length > 0));
+
   const SortIcon = sortOrder === 'asc' ? ArrowUp : sortOrder === 'desc' ? ArrowDown : ArrowUpDown;
 
   if (tasks.length === 0) {

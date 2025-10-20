@@ -67,6 +67,8 @@ export default function WorkItemDetailsPage() {
   const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
   const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
 
+  console.log(id);
+  
   useEffect(() => {
     const findWorkItem = async () => {
       if (!firestore || !id) return;

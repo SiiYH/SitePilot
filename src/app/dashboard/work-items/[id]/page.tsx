@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -15,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useDoc, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -54,17 +53,23 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const id = decodeURIComponent(params.id as string);
+  const encodedId = params.id as string;
+  const id = decodeURIComponent(encodedId);
+  
   const { user, company } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
 
   const [project, setProject] = useState<Project | null>(null);
   const [workItemRef, setWorkItemRef] = useState<any>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Use useDoc for real-time updates on the work item
-  const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
-  const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
+  const { data: workItem, isLoading: workItemLoading } = useDoc<Task>(workItemRef);
+  const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(
+    project ? doc(firestore, 'projects', project.id) : null
+  );
 
   const companyUsersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -73,36 +78,61 @@ export default function WorkItemDetailsPage() {
   const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const findWorkItem = async () => {
       if (!firestore || !id) return;
       
-      const pathParts = id.split('/tasks/');
-      if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
-        notFound();
-        return;
-      }
-      
-      const projectId = pathParts[0].replace('projects/', '');
-      const taskId = pathParts[1];
-
       try {
+        const pathParts = id.split('/tasks/');
+        
+        if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
+          console.error('Invalid path format:', id);
+          notFound();
+          return;
+        }
+        
+        const projectId = pathParts[0].replace('projects/', '');
+        const taskId = pathParts[1];
+
         const projectDocRef = doc(firestore, 'projects', projectId);
         const projectDoc = await getDoc(projectDocRef);
+
+        if (!isMounted) return;
 
         if (projectDoc.exists()) {
           const workItemDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
           setWorkItemRef(workItemDocRef);
           setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
+          // Don't set isInitializing to false yet - wait for useDoc to load
         } else {
+          console.error('Project not found:', projectId);
+          setIsInitializing(false);
           notFound();
         }
       } catch (error) {
         console.error("Error fetching documents:", error);
-        notFound();
+        if (isMounted) {
+          setFetchError('Failed to load work item. Please try again.');
+          setIsInitializing(false);
+        }
       }
     };
+    
     findWorkItem();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [id, firestore]);
+
+  // CRITICAL: Set isInitializing to false only after useDoc hooks have loaded
+  useEffect(() => {
+    if (workItemRef && !workItemLoading && !projectLoading) {
+      console.log(workItemRef);
+      setIsInitializing(false);
+    }
+  }, [workItemRef, workItemLoading, projectLoading]);
 
   const handleStatusChange = (newStatus: Task['status']) => {
     if (!workItem || !workItemRef) return;
@@ -115,9 +145,30 @@ export default function WorkItemDetailsPage() {
     });
   };
 
-  const loading = workItemLoading || projectLoading || usersLoading || !project;
+  // Show error state
+  if (fetchError) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Error Loading Work Item</CardTitle>
+            <CardDescription>{fetchError}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => router.back()} variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-  if (loading || !user) {
+  // Show loading state - MUST include isInitializing
+  const isLoading = isInitializing || workItemLoading || projectLoading || usersLoading || !user || !firestore;
+  
+  if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -125,7 +176,8 @@ export default function WorkItemDetailsPage() {
     );
   }
 
-  if (!workItem || !parentProject) {
+  // NOW it's safe to check if data exists
+  if (!workItem || !parentProject || !project) {
     notFound();
   }
 
@@ -166,7 +218,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${encodeURIComponent(id)}/edit`}>
+                                    <Link href={`/dashboard/work-items/${encodedId}/edit`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>
