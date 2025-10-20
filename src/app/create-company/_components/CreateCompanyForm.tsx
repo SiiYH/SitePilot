@@ -97,9 +97,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
         
         const userDocRef = doc(firestore, 'users', user.id);
         const userUpdates: { companyId: string; role?: 'director' } = { companyId: newCompanyId };
-        if (user.role !== 'director') {
-            userUpdates.role = 'director';
-        }
+        
+        userUpdates.role = 'director';
+        
         updateDocumentNonBlocking(userDocRef, userUpdates);
         
         // Update auth context
@@ -202,5 +202,3 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     </Card>
   );
 }
-
-    
