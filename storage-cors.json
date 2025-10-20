@@ -3,7 +3,9 @@
     "origin": [
       "https://9000-firebase-studio-1758432771679.cluster-isls3qj2gbd5qs4jkjqvhahfv6.cloudworkstations.dev",
       "https://studio-3087748224-d33c9.web.app",
-      "https://studio-3087748224-d33c9.firebaseapp.com"
+      "https://studio-3087748224-d33c9.firebaseapp.com",
+      "https://4000-firebase-studio-1758432771679.cluster-isls3qj2gbd5qs4jkjqvhahfv6.cloudworkstations.dev/auth",
+      "http://127.0.0.1:4000/auth"
     ],
     "method": ["GET", "POST", "PUT", "HEAD", "DELETE"],
     "responseHeader": [

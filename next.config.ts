@@ -36,6 +36,20 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  /* async rewrites() {
+    return [
+      {
+        source: '/_workstation/:path*',
+        destination: 'http://localhost:3000/_workstation/:path*',
+      },
+      {
+        source: '/auth/:path*',
+        destination: 'http://localhost:3000/auth/:path*', // proxy /auth as well
+      },
+    ];
+  } */
+  
 };
+
 
 export default nextConfig;

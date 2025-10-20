@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,7 +19,11 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading) {
+      if (!user) {
+        router.replace('/login');
+        return;
+      }
       // If user has no company and is not system admin, redirect to welcome
       if (!user.companyId && user.role !== 'system super admin' && pathname !== '/welcome') {
         router.push('/welcome');
