@@ -109,7 +109,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       setIsLoading(false);
       
       const viewPath = pathSegments.join('/');
-      router.replace(`/dashboard/work-items/${viewPath}`);
+      router.replace(`/dashboard/work-items/view/${viewPath}`);
       router.refresh();
     }, 1000);
   };

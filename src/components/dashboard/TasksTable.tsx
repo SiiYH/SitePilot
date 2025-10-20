@@ -130,7 +130,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
           return;
       }
       const path = `projects/${task.projectId}/tasks/${task.id}`;
-      router.push(`/dashboard/work-items/${path}`);
+      router.push(`/dashboard/work-items/view/${path}`);
   };
 
     const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
