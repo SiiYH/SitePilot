@@ -40,14 +40,19 @@ export default function JoinCompanyForm() {
         setIsLoading(false);
         return;
       }
-
-      await updateDoc(userDocRef, { companyId: companyId.trim() });
       
-      setUser(prev => prev ? { ...prev, companyId: companyId.trim() } : null);
+      const updateData = { 
+        companyId: companyId.trim(),
+        role: 'engineer' 
+      };
+
+      await updateDoc(userDocRef, updateData);
+      
+      setUser(prev => prev ? { ...prev, ...updateData } : null);
 
       toast({
         title: 'Joined Company!',
-        description: "You've been successfully added to the company.",
+        description: "You've been successfully added to the company as an Engineer.",
       });
 
       router.push('/dashboard');
