@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -15,30 +14,12 @@ import { cn } from '@/lib/utils';
 
 type ViewMode = 'grid' | 'list';
 
-async function getAllTasks(firestore: any, companyId: string): Promise<Task[]> {
-  if (!firestore || !companyId) return [];
-  const projectsQuery = query(collection(firestore, 'projects'), where('companyId', '==', companyId));
-  const projectsSnapshot = await getDocs(projectsQuery);
-  
-  let allTasks: Task[] = [];
-  for (const projectDoc of projectsSnapshot.docs) {
-    const project = { id: projectDoc.id, ...projectDoc.data() } as Project;
-    const tasksQuery = query(collection(firestore, 'projects', project.id, 'tasks'));
-    const tasksSnapshot = await getDocs(tasksQuery);
-    const projectTasks = tasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, projectId: project.id, projectName: project.name, projectSlug: project.slug } as Task));
-    allTasks = [...allTasks, ...projectTasks];
-  }
-  return allTasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
 export default function MyTasksPage() {
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
   
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-tasks-view') as ViewMode;
@@ -53,15 +34,19 @@ export default function MyTasksPage() {
   }, [firestore, company?.id]);
   const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
   
-  useEffect(() => {
-    if (firestore && company?.id) {
-      setTasksLoading(true);
-      getAllTasks(firestore, company.id).then(tasks => {
-        setAllTasks(tasks);
-        setTasksLoading(false);
-      });
-    }
+  const projectsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
+
+  const { data: allProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+
+  const allTasks = useMemo(() => {
+    if (!allProjects) return [];
+    return allProjects.flatMap(p => 
+      (p.tasks || []).map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id}))
+    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [allProjects]);
 
 
   const filteredTasks = useMemo(() => {
@@ -105,7 +90,9 @@ export default function MyTasksPage() {
     localStorage.setItem('sitepilot-tasks-view', mode);
   }
 
-  if (authLoading || usersLoading || tasksLoading || !user) {
+  const isLoading = authLoading || usersLoading || projectsLoading;
+
+  if (isLoading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

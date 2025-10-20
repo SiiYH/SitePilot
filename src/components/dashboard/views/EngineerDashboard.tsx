@@ -1,4 +1,3 @@
-
 import { Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TasksTable from '../TasksTable';
