@@ -59,12 +59,28 @@ export default function WorkItemDetailsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [workItemRef, setWorkItemRef] = useState<any>(null);
-  const [projectId, setProjectId] = useState<string>('');
-  const [taskId, setTaskId] = useState<string>('');
+  const { projectId, taskId } = useMemo(() => {
+    if (!encodedId) return { projectId: null, taskId: null };
+    const decodedPath = decodeURIComponent(encodedId);
+    const pathParts = decodedPath.split('/');
+    if (pathParts.length !== 4 || pathParts[0] !== 'projects' || pathParts[2] !== 'tasks') {
+      return { projectId: null, taskId: null };
+    }
+    return { projectId: pathParts[1], taskId: pathParts[3] };
+  }, [encodedId]);
+
+  const workItemRef = useMemoFirebase(() => {
+    if (!firestore || !projectId || !taskId) return null;
+    return doc(firestore, 'projects', projectId, 'tasks', taskId);
+  }, [firestore, projectId, taskId]);
+
+  const projectRef = useMemoFirebase(() => {
+    if (!firestore || !projectId) return null;
+    return doc(firestore, 'projects', projectId);
+  }, [firestore, projectId]);
   
   const { data: workItem, isLoading: workItemLoading } = useDoc<Task>(workItemRef);
+  const { data: project, isLoading: projectLoading } = useDoc<Project>(projectRef);
   
   const userIds = useMemo(() => {
     if (!workItem) return [];
@@ -83,50 +99,6 @@ export default function WorkItemDetailsPage() {
 
   const { data: itemUsers, isLoading: usersLoading } = useCollection<User>(usersQuery);
 
-  useEffect(() => {
-    const parseAndFetchWorkItem = async () => {
-      if (!firestore || !encodedId) return;
-      
-      const decodedPath = decodeURIComponent(encodedId);
-      const pathParts = decodedPath.split('/');
-      
-      if (pathParts.length !== 4 || pathParts[0] !== 'projects' || pathParts[2] !== 'tasks') {
-        console.error('Invalid work item path:', decodedPath);
-        notFound();
-        return;
-      }
-      
-      const extractedProjectId = pathParts[1];
-      const extractedTaskId = pathParts[3];
-
-      if (!extractedProjectId || !extractedTaskId) {
-        notFound();
-        return;
-      }
-
-      setProjectId(extractedProjectId);
-      setTaskId(extractedTaskId);
-
-      try {
-        const projectDocRef = doc(firestore, 'projects', extractedProjectId);
-        const projectDoc = await getDoc(projectDocRef);
-
-        if (projectDoc.exists()) {
-          setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
-          const workItemDocRef = doc(firestore, decodedPath);
-          setWorkItemRef(workItemDocRef);
-        } else {
-          notFound();
-        }
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-        notFound();
-      }
-    };
-
-    parseAndFetchWorkItem();
-  }, [encodedId, firestore]);
-
   const handleStatusChange = (newStatus: Task['status']) => {
     if (!workItem || !workItemRef) return;
     
@@ -138,7 +110,7 @@ export default function WorkItemDetailsPage() {
     });
   };
   
-  const loading = !project || workItemLoading || usersLoading;
+  const loading = projectLoading || workItemLoading || usersLoading;
 
   if (!user || loading) {
     return (
@@ -148,7 +120,7 @@ export default function WorkItemDetailsPage() {
     );
   }
 
-  if (!workItem) {
+  if (!workItem || !project) {
     notFound();
   }
 
@@ -292,4 +264,3 @@ export default function WorkItemDetailsPage() {
   );
 }
 
-    
