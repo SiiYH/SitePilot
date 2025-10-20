@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Loader2, FolderKanban, User as UserIcon, LayoutGrid, List } from 'lucide-react';
+import { Loader2, FolderKanban, User as UserIcon, LayoutGrid, List, Tags } from 'lucide-react';
 import { Project, Task, User } from '@/types';
 import TasksTable from '@/components/dashboard/TasksTable';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +12,8 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 type ViewMode = 'grid' | 'list';
 
@@ -20,6 +23,7 @@ export default function MyTasksPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-tasks-view') as ViewMode;
@@ -105,6 +109,8 @@ export default function MyTasksPage() {
     ? 'All tasks and work items assigned to you. Click a work item to view details.'
     : 'A comprehensive list of all work items across all projects in the company.';
 
+  const currentViewMode = isMobile ? 'grid' : viewMode;
+
   return (
     <div className="space-y-6">
        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -157,7 +163,7 @@ export default function MyTasksPage() {
                     size="icon"
                     onClick={() => handleViewModeChange('grid')}
                     aria-label="Grid view"
-                    className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
+                    className={cn('h-8 w-8', currentViewMode === 'grid' && 'bg-background shadow-sm')}
                 >
                     <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -166,7 +172,7 @@ export default function MyTasksPage() {
                     size="icon"
                     onClick={() => handleViewModeChange('list')}
                     aria-label="List view"
-                    className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
+                    className={cn('h-8 w-8', currentViewMode === 'list' && 'bg-background shadow-sm')}
                 >
                     <List className="h-4 w-4" />
                 </Button>
@@ -178,9 +184,11 @@ export default function MyTasksPage() {
                 <CardTitle>Work Items List</CardTitle>
             </CardHeader>
             <CardContent>
-                <TasksTable tasks={filteredTasks} user={user} users={companyUsers || []} viewMode={viewMode} />
+                <TasksTable tasks={filteredTasks} user={user} users={companyUsers || []} viewMode={currentViewMode} />
             </CardContent>
         </Card>
     </div>
   );
 }
+
+    
