@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -53,18 +54,18 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const encodedId = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
 
   const [project, setProject] = useState<Project | null>(null);
   const [workItemRef, setWorkItemRef] = useState<any>(null);
-
-  // Use useDoc for real-time updates on the work item
-  const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
-  const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
-
+  const [projectId, setProjectId] = useState<string>('');
+  const [taskId, setTaskId] = useState<string>('');
+  
+  const { data: workItem, isLoading: workItemLoading } = useDoc<Task>(workItemRef);
+  
   const userIds = useMemo(() => {
     if (!workItem) return [];
     const ids = new Set<string>();
@@ -83,28 +84,37 @@ export default function WorkItemDetailsPage() {
   const { data: itemUsers, isLoading: usersLoading } = useCollection<User>(usersQuery);
 
   useEffect(() => {
-    const findWorkItem = async () => {
-      if (!firestore || !id) return;
+    const parseAndFetchWorkItem = async () => {
+      if (!firestore || !encodedId) return;
       
-      const path = decodeURIComponent(id);
-      const pathParts = path.split('/tasks/');
-      if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
+      const decodedPath = decodeURIComponent(encodedId);
+      const pathParts = decodedPath.split('/');
+      
+      if (pathParts.length !== 4 || pathParts[0] !== 'projects' || pathParts[2] !== 'tasks') {
+        console.error('Invalid work item path:', decodedPath);
         notFound();
         return;
       }
       
-      const projectId = pathParts[0].replace('projects/', '');
-      const taskId = pathParts[1];
-      
+      const extractedProjectId = pathParts[1];
+      const extractedTaskId = pathParts[3];
+
+      if (!extractedProjectId || !extractedTaskId) {
+        notFound();
+        return;
+      }
+
+      setProjectId(extractedProjectId);
+      setTaskId(extractedTaskId);
 
       try {
-        const projectDocRef = doc(firestore, 'projects', projectId);
+        const projectDocRef = doc(firestore, 'projects', extractedProjectId);
         const projectDoc = await getDoc(projectDocRef);
 
         if (projectDoc.exists()) {
-          const workItemDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
-          setWorkItemRef(workItemDocRef);
           setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
+          const workItemDocRef = doc(firestore, decodedPath);
+          setWorkItemRef(workItemDocRef);
         } else {
           notFound();
         }
@@ -113,8 +123,9 @@ export default function WorkItemDetailsPage() {
         notFound();
       }
     };
-    findWorkItem();
-  }, [id, firestore]);
+
+    parseAndFetchWorkItem();
+  }, [encodedId, firestore]);
 
   const handleStatusChange = (newStatus: Task['status']) => {
     if (!workItem || !workItemRef) return;
@@ -126,10 +137,10 @@ export default function WorkItemDetailsPage() {
         description: `The status for "${workItem.title}" has been set to ${newStatus}.`
     });
   };
+  
+  const loading = !project || workItemLoading || usersLoading;
 
-  const loading = workItemLoading || projectLoading || usersLoading || !project;
-
-  if (loading || !user) {
+  if (!user || loading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -137,7 +148,7 @@ export default function WorkItemDetailsPage() {
     );
   }
 
-  if (!workItem || !parentProject) {
+  if (!workItem) {
     notFound();
   }
 
@@ -178,7 +189,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${id}/edit`}>
+                                    <Link href={`/dashboard/work-items/${encodeURIComponent(`projects/${projectId}/tasks/${taskId}`)}/edit`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>
@@ -205,10 +216,10 @@ export default function WorkItemDetailsPage() {
                            <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
                         </InfoField>
 
-                        {parentProject && (
+                        {project && (
                             <InfoField icon={FolderKanban} label="Associated Project">
-                                <Link href={`/dashboard/projects/${parentProject.slug}`} className="text-primary hover:underline font-medium">
-                                    {parentProject.name}
+                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
+                                    {project.name}
                                 </Link>
                             </InfoField>
                         )}
@@ -280,3 +291,5 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
+
+    
