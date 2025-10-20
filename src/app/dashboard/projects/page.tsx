@@ -1,6 +1,5 @@
 
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type ViewMode = 'grid' | 'list';
@@ -31,6 +31,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
@@ -120,6 +121,8 @@ export default function ProjectsPage() {
 
     return userProjects;
   }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
+  
+  const currentViewMode = isMobile ? 'grid' : viewMode;
 
   if (loading) {
     return (
@@ -174,7 +177,7 @@ export default function ProjectsPage() {
               size="icon"
               onClick={() => handleViewModeChange('grid')}
               aria-label="Grid view"
-              className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
+              className={cn('h-8 w-8', currentViewMode === 'grid' && 'bg-background shadow-sm')}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -183,7 +186,7 @@ export default function ProjectsPage() {
               size="icon"
               onClick={() => handleViewModeChange('list')}
               aria-label="List view"
-              className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
+              className={cn('h-8 w-8', currentViewMode === 'list' && 'bg-background shadow-sm')}
             >
               <List className="h-4 w-4" />
             </Button>
@@ -210,7 +213,7 @@ export default function ProjectsPage() {
 
 
       {filteredProjects.length > 0 ? (
-        viewMode === 'grid' ? (
+        currentViewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProjects.map(project => (
               <ProjectCard key={project.id} project={project} />
@@ -230,5 +233,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-
-    
