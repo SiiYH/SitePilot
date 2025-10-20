@@ -106,7 +106,8 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
         description: `${values.title} has been successfully updated.`,
       });
       setIsLoading(false);
-      router.replace(`/dashboard/work-items/${encodeURIComponent(`projects/${project.id}/tasks/${workItem.id}`)}`);
+      const fullPath = `projects/${project.id}/tasks/${workItem.id}`;
+      router.replace(`/dashboard/work-items/${fullPath}`);
       router.refresh();
     }, 1000);
   };
@@ -319,4 +320,3 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
     </Card>
   );
 }
-    

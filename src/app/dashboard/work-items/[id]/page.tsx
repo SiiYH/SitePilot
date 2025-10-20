@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -53,7 +53,7 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const id = decodeURIComponent(params.id as string);
+  const id = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -86,7 +86,8 @@ export default function WorkItemDetailsPage() {
     const findWorkItem = async () => {
       if (!firestore || !id) return;
       
-      const pathParts = id.split('/tasks/');
+      const path = decodeURIComponent(id);
+      const pathParts = path.split('/tasks/');
       if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
         notFound();
         return;
@@ -177,7 +178,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${encodeURIComponent(id)}/edit`}>
+                                    <Link href={`/dashboard/work-items/${id}/edit`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>

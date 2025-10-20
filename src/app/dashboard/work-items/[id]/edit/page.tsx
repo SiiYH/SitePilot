@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export default function EditWorkItemPage() {
     const params = useParams();
-    const id = decodeURIComponent(params.id as string);
+    const id = params.id as string;
     const firestore = useFirestore();
     const { company } = useAuth();
 
@@ -30,8 +30,8 @@ export default function EditWorkItemPage() {
     useEffect(() => {
         const findWorkItem = async () => {
             if (!firestore || !id) return;
-
-            const pathParts = id.split('/tasks/');
+            const path = decodeURIComponent(id);
+            const pathParts = path.split('/tasks/');
             if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
                 notFound();
                 return;

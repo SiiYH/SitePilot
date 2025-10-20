@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -129,32 +128,12 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
       console.error('Missing projectId!');
       return;
     }
+    // The path should not be fully encoded, as Next.js expects the segments.
+    // The dynamic route `[id]` will capture the full `projects/.../tasks/...` string.
     const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
-    // The dynamic route segment should be URL-encoded to handle special characters.
-    const encodedPath = encodeURIComponent(fullPath);
-    router.push(`/dashboard/work-items/${encodedPath}`);
-  };
-  /* const handleRowClick = (task: Task) => {
-    if (!task.projectId) {
-      console.error('Missing projectId!');
-      return;
-    }
-    // Encode only the individual segments, not the slashes
-    const encodedProjectId = encodeURIComponent(task.projectId);
-    const encodedTaskId = encodeURIComponent(task.id);
-    const fullPath = `projects/${encodedProjectId}/tasks/${encodedTaskId}`;
-    
     router.push(`/dashboard/work-items/${fullPath}`);
-}; */
-    /* const handleRowClick = (task: Task) => {
-        if (!task.projectId) {
-            console.error('Missing projectId!');
-            return;
-        }
-        // Don't encode - Next.js handles this
-        const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
-        router.push(`/dashboard/work-items/${fullPath}`);
-    }; */
+  };
+
     const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
 
     const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner || (t.contributors && t.contributors.length > 0));
