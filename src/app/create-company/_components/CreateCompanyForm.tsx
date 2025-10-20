@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 type Industry = {
   Code: string;
@@ -67,9 +67,9 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   }
   
   const handleContinue = async () => {
-    if (!user || (!companyId && isEditing)) return;
+    if (!user) return;
     setIsLoading(true);
-    
+
     const selectedIndustry = industries.find((industry) => industry.Code.toLowerCase() === industryCode.toLowerCase());
 
     const companyData = {
@@ -78,40 +78,53 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       industryDescription: selectedIndustry?.Description || '',
       description: companyDescription,
     };
-    
+
     if (isEditing && companyId) {
-        const companyDocRef = doc(firestore, 'companies', companyId);
-        updateDocumentNonBlocking(companyDocRef, companyData);
-        setAuthCompany((prev: any) => ({ ...prev, ...companyData }));
+      const companyDocRef = doc(firestore, 'companies', companyId);
+      updateDocumentNonBlocking(companyDocRef, companyData);
+      setAuthCompany((prev: any) => ({ ...prev, ...companyData }));
     } else {
-        const newCompanyId = `company-${Date.now()}`;
+      const newCompanyId = `company-${Date.now()}`;
+
+      // ✅ STEP 1: Update user role to 'director' FIRST
+      const userDocRef = doc(firestore, 'users', user.id);
+      const userUpdates = {
+        companyId: newCompanyId,
+        role: 'director' as const
+      };
+
+      try {
+        // Use await instead of non-blocking to ensure role is updated first
+        await updateDoc(userDocRef, userUpdates);
+
+        // ✅ STEP 2: Now create company (user is now director)
         const finalCompanyData = {
-            ...companyData,
-            id: newCompanyId,
-            activated: false,
-            licenseKey: null,
-            ownerId: user.id,
+          ...companyData,
+          id: newCompanyId,
+          activated: false,
+          licenseKey: null,
+          ownerId: user.id,
         };
+
         const companyDocRef = doc(firestore, 'companies', newCompanyId);
-        setDocumentNonBlocking(companyDocRef, finalCompanyData, {});
-        
-        const userDocRef = doc(firestore, 'users', user.id);
-        const userUpdates: { companyId: string; role?: 'director' } = { companyId: newCompanyId };
-        
-        userUpdates.role = 'director';
-        
-        updateDocumentNonBlocking(userDocRef, userUpdates);
-        
+        await setDoc(companyDocRef, finalCompanyData);
+
         // Update auth context
         setAuthCompany(finalCompanyData);
         setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
+
+        setIsLoading(false);
+        router.push('/company-setup/license');
+      } catch (error) {
+        console.error('Error creating company:', error);
+        setIsLoading(false);
+        // Handle error - maybe show toast
+      }
     }
-    
-    setIsLoading(false);
+
     if (isEditing) {
+      setIsLoading(false);
       router.push('/dashboard/company');
-    } else {
-      router.push('/company-setup/license');
     }
   }
 
