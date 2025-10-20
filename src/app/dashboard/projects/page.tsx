@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -220,7 +219,7 @@ export default function ProjectsPage() {
             ))}
           </div>
         ) : (
-          <ProjectList projects={filteredProjects} />
+          <ProjectList projects={filteredProjects} users={companyUsers || []} />
         )
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">

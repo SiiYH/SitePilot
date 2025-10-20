@@ -4,12 +4,11 @@
 import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Project } from '@/types';
+import { Project, User } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { getProjectProgress } from '@/lib/projects';
 import { format, parseISO } from 'date-fns';
-import { mockUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProjectStatusBadge from './ProjectStatusBadge';
@@ -21,6 +20,7 @@ import { cn } from '@/lib/utils';
 
 interface ProjectListProps {
   projects: Project[];
+  users: User[];
 }
 
 type SortKey = 'startDate' | 'endDate';
@@ -45,7 +45,7 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
     }
 };
 
-export default function ProjectList({ projects }: ProjectListProps) {
+export default function ProjectList({ projects, users }: ProjectListProps) {
   const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -98,7 +98,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
             const progress = getProjectProgress(project);
             const endDate = getSafeDate(project.endDate);
             const assignedEngineers = project.assignedEngineers
-                .map(id => mockUsers.find(u => u.id === id))
+                .map(id => users.find(u => u.id === id))
                 .filter((u): u is any => !!u);
             return (
                 <Card key={project.id} onClick={() => handleRowClick(project.slug)} className="cursor-pointer transition-shadow hover:shadow-md">
@@ -162,7 +162,7 @@ export default function ProjectList({ projects }: ProjectListProps) {
                       const endDate = getSafeDate(project.endDate);
 
                       const assignedEngineers = project.assignedEngineers
-                          .map(id => mockUsers.find(u => u.id === id))
+                          .map(id => users.find(u => u.id === id))
                           .filter((u): u is any => !!u);
 
                       return (
