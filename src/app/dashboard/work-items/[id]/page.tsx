@@ -2,7 +2,6 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockUsers } from '@/lib/data';
 import { Task, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +13,8 @@ import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useDoc, updateDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { useFirestore, useDoc, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, collection, query, where, documentId } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -66,6 +65,23 @@ export default function WorkItemDetailsPage() {
   const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
   const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(project ? doc(firestore, 'projects', project.id) : null);
 
+  const userIds = useMemo(() => {
+    if (!workItem) return [];
+    const ids = new Set<string>();
+    if (workItem.owner) ids.add(workItem.owner);
+    if (workItem.contributors) {
+      workItem.contributors.forEach(id => ids.add(id));
+    }
+    return Array.from(ids);
+  }, [workItem]);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || userIds.length === 0) return null;
+    return query(collection(firestore, 'users'), where(documentId(), 'in', userIds));
+  }, [firestore, userIds]);
+
+  const { data: itemUsers, isLoading: usersLoading } = useCollection<User>(usersQuery);
+
   useEffect(() => {
     const findWorkItem = async () => {
       if (!firestore || !id) return;
@@ -78,6 +94,7 @@ export default function WorkItemDetailsPage() {
       
       const projectId = pathParts[0].replace('projects/', '');
       const taskId = pathParts[1];
+      
 
       try {
         const projectDocRef = doc(firestore, 'projects', projectId);
@@ -109,7 +126,7 @@ export default function WorkItemDetailsPage() {
     });
   };
 
-  const loading = workItemLoading || projectLoading || !project;
+  const loading = workItemLoading || projectLoading || usersLoading || !project;
 
   if (loading || !user) {
     return (
@@ -124,8 +141,8 @@ export default function WorkItemDetailsPage() {
   }
 
   const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
-  const owner = mockUsers.find(u => u.id === workItem.owner);
-  const contributors = mockUsers.filter(u => workItem.contributors?.includes(u.id));
+  const owner = itemUsers?.find(u => u.id === workItem.owner);
+  const contributors = itemUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
   const Icon = typeIcon[workItem.type] || GanttChartSquare;
   
   const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
@@ -262,4 +279,3 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-    
