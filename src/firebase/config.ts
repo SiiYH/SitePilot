@@ -1,8 +1,8 @@
 
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
 
 export const firebaseConfig = {
   "projectId": "studio-3087748224-d33c9",
@@ -19,3 +19,12 @@ const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app);
 export const firestore = getFirestore(app);
 export const auth = getAuth(app);
+
+// 🔥 Connect to emulators only in local development
+// if (process.env.NODE_ENV === 'development') {
+//   console.log('🔥 Using Firebase emulators...');
+//   connectFirestoreEmulator(firestore, 'localhost', 8080);
+//   connectAuthEmulator(auth, 'http://localhost:9099');
+// }
+
+// export default app;  

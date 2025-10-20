@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -15,12 +15,20 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
+    if (!loading && user) {
+      // If user has no company and is not system admin, redirect to welcome
+      if (!user.companyId && user.role !== 'system super admin' && pathname !== '/welcome') {
+        router.push('/welcome');
+      }
+      // If user has company but is on welcome page, redirect to dashboard
+      else if (user.companyId && pathname === '/welcome') {
+        router.push('/dashboard');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname]);
 
   if (loading || !user) {
     return (

@@ -5,18 +5,18 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Project, User, Claim, AttendanceRecord, Task } from '@/types';
-import AdminDashboard from '@/components/dashboard/views/AdminDashboard';
+import AdminDashboard from '@/components/dashboard/views/admin/AdminDashboard';
 import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { mockUsers, mockClaims, mockProjects } from '@/lib/data';
-import { firestore } from '@/firebase/config';
+import { mockAttendance } from '@/lib/data';
 
 export default function DashboardPage() {
   const { user, company, loading: authLoading } = useAuth();
   const router = useRouter();
+  const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -26,24 +26,32 @@ export default function DashboardPage() {
   }, [firestore, company?.id]);
 
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+
+  const claimsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'claims'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
   
-  // Replaced firestore query with mock data to fix permissions error
-  const [users, setUsers] = useState<User[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   
   useEffect(() => {
-    if (company) {
-      setUsers(mockUsers.filter(u => u.companyId === company.id));
-      setClaims(mockClaims.filter(c => mockProjects.some(p => p.id === c.projectId && p.companyId === company.id)));
-      const allTasks = mockProjects.flatMap(p => 
-        p.companyId === company.id ? p.tasks.map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id})) : []
-      );
-      setTasks(allTasks);
-    }
-    // setAttendance(mockAttendance); // This data is not company-specific yet
-  }, [company]);
+    setAttendance(mockAttendance);
+  }, []);
+
+  const allTasks = useMemo(() => {
+    if (!projects) return [];
+    return projects.flatMap(p => 
+      (p.tasks || []).map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id}))
+    );
+  }, [projects]);
+
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
@@ -69,7 +77,7 @@ export default function DashboardPage() {
   }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
 
 
-  const loading = projectsLoading || authLoading;
+  const loading = projectsLoading || authLoading || claimsLoading || usersLoading;
   
   useEffect(() => {
     // Only redirect after data fully loaded
@@ -107,7 +115,7 @@ export default function DashboardPage() {
   }
 
   const engineerTasks = user.role === 'engineer' 
-    ? tasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id))
+    ? allTasks.filter(t => t.owner === user.id || t.contributors?.includes(user.id))
     : [];
 
   const engineerProjects = user.role === 'engineer' && projects
@@ -122,9 +130,9 @@ export default function DashboardPage() {
       case 'admin':
         return <AdminDashboard 
                   projects={filteredProjects || []} 
-                  claims={claims} 
+                  claims={claims || []} 
                   attendance={attendance} 
-                  users={users} 
+                  users={users || []} 
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   statusFilter={statusFilter}
@@ -133,16 +141,16 @@ export default function DashboardPage() {
       case 'director':
         return <DirectorDashboard 
                   projects={filteredProjects || []} 
-                  claims={claims} 
+                  claims={claims || []} 
                   attendance={attendance} 
-                  users={users} 
+                  users={users || []} 
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   statusFilter={statusFilter}
                   setStatusFilter={setStatusFilter}
                 />;
       case 'engineer':
-        return <EngineerDashboard projects={engineerProjects} tasks={engineerTasks} user={user} />;
+        return <EngineerDashboard projects={engineerProjects} tasks={engineerTasks} user={user} users={users || []} />;
       default:
         return <div>Welcome! Your dashboard is being set up.</div>;
     }

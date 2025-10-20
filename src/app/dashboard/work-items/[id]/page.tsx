@@ -2,320 +2,140 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Task, Project, User } from '@/types';
+import { useEffect, useState } from 'react';
+import { getDoc, doc, collection, query, where } from 'firebase/firestore';
+// import { useAuth, useFirestore, useCompany } from '@/contexts';
+// import { useDoc, useCollection, useMemoFirebase } from '@/hooks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Task, Project, User } from '@/types';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useDoc, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 
-const getInitials = (name: string) => {
-    if (!name) return '';
-    const names = name.split(' ');
-    if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-};
-
-const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  'Completed': 'default',
-  'In Progress': 'secondary',
-  'Not Started': 'outline',
-  'Overdue': 'destructive',
-};
-
-const typeIcon: { [key: string]: React.ElementType } = {
-    'Task': GanttChartSquare,
-    'Milestone': Milestone
-};
-
-const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: string; children?: React.ReactNode }) => {
-    const Icon = icon;
-    return (
-        <div className="flex items-start gap-4">
-            <Icon className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
-            <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                {children}
-            </div>
-        </div>
-    );
-};
-
-export default function WorkItemDetailsPage() {
-  const params = useParams();
+export default function WorkItemDetailPage() {
+  const { id } = useParams();
   const router = useRouter();
-  const encodedId = params.id as string;
-  const id = decodeURIComponent(encodedId);
-  
-  const { user, company } = useAuth();
-  const { toast } = useToast();
+
   const firestore = useFirestore();
+  const { user, company } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
   const [workItemRef, setWorkItemRef] = useState<any>(null);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Use useDoc for real-time updates on the work item
-  const { data: workItem, isLoading: workItemLoading } = useDoc<Task>(workItemRef);
-  const { data: parentProject, isLoading: projectLoading } = useDoc<Project>(
-    project ? doc(firestore, 'projects', project.id) : null
-  );
-
+  // === Company Users ===
   const companyUsersQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
     return query(collection(firestore, 'users'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
-  const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
 
+  const { data: users = [], isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
+
+  // === Work Item ===
+  const { data: workItem, isLoading: workItemLoading } = useDoc<Task>(
+    workItemRef ? workItemRef : null
+  );
+
+  // === Parent Project (already fetched, no need useDoc again) ===
+  const parentProject = project;
+  const projectLoading = false;
+
+  // === Find and set WorkItem reference ===
   useEffect(() => {
-    let isMounted = true;
-    
     const findWorkItem = async () => {
       if (!firestore || !id) return;
-      
-      try {
-        const pathParts = id.split('/tasks/');
-        
-        if (pathParts.length !== 2 || !pathParts[0].startsWith('projects/')) {
-          console.error('Invalid path format:', id);
-          notFound();
-          return;
-        }
-        
-        const projectId = pathParts[0].replace('projects/', '');
-        const taskId = pathParts[1];
 
-        const projectDocRef = doc(firestore, 'projects', projectId);
-        const projectDoc = await getDoc(projectDocRef);
+      // Step 1: find the project that contains this workItem
+      const projectQuery = query(collection(firestore, 'projects'));
+      const snapshot = await getDoc(doc(firestore, `projects/${id}`));
 
-        if (!isMounted) return;
+      if (snapshot.exists()) {
+        const projectData = { id: snapshot.id, ...snapshot.data() } as Project;
+        setProject(projectData);
 
-        if (projectDoc.exists()) {
-          const workItemDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
-          setWorkItemRef(workItemDocRef);
-          setProject({ id: projectDoc.id, ...projectDoc.data() } as Project);
-          // Don't set isInitializing to false yet - wait for useDoc to load
-        } else {
-          console.error('Project not found:', projectId);
-          setIsInitializing(false);
-          notFound();
-        }
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-        if (isMounted) {
-          setFetchError('Failed to load work item. Please try again.');
-          setIsInitializing(false);
-        }
+        // Step 2: find work item reference under this project
+        const workItemRef = doc(firestore, `projects/${projectData.id}/workItems/${id}`);
+        setWorkItemRef(workItemRef);
+      } else {
+        notFound();
       }
     };
-    
+
     findWorkItem();
-    
-    return () => {
-      isMounted = false;
-    };
   }, [id, firestore]);
 
-  // CRITICAL: Set isInitializing to false only after useDoc hooks have loaded
+  // === Stop initializing once we found the Firestore ref ===
   useEffect(() => {
-    if (workItemRef && !workItemLoading && !projectLoading) {
-      console.log(workItemRef);
+    if (workItemRef) {
       setIsInitializing(false);
     }
-  }, [workItemRef, workItemLoading, projectLoading]);
+  }, [workItemRef]);
 
-  const handleStatusChange = (newStatus: Task['status']) => {
-    if (!workItem || !workItemRef) return;
-    
-    updateDocumentNonBlocking(workItemRef, { status: newStatus });
+  // === Handle loading state ===
+  const isLoading =
+    isInitializing ||
+    workItemLoading ||
+    projectLoading ||
+    usersLoading ||
+    !user ||
+    !firestore;
 
-    toast({
-        title: "Status Updated",
-        description: `The status for "${workItem.title}" has been set to ${newStatus}.`
-    });
-  };
-
-  // Show error state
-  if (fetchError) {
-    return (
-      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Error Loading Work Item</CardTitle>
-            <CardDescription>{fetchError}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.back()} variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show loading state - MUST include isInitializing
-  const isLoading = isInitializing || workItemLoading || projectLoading || usersLoading || !user || !firestore;
-  
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
-  // NOW it's safe to check if data exists
-  if (!workItem || !parentProject || !project) {
+  // === Handle missing data ===
+  if (!workItem && !workItemLoading) {
     notFound();
   }
 
-  const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
-  const owner = companyUsers?.find(u => u.id === workItem.owner);
-  const contributors = companyUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
-  const Icon = typeIcon[workItem.type] || GanttChartSquare;
-  
-  const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
-    if (!dateValue) return null;
-    if (dateValue instanceof Date) return dateValue;
-    try {
-      return parseISO(dateValue);
-    } catch (error) {
-      return null;
-    }
-  };
-
-  const dueDate = getSafeDate(workItem.dueDate);
+  // === Find assigned user ===
+  const assignedUser = users?.find((u) => u.id === workItem?.owner);
 
   return (
-    <div className="space-y-6">
-       <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>{workItem?.title}</CardTitle>
+              <CardDescription>{parentProject?.name}</CardDescription>
+            </div>
+            <Badge variant={workItem?.status === 'Completed' ? 'success' : 'secondary'}>
+              {workItem?.status}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p>{workItem?.description}</p>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground">
+              Assigned to:{' '}
+              {assignedUser ? (
+                <span className="font-medium text-foreground">{assignedUser.name}</span>
+              ) : (
+                'Unassigned'
+              )}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={() => router.back()}>
           Back
         </Button>
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
-        <p className="text-muted-foreground">Details for work item #{workItem.id.slice(-6)}</p>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <CardTitle>{workItem.title}</CardTitle>
-                         <div className="flex items-center gap-2">
-                             {canManageWorkItem && (
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${encodedId}/edit`}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                            )}
-                            <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
-                                {workItem.status}
-                            </Badge>
-                         </div>
-                    </div>
-                    <CardDescription className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{workItem.type}</span>
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {workItem.description && (
-                        <InfoField icon={FileText} label="Description">
-                            <p className="text-sm text-foreground whitespace-pre-wrap">{workItem.description}</p>
-                        </InfoField>
-                    )}
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <InfoField icon={Calendar} label="Due Date">
-                           <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
-                        </InfoField>
-
-                        {parentProject && (
-                            <InfoField icon={FolderKanban} label="Associated Project">
-                                <Link href={`/dashboard/projects/${parentProject.slug}`} className="text-primary hover:underline font-medium">
-                                    {parentProject.name}
-                                </Link>
-                            </InfoField>
-                        )}
-                        {owner ? (
-                            <InfoField icon={UserIcon} label="Owner">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={owner.avatarUrl} alt={owner.name} />
-                                        <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <p className="font-medium">{owner.name}</p>
-                                </div>
-                            </InfoField>
-                        ) : (
-                             <InfoField icon={UserIcon} label="Owner">
-                                <Badge variant="destructive">Unassigned</Badge>
-                            </InfoField>
-                        )}
-                        {contributors && contributors.length > 0 && (
-                            <InfoField icon={Users} label="Contributors">
-                                <div className="flex flex-wrap gap-2">
-                                    {contributors.map(c => (
-                                        <Avatar key={c.id} className="h-8 w-8">
-                                            <AvatarImage src={c.avatarUrl} alt={c.name} />
-                                            <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
-                                        </Avatar>
-                                    ))}
-                                </div>
-                            </InfoField>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-        
-        <div className="md:col-span-1 space-y-6">
-             <Card className="bg-muted/40">
-                <CardHeader>
-                    <CardTitle className="text-xl">Manage Work Item</CardTitle>
-                    <CardDescription>
-                        {canManageWorkItem 
-                            ? "Update the status of this work item." 
-                            : "Only assigned members, Admins, or Directors can change the status."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="max-w-xs">
-                        {canManageWorkItem ? (
-                            <Select value={workItem.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(newStatus)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Set status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Not Started">Not Started</SelectItem>
-                                    <SelectItem value="In Progress">In Progress</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ) : (
-                             <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
-                                {workItem.status}
-                            </Badge>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        <Link href={`/projects/${parentProject?.id}/work-items/${workItem?.id}/edit`}>
+          <Button>Edit Work Item</Button>
+        </Link>
       </div>
     </div>
   );

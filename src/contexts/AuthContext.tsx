@@ -66,12 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (userDoc.exists()) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               setUser(userData);
-
+  
+              // ✅ ADD THIS: Redirect logic based on companyId
+              if (!userData.companyId && userData.role !== 'system super admin') {
+                // User has no company, redirect to welcome page
+                router.push('/welcome');
+              }
+  
               if (userData.companyId) {
                 const companyDocRef = doc(firestore, 'companies', userData.companyId);
                 const companyDoc = await getDoc(companyDocRef);
                 if (companyDoc.exists()) {
-                  const companyData = { id: companyDoc.id, ...companyDoc.data() }as Company;
+                  const companyData = { id: companyDoc.id, ...companyDoc.data() } as Company;
                   setCompany(companyData);
                   
                   // Setup real-time listener for company users
@@ -90,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                       errorEmitter.emit('permission-error', permissionError);
                     }
                   );
-
+  
                   // Load license limits
                   if (companyData.activated && companyData.licenseKey) {
                     try {
@@ -101,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         const activeLicense = licenseDoc.data() as License;
                   
                         setLicenseLimits({
-                          'system super admin': Infinity, // System admin is not governed by license
+                          'system super admin': Infinity,
                           admin: activeLicense.maxAdmins,
                           director: activeLicense.maxDirectors,
                           engineer: activeLicense.maxEngineers,
@@ -163,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           unsubscribeUsers();
         }
     };
-  }, [auth, firestore]);
+  }, [auth, firestore, router]); // ADD router to dependencies
   
   const licenseUsage = {
     'system super admin': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
@@ -183,20 +189,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return loggedInUser;
   };
 
-  const handleSignUp = async (data: SignUpData): Promise<User | null> => {
-    setLoading(true);
-    if (licenseUsage[data.role] >= licenseLimits[data.role]) {
-      setLoading(false);
-      return null;
-    }
-    const companyId = company?.id;
-    const newUser = await signUp({ ...data, companyId });
-    if (newUser) {
-      router.push('/welcome');
-    }
+  // REMOVE the router.push from handleSignUp
+const handleSignUp = async (data: SignUpData): Promise<User | null> => {
+  setLoading(true);
+  if (licenseUsage[data.role] >= licenseLimits[data.role]) {
     setLoading(false);
-    return newUser;
+    return null;
   }
+  const companyId = company?.id;
+  const newUser = await signUp({ ...data, companyId });
+  // REMOVE: router.push('/welcome');
+  // The redirect will happen automatically in the useEffect when auth state changes
+  setLoading(false);
+  return newUser;
+}
   
   const handleCreateUser = async (data: CreateUserData): Promise<User | null> => {
     if (!data.password || !data.email) {
