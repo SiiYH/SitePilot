@@ -91,7 +91,7 @@ export default function WorkItemDetailsPage() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || userIds.length === 0) return null;
-    // Firestore 'in' queries are limited to 10 items. For more, you'd need multiple queries.
+    // Firestore 'in' queries are limited to 30 items in modern SDKs.
     return query(collection(firestore, 'users'), where(documentId(), 'in', userIds));
   }, [firestore, userIds]);
 
@@ -159,7 +159,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/projects/${projectId}/tasks/${taskId}/edit`}>
+                                    <Link href={`/dashboard/work-items/edit/${idParts.join('/')}`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>
@@ -261,4 +261,3 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-

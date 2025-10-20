@@ -28,6 +28,7 @@ interface EditWorkItemFormProps {
   workItem: Task;
   project: Project;
   engineers: User[];
+  pathSegments: string[];
 }
 
 const formSchema = z.object({
@@ -40,7 +41,7 @@ const formSchema = z.object({
   type: z.enum(['Task', 'Milestone']),
 });
 
-export default function EditWorkItemForm({ workItem, project, engineers }: EditWorkItemFormProps) {
+export default function EditWorkItemForm({ workItem, project, engineers, pathSegments }: EditWorkItemFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -106,8 +107,9 @@ export default function EditWorkItemForm({ workItem, project, engineers }: EditW
         description: `${values.title} has been successfully updated.`,
       });
       setIsLoading(false);
-      const path = `projects/${project.id}/tasks/${workItem.id}`;
-      router.replace(`/dashboard/work-items/${path}`);
+      
+      const viewPath = pathSegments.join('/');
+      router.replace(`/dashboard/work-items/${viewPath}`);
       router.refresh();
     }, 1000);
   };
