@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -123,27 +124,14 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     return users.find(u => u.id === userId);
   }
 
-  /* const handleRowClick = (task: Task) => {
-    if (!task.projectId) {
-      console.error('Missing projectId!');
-      return;
-    }
-    // The path should not be fully encoded, as Next.js expects the segments.
-    // The dynamic route `[id]` will capture the full `projects/.../tasks/...` string.
-    const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
-    router.push(`/dashboard/work-items/${fullPath}`);
-  }; */
-
-    const handleRowClick = (task: Task) => {
-        if (!task.projectId) {
-            console.error('Missing projectId!');
-            return;
-        }
-        // Encode the ENTIRE path as one string
-        const fullPath = `projects/${task.projectId}/tasks/${task.id}`;
-        const encodedPath = encodeURIComponent(fullPath);
-        router.push(`/dashboard/work-items/${encodedPath}`);
-    };
+  const handleRowClick = (task: Task) => {
+      if (!task.projectId) {
+          console.error('Missing projectId!');
+          return;
+      }
+      const path = `projects/${task.projectId}/tasks/${task.id}`;
+      router.push(`/dashboard/work-items/${path}`);
+  };
 
     const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
 

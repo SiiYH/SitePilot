@@ -54,24 +54,17 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const encodedId = params.id as string;
+  const idParts = params.id as string[]; // e.g., ['projects', 'proj-123', 'tasks', 'task-456']
   const { user } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
 
   const { projectId, taskId } = useMemo(() => {
-    if (!encodedId) return { projectId: null, taskId: null };
-    const decodedPath = decodeURIComponent(encodedId);
-    const pathParts = decodedPath.split('/');
-    if (pathParts.length !== 4 || pathParts[0] !== 'projects' || pathParts[2] !== 'tasks') {
-      return { projectId: null, taskId: null };
+    if (!idParts || idParts.length !== 4 || idParts[0] !== 'projects' || idParts[2] !== 'tasks') {
+        return { projectId: null, taskId: null };
     }
-    console.log('projectId', pathParts[1]);
-    console.log('taskId', pathParts[3]);
-
-    return { projectId: pathParts[1], taskId: pathParts[3] };
-
-  }, [encodedId]);
+    return { projectId: idParts[1], taskId: idParts[3] };
+  }, [idParts]);
 
   const workItemRef = useMemoFirebase(() => {
     if (!firestore || !projectId || !taskId) return null;
@@ -98,6 +91,7 @@ export default function WorkItemDetailsPage() {
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || userIds.length === 0) return null;
+    // Firestore 'in' queries are limited to 10 items. For more, you'd need multiple queries.
     return query(collection(firestore, 'users'), where(documentId(), 'in', userIds));
   }, [firestore, userIds]);
 
@@ -165,7 +159,7 @@ export default function WorkItemDetailsPage() {
                          <div className="flex items-center gap-2">
                              {canManageWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/${encodeURIComponent(`projects/${projectId}/tasks/${taskId}`)}/edit`}>
+                                    <Link href={`/dashboard/work-items/projects/${projectId}/tasks/${taskId}/edit`}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Link>
@@ -257,7 +251,7 @@ export default function WorkItemDetailsPage() {
                         ) : (
                              <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
                                 {workItem.status}
-                            </Badge>
+                             </Badge>
                         )}
                     </div>
                 </CardContent>
