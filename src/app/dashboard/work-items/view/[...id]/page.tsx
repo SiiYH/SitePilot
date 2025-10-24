@@ -91,6 +91,8 @@ export default function WorkItemDetailsPage() {
     console.log('📁 Project ref path:', ref.path);
     return ref;
   }, [firestore, projectId]);
+
+  console.log('workitem and project ref', workItemRef?.path, projectRef?.path);
   
   const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
   const { data: project, isLoading: projectLoading, error: projectError } = useDoc<Project>(projectRef);
