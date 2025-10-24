@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, collection, query, where, documentId, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, documentId, updateDoc } from 'firebase/firestore';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -64,24 +64,27 @@ export default function WorkItemDetailsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const idParts = params.id as string[];
-        console.log('🧭 idParts:', idParts);
+    if (!firestore) return;
 
-        if (!idParts || idParts.length !== 4 || idParts[0] !== 'projects' || idParts[2] !== 'tasks') {
-          throw new Error('Invalid path format');
-        }
+    const idParts = params.id as string[];
+    console.log('🧭 idParts:', idParts);
 
-        const projectId = idParts[1];
-        const taskId = idParts[3];
+    if (!idParts || idParts.length !== 4 || idParts[0] !== 'projects' || idParts[2] !== 'tasks') {
+      setError('Invalid path format');
+      setLoading(false);
+      return;
+    }
 
-        // Fetch work item
-        const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
-        console.log('📄 Fetching task from path:', taskRef.path);
-        const taskSnapshot = await getDoc(taskRef);
+    const projectId = idParts[1];
+    const taskId = idParts[3];
 
+    // Real-time listener for work item
+    const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
+    console.log('📄 Setting up real-time listener for task:', taskRef.path);
+
+    const unsubscribeTask = onSnapshot(
+      taskRef,
+      (taskSnapshot) => {
         if (!taskSnapshot.exists()) {
           console.log('❌ Task not found');
           setError('Task not found');
@@ -90,55 +93,88 @@ export default function WorkItemDetailsPage() {
         }
 
         const taskData = { id: taskSnapshot.id, ...taskSnapshot.data() } as Task;
-        console.log('✅ Task data:', taskData);
+        console.log('✅ Task data updated:', taskData);
         setWorkItem(taskData);
-
-        // Fetch project
-        const projectRef = doc(firestore, 'projects', projectId);
-        console.log('📄 Fetching project from path:', projectRef.path);
-        const projectSnapshot = await getDoc(projectRef);
-
-        if (projectSnapshot.exists()) {
-          const projectData = { id: projectSnapshot.id, ...projectSnapshot.data() } as Project;
-          console.log('✅ Project data:', projectData);
-          setProject(projectData);
-        }
-
-        // Fetch users
-        const userIds = new Set<string>();
-        if (taskData.owner) userIds.add(taskData.owner);
-        if (taskData.contributors) {
-          taskData.contributors.forEach(id => userIds.add(id));
-        }
-
-        if (userIds.size > 0) {
-          const userIdsArray = Array.from(userIds);
-          // Firestore 'in' query has a limit of 30
-          const usersQuery = query(
-            collection(firestore, 'users'),
-            where(documentId(), 'in', userIdsArray.slice(0, 30))
-          );
-          const usersSnapshot = await getDocs(usersQuery);
-          const usersData = usersSnapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data() 
-          })) as User[];
-          console.log('✅ Users data:', usersData);
-          setItemUsers(usersData);
-        }
-
-      } catch (err: any) {
-        console.error('🔥 Error fetching data:', err);
-        setError(err.message || 'Failed to fetch work item details');
-      } finally {
+        setLoading(false);
+      },
+      (err) => {
+        console.error('🔥 Error listening to task:', err);
+        setError(err.message || 'Failed to fetch work item');
         setLoading(false);
       }
-    };
+    );
 
-    if (firestore) {
-      fetchData();
-    }
+    // Real-time listener for project
+    const projectRef = doc(firestore, 'projects', projectId);
+    console.log('📄 Setting up real-time listener for project:', projectRef.path);
+
+    const unsubscribeProject = onSnapshot(
+      projectRef,
+      (projectSnapshot) => {
+        if (projectSnapshot.exists()) {
+          const projectData = { id: projectSnapshot.id, ...projectSnapshot.data() } as Project;
+          console.log('✅ Project data updated:', projectData);
+          setProject(projectData);
+        }
+      },
+      (err) => {
+        console.error('🔥 Error listening to project:', err);
+      }
+    );
+
+    // Cleanup listeners on unmount
+    return () => {
+      console.log('🧹 Cleaning up listeners');
+      unsubscribeTask();
+      unsubscribeProject();
+    };
   }, [firestore, params.id]);
+
+  // Separate effect for users - updates when workItem changes
+  useEffect(() => {
+    if (!firestore || !workItem) return;
+
+    const userIds = new Set<string>();
+    if (workItem.owner) userIds.add(workItem.owner);
+    if (workItem.contributors) {
+      workItem.contributors.forEach(id => userIds.add(id));
+    }
+
+    if (userIds.size === 0) {
+      setItemUsers([]);
+      return;
+    }
+
+    const userIdsArray = Array.from(userIds);
+    // Firestore 'in' query has a limit of 30
+    const usersQuery = query(
+      collection(firestore, 'users'),
+      where(documentId(), 'in', userIdsArray.slice(0, 30))
+    );
+
+    console.log('📄 Setting up real-time listener for users');
+
+    // Real-time listener for users
+    const unsubscribeUsers = onSnapshot(
+      usersQuery,
+      (usersSnapshot) => {
+        const usersData = usersSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        })) as User[];
+        console.log('✅ Users data updated:', usersData);
+        setItemUsers(usersData);
+      },
+      (err) => {
+        console.error('🔥 Error listening to users:', err);
+      }
+    );
+
+    return () => {
+      console.log('🧹 Cleaning up users listener');
+      unsubscribeUsers();
+    };
+  }, [firestore, workItem]);
 
   const handleStatusChange = async (newStatus: Task['status']) => {
     if (!workItem || !firestore) return;
@@ -150,9 +186,6 @@ export default function WorkItemDetailsPage() {
       const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
 
       await updateDoc(taskRef, { status: newStatus });
-
-      // Update local state
-      setWorkItem({ ...workItem, status: newStatus });
 
       toast({
         title: "Status Updated",
