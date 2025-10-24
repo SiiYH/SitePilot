@@ -107,7 +107,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     }
   };
 
-  const handleStatusChange = (taskId: string, projectId: string | undefined, newStatus: Task['status']) => {
+  const handleStatusChange = (taskId: string, projectId: string, newStatus: Task['status']) => {
     if (!projectId) return;
     
     const taskDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
@@ -261,12 +261,12 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
             </Button>
         </div>
         
-        {/* Mobile View: Always Grid */}
-        <div className="grid grid-cols-1 gap-6 md:hidden">
-            {sortedTasks.map(renderTaskCard)}
+        {/* Always grid on mobile */}
+        <div className={cn("md:hidden", viewMode === 'list' ? 'hidden' : 'grid grid-cols-1 gap-6')}>
+             {sortedTasks.map(renderTaskCard)}
         </div>
-
-        {/* Desktop View: Respects viewMode prop */}
+       
+        {/* Desktop: respects viewMode prop */}
         <div className="hidden md:block">
             {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -354,7 +354,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                                 <TableCell>{dueDate ? format(dueDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                 {canEditTask ? (
-                                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
+                                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId!, newStatus)}>
                                     <SelectTrigger className="w-[150px] ml-auto">
                                         <SelectValue placeholder="Set status" />
                                     </SelectTrigger>

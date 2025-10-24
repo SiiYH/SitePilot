@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,20 +38,35 @@ export default function MyTasksPage() {
   }, [firestore, company?.id]);
   const { data: companyUsers, isLoading: usersLoading } = useCollection<User>(companyUsersQuery);
   
+  // 1. Fetch all projects to get their names and slugs
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
     return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
-
   const { data: allProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
-  const allTasks = useMemo(() => {
-    if (!allProjects) return [];
-    return allProjects.flatMap(p => 
-      (p.tasks || []).map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id}))
-    ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [allProjects]);
+  // 2. Fetch all tasks across all projects for the company
+  const allTasksQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collectionGroup(firestore, 'tasks'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  const { data: allTasksData, isLoading: tasksLoading } = useCollection<Task>(allTasksQuery);
 
+  // 3. Combine task data with project metadata
+  const allTasks = useMemo(() => {
+    if (!allTasksData || !allProjects) return [];
+    
+    const projectsMap = new Map(allProjects.map(p => [p.id, { name: p.name, slug: p.slug }]));
+
+    return allTasksData.map(task => {
+      const projectInfo = projectsMap.get(task.projectId || '');
+      return {
+        ...task,
+        projectName: projectInfo?.name || 'Unknown Project',
+        projectSlug: projectInfo?.slug || '',
+      };
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [allTasksData, allProjects]);
 
   const filteredTasks = useMemo(() => {
     let tasksToDisplay = allTasks;
@@ -75,17 +90,9 @@ export default function MyTasksPage() {
 
 
   const projectsForFilter = useMemo(() => {
-    if (!allTasks) return [];
-    
-    const projectMap = new Map<string, { id: string; name: string }>();
-    allTasks.forEach(task => {
-        if (task.projectId && task.projectName && !projectMap.has(task.projectId)) {
-            projectMap.set(task.projectId, { id: task.projectId, name: task.projectName });
-        }
-    });
-
-    return Array.from(projectMap.values());
-  }, [allTasks]);
+    if (!allProjects) return [];
+    return allProjects.map(p => ({ id: p.id, name: p.name }));
+  }, [allProjects]);
   
   const usersForFilter = companyUsers?.filter(u => u.role === 'engineer') || [];
 
@@ -94,7 +101,7 @@ export default function MyTasksPage() {
     localStorage.setItem('sitepilot-tasks-view', mode);
   }
 
-  const isLoading = authLoading || usersLoading || projectsLoading;
+  const isLoading = authLoading || usersLoading || projectsLoading || tasksLoading;
 
   if (isLoading || !user) {
     return (
@@ -190,5 +197,3 @@ export default function MyTasksPage() {
     </div>
   );
 }
-
-    

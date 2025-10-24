@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -53,62 +54,31 @@ const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: 
 export default function WorkItemDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const idParts = params.id as string[]; // e.g., ['projects', 'proj-123', 'tasks', 'task-456']
+  const idParts = params.id as string[];
   const { user } = useAuth();
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  console.log('🧭 params:', params);
-
   const { projectId, taskId } = useMemo(() => {
-    console.log('🔍 idParts:', idParts);
-    
     if (!idParts || idParts.length !== 4 || idParts[0] !== 'projects' || idParts[2] !== 'tasks') {
-        console.log('❌ Invalid idParts format');
         return { projectId: null, taskId: null };
     }
-    
-    console.log('✅ Parsed IDs:', { projectId: idParts[1], taskId: idParts[3] });
     return { projectId: idParts[1], taskId: idParts[3] };
   }, [idParts]);
 
   const workItemRef = useMemoFirebase(() => {
-    if (!firestore || !projectId || !taskId) {
-      console.log('⚠️ Missing dependencies for workItemRef:', { firestore: !!firestore, projectId, taskId });
-      return null;
-    }
-    const ref = doc(firestore, 'projects', projectId, 'tasks', taskId);
-    console.log('📄 Work item ref path:', ref.path);
-    return ref;
+    if (!firestore || !projectId || !taskId) return null;
+    return doc(firestore, 'projects', projectId, 'tasks', taskId);
   }, [firestore, projectId, taskId]);
 
   const projectRef = useMemoFirebase(() => {
-    if (!firestore || !projectId) {
-      console.log('⚠️ Missing dependencies for projectRef:', { firestore: !!firestore, projectId });
-      return null;
-    }
-    const ref = doc(firestore, 'projects', projectId);
-    console.log('📁 Project ref path:', ref.path);
-    return ref;
+    if (!firestore || !projectId) return null;
+    return doc(firestore, 'projects', projectId);
   }, [firestore, projectId]);
-
-  console.log('workitem and project ref', workItemRef?.path, projectRef?.path);
   
   const { data: workItem, isLoading: workItemLoading, error: workItemError } = useDoc<Task>(workItemRef);
   const { data: project, isLoading: projectLoading, error: projectError } = useDoc<Project>(projectRef);
   
-  // Debug effect
-  useEffect(() => {
-    console.log('📊 Loading states:', {
-      workItemLoading,
-      projectLoading,
-      workItem: workItem ? 'exists' : 'null',
-      project: project ? 'exists' : 'null',
-      workItemError,
-      projectError
-    });
-  }, [workItemLoading, projectLoading, workItem, project, workItemError, projectError]);
-
   const userIds = useMemo(() => {
     if (!workItem) return [];
     const ids = new Set<string>();
@@ -116,12 +86,12 @@ export default function WorkItemDetailsPage() {
     if (workItem.contributors) {
       workItem.contributors.forEach(id => ids.add(id));
     }
-    console.log('👥 User IDs to fetch:', Array.from(ids));
     return Array.from(ids);
   }, [workItem]);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || userIds.length === 0) return null;
+    // Firestore 'in' query has a limit of 30, handle larger arrays if needed
     return query(collection(firestore, 'users'), where(documentId(), 'in', userIds));
   }, [firestore, userIds]);
 
@@ -140,65 +110,15 @@ export default function WorkItemDetailsPage() {
   
   const loading = projectLoading || workItemLoading || usersLoading;
 
-  // Show loading state
-  if (!user || loading) {
+  if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <div className="text-sm text-muted-foreground">
-            <p>Loading work item...</p>
-            {projectId && <p className="mt-1">Project: {projectId}</p>}
-            {taskId && <p>Task: {taskId}</p>}
-          </div>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Check for invalid route parameters first
-  if (!projectId || !taskId) {
-    console.log('❌ Invalid route parameters');
-    notFound();
-  }
-
-  // Show error states
-  if (workItemError || projectError) {
-    return (
-      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Error Loading Work Item</CardTitle>
-            <CardDescription>
-              There was an error loading the work item data.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {workItemError && (
-              <div className="text-sm">
-                <p className="font-medium text-destructive">Work Item Error:</p>
-                <p className="text-muted-foreground">{String(workItemError)}</p>
-              </div>
-            )}
-            {projectError && (
-              <div className="text-sm">
-                <p className="font-medium text-destructive">Project Error:</p>
-                <p className="text-muted-foreground">{String(projectError)}</p>
-              </div>
-            )}
-            <Button onClick={() => router.back()} variant="outline" className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Only call notFound if loading is complete and data is still null
   if (!workItem || !project) {
-    console.log('❌ Work item or project not found after loading');
     notFound();
   }
 
