@@ -229,6 +229,7 @@ export default function WorkItemDetailsPage() {
   }
 
   const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
+  const canEditWorkItem = user.role === 'admin' || user.role === 'director';
   const owner = itemUsers?.find(u => u.id === workItem.owner);
   const contributors = itemUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
   const Icon = typeIcon[workItem.type] || GanttChartSquare;
@@ -264,7 +265,7 @@ export default function WorkItemDetailsPage() {
                     <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>{workItem.title}</CardTitle>
                          <div className="flex items-center gap-2">
-                             {canManageWorkItem && (
+                             {canEditWorkItem && (
                                 <Button variant="outline" size="sm" asChild>
                                     <Link href={`/dashboard/work-items/edit/${idParts.join('/')}`}>
                                         <Edit className="mr-2 h-4 w-4" />
