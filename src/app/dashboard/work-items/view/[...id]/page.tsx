@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -41,15 +40,32 @@ const typeIcon: { [key: string]: React.ElementType } = {
 const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: string; children?: React.ReactNode }) => {
     const Icon = icon;
     return (
-        <div className="flex items-start gap-4">
-            <Icon className="h-5 w-5 mt-1 flex-shrink-0 text-muted-foreground" />
-            <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                {children}
+        <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-muted/50 p-2 mt-0.5">
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+                <div className="text-sm">{children}</div>
             </div>
         </div>
     );
 };
+
+const UserDisplay = ({ user, isCurrentUser }: { user: User; isCurrentUser: boolean }) => (
+    <div className="inline-flex items-center gap-2 rounded-lg bg-muted/30 pr-3 py-1 pl-1">
+        <Avatar className="h-7 w-7 border-2 border-background">
+            <AvatarImage src={user.avatarUrl} alt={user.name} />
+            <AvatarFallback className="text-xs">{getInitials(user.name)}</AvatarFallback>
+        </Avatar>
+        <span className="font-medium text-sm">{user.name}</span>
+        {isCurrentUser && (
+            <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-semibold">
+                You
+            </Badge>
+        )}
+    </div>
+);
 
 export default function WorkItemDetailsPage() {
   const params = useParams();
@@ -65,7 +81,6 @@ export default function WorkItemDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const idParts = params.id as string[];
 
-
   useEffect(() => {
     if (!firestore) return;
 
@@ -78,7 +93,6 @@ export default function WorkItemDetailsPage() {
     const projectId = idParts[1];
     const taskId = idParts[3];
 
-    // Real-time listener for work item
     const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
 
     const unsubscribeTask = onSnapshot(
@@ -101,7 +115,6 @@ export default function WorkItemDetailsPage() {
       }
     );
 
-    // Real-time listener for project
     const projectRef = doc(firestore, 'projects', projectId);
 
     const unsubscribeProject = onSnapshot(
@@ -117,14 +130,12 @@ export default function WorkItemDetailsPage() {
       }
     );
 
-    // Cleanup listeners on unmount
     return () => {
       unsubscribeTask();
       unsubscribeProject();
     };
   }, [firestore, idParts]);
 
-  // Separate effect for users - updates when workItem changes
   useEffect(() => {
     if (!firestore || !workItem) return;
 
@@ -140,14 +151,11 @@ export default function WorkItemDetailsPage() {
     }
 
     const userIdsArray = Array.from(userIds);
-    // Firestore 'in' query has a limit of 30
     const usersQuery = query(
       collection(firestore, 'users'),
       where(documentId(), 'in', userIdsArray.slice(0, 30))
     );
 
-
-    // Real-time listener for users
     const unsubscribeUsers = onSnapshot(
       usersQuery,
       (usersSnapshot) => {
@@ -237,130 +245,137 @@ export default function WorkItemDetailsPage() {
   const dueDate = getSafeDate(workItem.dueDate);
 
   return (
-    <div className="space-y-6">
-       <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="space-y-6 pb-8">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.back()} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Work Item Details</h2>
-        <p className="text-muted-foreground">Details for work item #{workItem.id.slice(-6)}</p>
+      </div>
+
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">{workItem.title}</h1>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon className="h-4 w-4" />
+          <span className="text-sm">{workItem.type}</span>
+          <span className="text-sm">·</span>
+          <span className="text-sm font-mono">#{workItem.id.slice(-6)}</span>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <CardTitle>{workItem.title}</CardTitle>
-                         <div className="flex items-center gap-2">
-                             {canEditWorkItem && (
-                                <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/dashboard/work-items/edit/${idParts.join('/')}`}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                            )}
-                            <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
-                                {workItem.status}
-                            </Badge>
-                         </div>
-                    </div>
-                    <CardDescription className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{workItem.type}</span>
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {workItem.description && (
-                        <InfoField icon={FileText} label="Description">
-                            <p className="text-sm text-foreground whitespace-pre-wrap">{workItem.description}</p>
-                        </InfoField>
-                    )}
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <InfoField icon={Calendar} label="Due Date">
-                           <p className="font-medium">{dueDate ? format(dueDate, 'PPP') : 'N/A'}</p>
-                        </InfoField>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-sm px-3 py-1.5">
+                  {workItem.status}
+                </Badge>
+                {canEditWorkItem && (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/dashboard/work-items/edit/${idParts.join('/')}`}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {workItem.description && (
+                <InfoField icon={FileText} label="Description">
+                  <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                    {workItem.description}
+                  </p>
+                </InfoField>
+              )}
 
-                        {project && (
-                            <InfoField icon={FolderKanban} label="Associated Project">
-                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
-                                    {project.name}
-                                </Link>
-                            </InfoField>
-                        )}
-                        {owner ? (
-                            <InfoField icon={UserIcon} label="Owner">
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={owner.avatarUrl} alt={owner.name} />
-                                        <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <p className="font-medium">{owner.name}</p>
-                                    {owner.id === user.id && (
-                                        <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold">me</Badge>
-                                    )}
-                                </div>
-                            </InfoField>
-                        ) : (
-                             <InfoField icon={UserIcon} label="Owner">
-                                <Badge variant="destructive">Unassigned</Badge>
-                            </InfoField>
-                        )}
-                        {contributors && contributors.length > 0 && (
-                            <InfoField icon={Users} label="Contributors">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    {contributors.map(c => (
-                                        <div key={c.id} className="flex items-center gap-2">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={c.avatarUrl} alt={c.name} />
-                                                <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
-                                            </Avatar>
-                                            {c.id === user.id && (
-                                                <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold">me</Badge>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </InfoField>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <InfoField icon={Calendar} label="Due Date">
+                  <p className="font-semibold text-foreground">
+                    {dueDate ? format(dueDate, 'PPP') : 'Not set'}
+                  </p>
+                </InfoField>
+
+                {project && (
+                  <InfoField icon={FolderKanban} label="Project">
+                    <Link 
+                      href={`/dashboard/projects/${project.slug}`} 
+                      className="inline-flex items-center font-semibold text-primary hover:underline underline-offset-4"
+                    >
+                      {project.name}
+                    </Link>
+                  </InfoField>
+                )}
+              </div>
+
+              <div className="border-t pt-6">
+                <div className="space-y-6">
+                  {owner ? (
+                    <InfoField icon={UserIcon} label="Owner">
+                      <UserDisplay user={owner} isCurrentUser={owner.id === user.id} />
+                    </InfoField>
+                  ) : (
+                    <InfoField icon={UserIcon} label="Owner">
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Unassigned
+                      </Badge>
+                    </InfoField>
+                  )}
+
+                  {contributors && contributors.length > 0 && (
+                    <InfoField icon={Users} label="Contributors">
+                      <div className="flex flex-wrap gap-2">
+                        {contributors.map(contributor => (
+                          <UserDisplay 
+                            key={contributor.id} 
+                            user={contributor} 
+                            isCurrentUser={contributor.id === user.id} 
+                          />
+                        ))}
+                      </div>
+                    </InfoField>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
-        <div className="md:col-span-1 space-y-6">
-             <Card className="bg-muted/40">
-                <CardHeader>
-                    <CardTitle className="text-xl">Manage Work Item</CardTitle>
-                    <CardDescription>
-                        {canManageWorkItem 
-                            ? "Update the status of this work item." 
-                            : "Only assigned members, Admins, or Directors can change the status."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="max-w-xs">
-                        {canManageWorkItem ? (
-                            <Select value={workItem.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(newStatus)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Set status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Not Started">Not Started</SelectItem>
-                                    <SelectItem value="In Progress">In Progress</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ) : (
-                             <Badge variant={statusVariant[workItem.status] || 'outline'} className="text-base px-3 py-1">
-                                {workItem.status}
-                             </Badge>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Update Status</CardTitle>
+              <CardDescription className="text-xs">
+                {canManageWorkItem 
+                  ? "Change the current status of this work item" 
+                  : "Only assigned members can update the status"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {canManageWorkItem ? (
+                <Select 
+                  value={workItem.status} 
+                  onValueChange={(newStatus: Task['status']) => handleStatusChange(newStatus)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="rounded-lg border border-dashed p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    You don't have permission to update this status
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
