@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -81,12 +82,15 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       } else {
         form.setValue('currency', 'MYR');
       }
+      if (defaultProjectId) {
+        form.setValue('projectId', defaultProjectId);
+      }
       setImagePreviews([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
-  }, [open, defaultProjectId, form, projects, selectedProjectId]);
+  }, [open, defaultProjectId, form, projects]);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -201,7 +205,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a project" />
