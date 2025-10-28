@@ -3,12 +3,10 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { mockClaims, mockUsers, mockProjects } from '@/lib/data';
 import { Claim, Project, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText, Hash, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -93,39 +91,48 @@ export default function ClaimDetailsPage() {
   const [isEditingRemark, setIsEditingRemark] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* useEffect(() => {
-    if (id && firestore) {
-        getClaim(firestore, id).then(data => {
-            if (data) {
-                setClaimData(data);
-                setRemark(data.claim.remark || '');
-            } else {
-                notFound();
-            }
-        });
-    }
-  }, [id, firestore]); */
   useEffect(() => {
-    if (!id) return;
+    if (!id || !firestore) return;
     const claimRef = doc(firestore, 'claims', id);
     const unsub = onSnapshot(claimRef, async (snapshot) => {
-      if (!snapshot.exists()) return;
+      if (!snapshot.exists()) {
+        setClaimData(null);
+        notFound();
+        return;
+      }
       const claim = { id: snapshot.id, ...snapshot.data() } as Claim;
+
       const projectRef = doc(firestore, 'projects', claim.projectId);
-      const projectSnap = await getDoc(projectRef);
+      const submittedByRef = claim.submittedBy ? doc(firestore, 'users', claim.submittedBy) : null;
+      const approvedByRef = claim.approvedBy ? doc(firestore, 'users', claim.approvedBy) : null;
+
+      const [projectSnap, submittedBySnap, approvedBySnap] = await Promise.all([
+          getDoc(projectRef),
+          submittedByRef ? getDoc(submittedByRef) : null,
+          approvedByRef ? getDoc(approvedByRef) : null,
+      ]);
+
       const project = projectSnap.exists() ? { id: projectSnap.id, ...projectSnap.data() } as Project : undefined;
-      setClaimData({ claim, project });
+      const submittedBy = submittedBySnap?.exists() ? { id: submittedBySnap.id, ...submittedBySnap.data() } as User : undefined;
+      const approvedBy = approvedBySnap?.exists() ? { id: approvedBySnap.id, ...approvedBySnap.data() } as User : undefined;
+
+      setClaimData({ claim, project, submittedBy, approvedBy });
       setRemark(claim.remark || '');
     });
     return () => unsub();
-  }, [id]);
+  }, [id, firestore]);
 
   if (!claimData || !user) {
-    return null;
+    return (
+        <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
   }
 
   const { claim, project, submittedBy, approvedBy } = claimData;
   const canManageClaim = user.role === 'director';
+  const canEditClaim = user.id === claim.submittedBy && claim.status !== 'Paid';
   
   const handleApprove = async () => {
     if (!canManageClaim || !firestore) return;
@@ -213,9 +220,19 @@ export default function ClaimDetailsPage() {
                 <CardHeader>
                     <div className="flex flex-col-reverse items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <CardTitle>{claim.title}</CardTitle>
-                        <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
-                            {claim.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                           {canEditClaim && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/dashboard/claims/${claim.id}/edit`}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit Claim
+                                    </Link>
+                                </Button>
+                            )}
+                            <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
+                                {claim.status}
+                            </Badge>
+                        </div>
                     </div>
                     <CardDescription>
                         Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
@@ -431,3 +448,5 @@ export default function ClaimDetailsPage() {
     </div>
   );
 }
+
+    
