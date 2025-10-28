@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -62,12 +63,11 @@ export default function WorkItemDetailsPage() {
   const [itemUsers, setItemUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const idParts = params.id as string[];
+
 
   useEffect(() => {
     if (!firestore) return;
-
-    const idParts = params.id as string[];
-    console.log('🧭 idParts:', idParts);
 
     if (!idParts || idParts.length !== 4 || idParts[0] !== 'projects' || idParts[2] !== 'tasks') {
       setError('Invalid path format');
@@ -80,20 +80,17 @@ export default function WorkItemDetailsPage() {
 
     // Real-time listener for work item
     const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
-    console.log('📄 Setting up real-time listener for task:', taskRef.path);
 
     const unsubscribeTask = onSnapshot(
       taskRef,
       (taskSnapshot) => {
         if (!taskSnapshot.exists()) {
-          console.log('❌ Task not found');
           setError('Task not found');
           setLoading(false);
           return;
         }
 
         const taskData = { id: taskSnapshot.id, ...taskSnapshot.data() } as Task;
-        console.log('✅ Task data updated:', taskData);
         setWorkItem(taskData);
         setLoading(false);
       },
@@ -106,14 +103,12 @@ export default function WorkItemDetailsPage() {
 
     // Real-time listener for project
     const projectRef = doc(firestore, 'projects', projectId);
-    console.log('📄 Setting up real-time listener for project:', projectRef.path);
 
     const unsubscribeProject = onSnapshot(
       projectRef,
       (projectSnapshot) => {
         if (projectSnapshot.exists()) {
           const projectData = { id: projectSnapshot.id, ...projectSnapshot.data() } as Project;
-          console.log('✅ Project data updated:', projectData);
           setProject(projectData);
         }
       },
@@ -124,11 +119,10 @@ export default function WorkItemDetailsPage() {
 
     // Cleanup listeners on unmount
     return () => {
-      console.log('🧹 Cleaning up listeners');
       unsubscribeTask();
       unsubscribeProject();
     };
-  }, [firestore, params.id]);
+  }, [firestore, idParts]);
 
   // Separate effect for users - updates when workItem changes
   useEffect(() => {
@@ -152,7 +146,6 @@ export default function WorkItemDetailsPage() {
       where(documentId(), 'in', userIdsArray.slice(0, 30))
     );
 
-    console.log('📄 Setting up real-time listener for users');
 
     // Real-time listener for users
     const unsubscribeUsers = onSnapshot(
@@ -162,7 +155,6 @@ export default function WorkItemDetailsPage() {
           id: doc.id, 
           ...doc.data() 
         })) as User[];
-        console.log('✅ Users data updated:', usersData);
         setItemUsers(usersData);
       },
       (err) => {
@@ -171,7 +163,6 @@ export default function WorkItemDetailsPage() {
     );
 
     return () => {
-      console.log('🧹 Cleaning up users listener');
       unsubscribeUsers();
     };
   }, [firestore, workItem]);
@@ -180,7 +171,6 @@ export default function WorkItemDetailsPage() {
     if (!workItem || !firestore) return;
 
     try {
-      const idParts = params.id as string[];
       const projectId = idParts[1];
       const taskId = idParts[3];
       const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
@@ -245,7 +235,6 @@ export default function WorkItemDetailsPage() {
   };
 
   const dueDate = getSafeDate(workItem.dueDate);
-  const idParts = params.id as string[];
 
   return (
     <div className="space-y-6">
@@ -309,6 +298,9 @@ export default function WorkItemDetailsPage() {
                                         <AvatarFallback>{getInitials(owner.name)}</AvatarFallback>
                                     </Avatar>
                                     <p className="font-medium">{owner.name}</p>
+                                    {owner.id === user.id && (
+                                        <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold">me</Badge>
+                                    )}
                                 </div>
                             </InfoField>
                         ) : (
@@ -318,12 +310,17 @@ export default function WorkItemDetailsPage() {
                         )}
                         {contributors && contributors.length > 0 && (
                             <InfoField icon={Users} label="Contributors">
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     {contributors.map(c => (
-                                        <Avatar key={c.id} className="h-8 w-8">
-                                            <AvatarImage src={c.avatarUrl} alt={c.name} />
-                                            <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
-                                        </Avatar>
+                                        <div key={c.id} className="flex items-center gap-2">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={c.avatarUrl} alt={c.name} />
+                                                <AvatarFallback>{getInitials(c.name)}</AvatarFallback>
+                                            </Avatar>
+                                            {c.id === user.id && (
+                                                <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold">me</Badge>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             </InfoField>
