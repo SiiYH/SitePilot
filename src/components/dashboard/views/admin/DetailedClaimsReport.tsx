@@ -11,6 +11,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Paid': 'default',
   'Pending': 'secondary',
   'Overdue': 'destructive',
+  'Rejected': 'destructive',
 };
 
 export default function DetailedClaimsReport() {
@@ -27,7 +28,7 @@ export default function DetailedClaimsReport() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>engineer Name</TableHead>
+                <TableHead>Engineer Name</TableHead>
                 <TableHead>Site Name</TableHead>
                 <TableHead>e-Invoice No.</TableHead>
                 <TableHead>Claim Title</TableHead>

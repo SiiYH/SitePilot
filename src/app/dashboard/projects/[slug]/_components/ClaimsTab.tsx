@@ -35,6 +35,7 @@ export default function ClaimsTab({ claims, project, onClaimCreated, users }: Cl
       'Paid': 'default',
       'Pending': 'secondary',
       'Overdue': 'destructive',
+      'Rejected': 'destructive',
     };
 
     return (

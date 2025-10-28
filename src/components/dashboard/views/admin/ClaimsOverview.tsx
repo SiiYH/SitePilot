@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -24,6 +25,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Paid': 'default',
   'Pending': 'secondary',
   'Overdue': 'destructive',
+  'Rejected': 'destructive',
 };
 
 type StatusFilter = Claim['status'] | 'All';
@@ -115,6 +117,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                 <SelectItem value="Pending">Pending</SelectItem>
                                 <SelectItem value="Paid">Paid</SelectItem>
                                 <SelectItem value="Overdue">Overdue</SelectItem>
+                                <SelectItem value="Rejected">Rejected</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

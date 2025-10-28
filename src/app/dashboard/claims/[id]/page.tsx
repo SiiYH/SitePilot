@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText, Hash } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText, Hash, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +22,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { getFirestore, doc, getDoc, updateDoc, Firestore } from 'firebase/firestore';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { onSnapshot } from 'firebase/firestore';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 async function getClaim(firestore: Firestore, id: string): Promise<{ claim: Claim; project?: Project; submittedBy?: User; approvedBy?: User } | undefined> {
     const claimRef = doc(firestore, 'claims', id);
@@ -61,6 +64,7 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Paid': 'default',
   'Pending': 'secondary',
   'Overdue': 'destructive',
+  'Rejected': 'destructive',
 };
 
 const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; label: string; value?: string | null; children?: React.ReactNode }) => {
@@ -85,7 +89,9 @@ export default function ClaimDetailsPage() {
   const firestore = useFirestore();
   const [claimData, setClaimData] = useState<{ claim: Claim; project?: Project, submittedBy?: User, approvedBy?: User } | null>(null);
   const [remark, setRemark] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
   const [isEditingRemark, setIsEditingRemark] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /* useEffect(() => {
     if (id && firestore) {
@@ -120,43 +126,50 @@ export default function ClaimDetailsPage() {
 
   const { claim, project, submittedBy, approvedBy } = claimData;
   const canManageClaim = user.role === 'director';
-
-  const handleStatusChange = async (newStatus: Claim['status']) => {
-    if (!canManageClaim) return;
   
-    try {
-      const claimRef = doc(firestore, 'claims', claim.id);
-  
-      const updateData: any = { status: newStatus };
-  
-      if (newStatus === 'Paid') {
-        updateData.approvedBy = user.id;
-        updateData.approvedAt = new Date().toISOString();
-      } else {
-        updateData.approvedBy = null;
-        updateData.approvedAt = null;
-      }
-  
-      await updateDoc(claimRef, updateData);
-  
-      toast({
-        title: "Claim updated",
-        description: `Claim status changed to ${newStatus}.`,
-      });
-  
-      const refreshed = await getClaim(firestore, claim.id);
-      if (refreshed) setClaimData(refreshed);
-  
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Failed to update claim status.",
-        variant: "destructive",
-      });
-    }
+  const handleApprove = async () => {
+    if (!canManageClaim || !firestore) return;
+    setIsSubmitting(true);
+    const claimRef = doc(firestore, 'claims', claim.id);
+    const updateData = {
+      status: 'Paid' as const,
+      approvedBy: user.id,
+      approvedAt: new Date().toISOString(),
+    };
+    await updateDoc(claimRef, updateData);
+    toast({
+      title: 'Claim Approved',
+      description: 'The claim has been marked as Paid.',
+      className: 'bg-green-100 text-green-800 border-green-200'
+    });
+    setIsSubmitting(false);
   };
   
+  const handleReject = async () => {
+    if (!canManageClaim || !firestore || !rejectionReason) {
+      toast({
+        variant: 'destructive',
+        title: 'Rejection Failed',
+        description: 'Please provide a reason for rejection.',
+      });
+      return;
+    }
+    setIsSubmitting(true);
+    const claimRef = doc(firestore, 'claims', claim.id);
+    const updateData = {
+      status: 'Rejected' as const,
+      remark: rejectionReason,
+      approvedBy: null,
+      approvedAt: null,
+    };
+    await updateDoc(claimRef, updateData);
+    toast({
+      title: 'Claim Rejected',
+      description: 'The claim has been marked as Rejected.',
+    });
+    setIsSubmitting(false);
+    setRejectionReason('');
+  };
   
   const handleSaveRemark = async () => {
     try {
@@ -239,43 +252,84 @@ export default function ClaimDetailsPage() {
                             </InfoField>
                         )}
                     </div>
+                     {claim.status !== 'Paid' && claim.status !== 'Rejected' && canManageClaim && (
+                      <Card className="bg-muted/40">
+                          <CardHeader>
+                              <CardTitle className="text-xl">Manage Claim</CardTitle>
+                              <CardDescription>
+                                  Approve or reject this payment claim.
+                              </CardDescription>
+                          </CardHeader>
+                          <CardContent className="flex flex-col sm:flex-row gap-2">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button className="w-full sm:w-auto" disabled={isSubmitting}>
+                                      <ThumbsUp className="mr-2 h-4 w-4" />
+                                      Approve as Paid
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Approve Claim?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will mark the claim as 'Paid' and record you as the approver. This action can be reversed.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleApprove} disabled={isSubmitting}>
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Confirm Approval'}
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
-                    <Card className="bg-muted/40">
-                        <CardHeader>
-                            <CardTitle className="text-xl">Manage Claim</CardTitle>
-                            <CardDescription>
-                                {canManageClaim 
-                                    ? "Update the status of this payment claim." 
-                                    : "Only Directors can change the claim status."}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-w-xs">
-                                {canManageClaim ? (
-                                    <Select value={claim.status} onValueChange={handleStatusChange}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Set status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Pending">Pending</SelectItem>
-                                            <SelectItem value="Paid">Paid</SelectItem>
-                                            <SelectItem value="Overdue">Overdue</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                     <Badge variant={statusVariant[claim.status] || 'outline'} className="text-base px-3 py-1">
-                                        {claim.status}
-                                    </Badge>
-                                )}
-                            </div>
-                            {claim.status === 'Paid' && approvedBy && claim.approvedAt && (
-                                <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
-                                    <CheckCircle className="h-4 w-4 text-green-500" />
-                                    <span>Approved by {approvedBy.name} on {format(new Date(claim.approvedAt), 'PPP')}</span>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" className="w-full sm:w-auto" disabled={isSubmitting}>
+                                      <ThumbsDown className="mr-2 h-4 w-4" />
+                                      Reject
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Reject Claim?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Please provide a reason for rejecting this claim. This will be visible to the submitter.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="rejection-reason">Reason for Rejection</Label>
+                                        <Textarea 
+                                            id="rejection-reason"
+                                            placeholder="e.g., Incorrect amount, missing receipt details..."
+                                            value={rejectionReason}
+                                            onChange={(e) => setRejectionReason(e.target.value)}
+                                        />
+                                    </div>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleReject} disabled={isSubmitting || !rejectionReason}>
+                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Confirm Rejection'}
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                          </CardContent>
+                      </Card>
+                    )}
+                    {claim.status === 'Paid' && approvedBy && claim.approvedAt && (
+                        <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground rounded-lg border bg-green-500/10 p-3 text-green-700 dark:text-green-300">
+                            <CheckCircle className="h-5 w-5" />
+                            <span>Approved by {approvedBy.name} on {format(new Date(claim.approvedAt), 'PPP')}</span>
+                        </div>
+                    )}
+                     {claim.status === 'Rejected' && (
+                        <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground rounded-lg border bg-destructive/10 p-3 text-destructive">
+                            <XCircle className="h-5 w-5" />
+                            <span>This claim has been rejected.</span>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
@@ -333,7 +387,7 @@ export default function ClaimDetailsPage() {
                     <div className="flex items-center justify-between">
                          <CardTitle className="flex items-center gap-2">
                             <MessageSquare className="h-5 w-5 text-primary" />
-                            <span>director's Remark</span>
+                            <span>Director's Remark</span>
                         </CardTitle>
                         {user?.role === 'director' && !isEditingRemark && (
                             <Button variant="outline" size="sm" onClick={() => setIsEditingRemark(true)} className="p-2 h-auto sm:h-9 sm:px-3 sm:py-2">

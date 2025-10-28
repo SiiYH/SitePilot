@@ -47,7 +47,7 @@ export default function DetailedClaimsPage() {
             </div>
             <div className="flex flex-wrap items-end gap-4">
                <div className="grid flex-auto gap-2 min-w-48">
-                  <span className="text-sm font-medium">engineer</span>
+                  <span className="text-sm font-medium">Engineer</span>
                   <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
                     <SelectTrigger>
                       <User className="mr-2 h-4 w-4" />
