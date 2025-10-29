@@ -10,39 +10,24 @@ import EditClaimForm from './_components/EditClaimForm';
 import { useEffect } from 'react';
 
 export default function EditClaimPage() {
-    const { id } = useParams(); // ✅ single param route
+    const { id } = useParams();
     const firestore = useFirestore();
     const { company } = useAuth();
 
-    console.log('🧩 useParams() =', useParams());
-
     const claimRef = useMemoFirebase(
-        () => (id ? doc(firestore, 'claims', id as string) : null),
+        () => (firestore && id ? doc(firestore, 'claims', id as string) : null),
         [firestore, id]
     );
-    
-    const { data: claim, isLoading: claimLoading, error } = useDoc<Claim>(claimRef);
 
-    const projectsQuery = useMemoFirebase(() => {
-        if (!firestore || !company?.id) return null;
-        return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
-    }, [firestore, company?.id]);
+    const projectsQuery = useMemoFirebase(
+        () => (firestore && company?.id ? query(collection(firestore, 'projects'), where('companyId', '==', company.id)) : null),
+        [firestore, company?.id]
+    );
+
+    const { data: claim, isLoading: claimLoading, error } = useDoc<Claim>(claimRef);
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
     const loading = claimLoading || projectsLoading;
-
-    // 👇 Debug: print Firestore results when they change
-    useEffect(() => {
-        if (claim) {
-            console.log('✅ Claim data retrieved from Firestore:', JSON.stringify(claim, null, 2));
-        }
-        if (projects) {
-            console.log('✅ Projects data retrieved from Firestore:', JSON.stringify(projects, null, 2));
-        }
-        if (error) {
-            console.error('❌ Firestore error:', error);
-        }
-    }, [claim, projects, error]);
 
     if (loading) {
         return (
@@ -53,7 +38,6 @@ export default function EditClaimPage() {
     }
 
     if (!claim || error) {
-        console.warn('⚠️ Claim not found or error occurred:', error);
         notFound();
     }
 
