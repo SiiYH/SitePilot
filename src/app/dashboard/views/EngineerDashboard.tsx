@@ -1,5 +1,5 @@
 
-import { Project, User } from '@/types';
+import { Project, User, Task } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TasksTable from '../TasksTable';
 import AttendanceCard from './engineer/AttendanceCard';
@@ -7,7 +7,7 @@ import ProjectCalendar from './engineer/ProjectCalendar';
 
 interface EngineerDashboardProps {
     projects: Project[];
-    tasks: Project['tasks'];
+    tasks: Task[];
     user: User;
     users: User[];
 }
@@ -39,5 +39,3 @@ export default function EngineerDashboard({ projects, tasks, user, users }: Engi
         </div>
     );
 }
-
-    

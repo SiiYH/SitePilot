@@ -262,7 +262,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
         </div>
         
         {/* Always grid on mobile */}
-        <div className={cn("md:hidden", viewMode === 'list' ? 'hidden' : 'grid grid-cols-1 gap-6')}>
+        <div className={cn("grid grid-cols-1 gap-6 md:hidden")}>
              {sortedTasks.map(renderTaskCard)}
         </div>
        
