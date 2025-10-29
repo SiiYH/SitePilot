@@ -10,7 +10,7 @@ import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { mockAttendance } from '@/lib/data';
 
 export default function DashboardPage() {
@@ -19,6 +19,8 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -45,13 +47,34 @@ export default function DashboardPage() {
     setAttendance(mockAttendance);
   }, []);
 
-  const allTasks = useMemo(() => {
-    if (!projects) return [];
-    return projects.flatMap(p => 
-      (p.tasks || []).map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id}))
-    );
-  }, [projects]);
+  useEffect(() => {
+    const fetchAllTasks = async () => {
+        if (!projects || projects.length === 0 || !firestore) {
+            setTasksLoading(false);
+            return;
+        }
 
+        setTasksLoading(true);
+        const tasksPromises = projects.map(async (project) => {
+            const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
+            const tasksSnap = await getDocs(tasksRef);
+            return tasksSnap.docs.map(doc => ({
+                ...doc.data() as Task,
+                id: doc.id,
+                projectName: project.name,
+                projectSlug: project.slug,
+                projectId: project.id,
+            }));
+        });
+
+        const allTasksArrays = await Promise.all(tasksPromises);
+        const flattenedTasks = allTasksArrays.flat();
+        setAllTasks(flattenedTasks);
+        setTasksLoading(false);
+    };
+
+    fetchAllTasks();
+  }, [projects, firestore]);
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
@@ -68,19 +91,17 @@ export default function DashboardPage() {
         const lowercasedQuery = searchQuery.toLowerCase();
         userProjects = userProjects.filter(p => 
             p.name.toLowerCase().includes(lowercasedQuery) ||
-            p.description.toLowerCase().includes(lowercasedQuery) ||
-            p.jobNo.toLowerCase().includes(lowercasedQuery)
+            (p.description && p.description.toLowerCase().includes(lowercasedQuery)) ||
+            (p.jobNo && p.jobNo.toLowerCase().includes(lowercasedQuery))
         );
     }
 
     return userProjects;
   }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
 
-
-  const loading = projectsLoading || authLoading || claimsLoading || usersLoading;
+  const loading = projectsLoading || authLoading || claimsLoading || usersLoading || tasksLoading;
   
   useEffect(() => {
-    // Only redirect after data fully loaded
     if (!loading && user) {
       const shouldRedirect =
         user.role !== 'system super admin' && (user.role === '' || !user.companyId);
@@ -91,7 +112,6 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
   
-  // Still show loading while redirecting
   if (loading || !user) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -99,19 +119,13 @@ export default function DashboardPage() {
       </div>
     );
   }
-
   
-  // Redirect if user has no role or company, unless they are a system admin
   if (user.role !== 'system super admin' && (user.role === '' || !user.companyId)) {
      return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-  // Prevent showing dashboard content while redirecting
-  if (!authLoading && user.role !== 'system super admin' && (user.role === '' || !user.companyId)) {
-    return null; // or a <Redirecting /> component
   }
 
   const engineerTasks = user.role === 'engineer' 

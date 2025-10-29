@@ -1,22 +1,26 @@
-
 'use client';
 
 import { useParams, notFound } from 'next/navigation';
-import { Claim, Project, User } from '@/types';
+import { Claim, Project } from '@/types';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import EditClaimForm from './_components/EditClaimForm';
+import { useEffect } from 'react';
 
 export default function EditClaimPage() {
-    const params = useParams();
-    const id = params.id as string;
+    const { id } = useParams(); // ✅ single param route
     const firestore = useFirestore();
     const { company } = useAuth();
 
-    const claimRef = useMemoFirebase(() => id ? doc(firestore, 'claims', id) : null, [firestore, id]);
+    console.log('🧩 useParams() =', useParams());
+
+    const claimRef = useMemoFirebase(
+        () => (id ? doc(firestore, 'claims', id as string) : null),
+        [firestore, id]
+    );
+    
     const { data: claim, isLoading: claimLoading, error } = useDoc<Claim>(claimRef);
 
     const projectsQuery = useMemoFirebase(() => {
@@ -27,6 +31,19 @@ export default function EditClaimPage() {
 
     const loading = claimLoading || projectsLoading;
 
+    // 👇 Debug: print Firestore results when they change
+    useEffect(() => {
+        if (claim) {
+            console.log('✅ Claim data retrieved from Firestore:', JSON.stringify(claim, null, 2));
+        }
+        if (projects) {
+            console.log('✅ Projects data retrieved from Firestore:', JSON.stringify(projects, null, 2));
+        }
+        if (error) {
+            console.error('❌ Firestore error:', error);
+        }
+    }, [claim, projects, error]);
+
     if (loading) {
         return (
             <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -36,18 +53,19 @@ export default function EditClaimPage() {
     }
 
     if (!claim || error) {
+        console.warn('⚠️ Claim not found or error occurred:', error);
         notFound();
     }
-    
+
     return (
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-bold tracking-tight">Edit Claim</h2>
-                <p className="text-muted-foreground">Make changes to claim "{claim.title}".</p>
+                <p className="text-muted-foreground">
+                    Make changes to claim "{claim.title}".
+                </p>
             </div>
             <EditClaimForm claim={claim} projects={projects || []} />
         </div>
     );
 }
-
-    
