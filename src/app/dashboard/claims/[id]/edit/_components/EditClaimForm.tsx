@@ -87,19 +87,33 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
       return;
     }
     setIsLoading(true);
-
+  
     const claimDocRef = doc(firestore, 'claims', claim.id);
-
-    const updatedClaimData = {
-      ...values,
+  
+    // Create the update object and remove undefined/unnecessary fields
+    const updatedClaimData: any = {
+      projectId: values.projectId,
+      title: values.title,
       amount: parseFloat(values.amount.replace(/,/g, '')),
-      receiptImageUrls: imagePreviews, // In a real app, upload new files and get new URLs
-      status: 'Pending' as const, // Reset status to Pending on edit
-      submittedAt: new Date().toISOString(), // Update submission timestamp
+      currency: values.currency,
+      receiptImageUrls: imagePreviews,
+      status: 'Pending' as const,
+      submittedAt: new Date().toISOString(),
     };
+  
+    // Only add optional fields if they have values
+    if (values.eInvoiceNo && values.eInvoiceNo.trim() !== '') {
+      updatedClaimData.eInvoiceNo = values.eInvoiceNo;
+    }
+  
+    if (values.description && values.description.trim() !== '') {
+      updatedClaimData.description = values.description;
+    }
+  
+    // Don't include receiptImages field - it's only for the form, not for Firestore
     
     updateDocumentNonBlocking(claimDocRef, updatedClaimData);
-
+  
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -145,31 +159,30 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
             <CardDescription>Update the claim information below. Resubmitting will require re-approval.</CardDescription>
         </CardHeader>
         <CardContent>
-            <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={form.control}
-                    name="projectId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Project</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {projects.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => {
+                const selectedProject = projects.find(p => p.id === field.value);
+                return (
+                  <FormItem>
+                    <FormLabel>Project</FormLabel>
+                    <FormControl>
+                      <div className="rounded-lg border bg-muted/50 p-3">
+                        <p className="text-sm font-medium">{selectedProject?.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Project cannot be changed after claim creation
+                        </p>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (

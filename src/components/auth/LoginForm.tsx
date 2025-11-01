@@ -78,12 +78,12 @@ export default function LoginForm() {
 
   const onEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
     setIsLoading(true);
-    const user = await login(values);
-    if (!user) {
+    const { user, error } = await login(values);
+    if (error) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid credentials or inactive account.',
+        description: error,
       });
     }
     setIsLoading(false);
@@ -91,12 +91,12 @@ export default function LoginForm() {
 
   const onPhoneSubmit = async (values: z.infer<typeof phoneSchema>) => {
     setIsLoading(true);
-    const user = await login(values);
-    if (!user) {
+    const { user, error } = await login(values);
+    if (error) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Invalid credentials or inactive account.',
+        description: error,
       });
     }
     setIsLoading(false);

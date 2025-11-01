@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   setUser: Dispatch<SetStateAction<User | null>>;
   loading: boolean;
-  login: (credentials: UserCredentials) => Promise<User | null>;
+  login: (credentials: UserCredentials) => Promise<{ user: User | null; error?: string }>;
   signUp: (data: SignUpData) => Promise<User | null>;
   logout: () => void;
   createUser: (data: CreateUserData) => Promise<User | null>;
@@ -179,14 +179,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     '': allUsers.filter(u => u.role === '' && u.status === 'Active').length,
   };
 
-  const handleLogin = async (credentials: UserCredentials): Promise<User | null> => {
+  const handleLogin = async (credentials: UserCredentials): Promise<{ user: User | null; error?: string }> => {
     setLoading(true);
-    const loggedInUser = await login(credentials);
-    if (loggedInUser) {
-      router.push('/dashboard');
+    try {
+      const loggedInUser = await login(credentials);
+      if (loggedInUser) {
+        router.push('/dashboard');
+        setLoading(false);
+        return { user: loggedInUser };
+      }
+      setLoading(false);
+      return { user: null, error: 'User data not found or inactive.' };
+    } catch (error: any) {
+      setLoading(false);
+      return { user: null, error: error.message };
     }
-    setLoading(false);
-    return loggedInUser;
   };
 
   // REMOVE the router.push from handleSignUp

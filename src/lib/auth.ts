@@ -54,8 +54,13 @@ export async function login(credentials: UserCredentials): Promise<User | null> 
     }
     // Phone login logic can be added here if using Firebase phone auth
     return null;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === 'auth/invalid-credential') {
+      // This specific error is for wrong email/password. We can re-throw it.
+      throw new Error('Invalid email or password.');
+    }
     console.error("Login error:", error);
+    // For other errors, return null to indicate a generic failure.
     return null;
   }
 }
