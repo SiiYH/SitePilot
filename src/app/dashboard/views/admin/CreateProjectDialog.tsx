@@ -19,7 +19,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, ChevronsUpDown, PlusCircle, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, PlusCircle, Loader2, Info } from 'lucide-react';
 import { User, Project, ProgressTrackingMode, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +33,7 @@ import { doc } from 'firebase/firestore';
 import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface CreateProjectDialogProps {
   users: User[];
@@ -360,15 +361,29 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <FormField
-                        control={form.control}
-                        name="grossProfit"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Gross Profit</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 2,000,000" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                            control={form.control}
+                            name="grossProfit"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center gap-2">
+                                        <FormLabel>Gross Profit</FormLabel>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Gross Profit is auto-calculated based on other financial inputs.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    <FormControl>
+                                        <Input type="number" placeholder="Auto-calculated" {...field} disabled />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                         <FormField
                         control={form.control}
@@ -590,4 +605,5 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     </Dialog>
   );
 }
+
 
