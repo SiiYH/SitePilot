@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, GanttChartSquare, Milestone, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Landmark, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2, Wrench } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,8 +33,8 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 const typeIcon: { [key: string]: React.ElementType } = {
-    'Task': GanttChartSquare,
-    'Milestone': Milestone
+    'Task': Wrench,
+    'Milestone': Landmark
 };
 
 const InfoField = ({ icon, label, children }: { icon: React.ElementType; label: string; children?: React.ReactNode }) => {
@@ -230,7 +230,7 @@ export default function WorkItemDetailsPage() {
   const canEditWorkItem = user.role === 'admin' || user.role === 'director';
   const owner = itemUsers?.find(u => u.id === workItem.owner);
   const contributors = itemUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
-  const Icon = typeIcon[workItem.type] || GanttChartSquare;
+  const Icon = typeIcon[workItem.type] || Wrench;
   
   const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
     if (!dateValue) return null;
@@ -381,3 +381,4 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
+    

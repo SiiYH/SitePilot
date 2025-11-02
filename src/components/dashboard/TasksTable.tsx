@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -8,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { GanttChartSquare, Milestone, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp, Tags } from 'lucide-react';
+import { Wrench, Landmark, Calendar, User as UserIcon, FolderKanban, ArrowUpDown, ArrowDown, ArrowUp, Tags } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -38,8 +37,8 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
 };
 
 const typeIcon: { [key: string]: React.ElementType } = {
-    'Task': GanttChartSquare,
-    'Milestone': Milestone
+    'Task': Wrench,
+    'Milestone': Landmark
 }
 
 const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
@@ -149,7 +148,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
   }
 
   const renderTaskCard = (task: Task) => {
-    const Icon = typeIcon[task.type] || GanttChartSquare;
+    const Icon = typeIcon[task.type] || Wrench;
     const dueDate = getSafeDate(task.dueDate);
     const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
     const owner = getUserFromId(task.owner);
@@ -286,7 +285,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                     </TableHeader>
                     <TableBody>
                         {sortedTasks.map(task => {
-                            const Icon = typeIcon[task.type] || GanttChartSquare;
+                            const Icon = typeIcon[task.type] || Wrench;
                             const dueDate = getSafeDate(task.dueDate);
                             const canEditTask = user.role === 'admin' || user.role === 'director' || task.owner === user.id || task.contributors?.includes(user.id);
                             const owner = getUserFromId(task.owner);
@@ -378,3 +377,4 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     </>
   );
 }
+    
