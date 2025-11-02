@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -69,6 +68,8 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       type: workItem.type,
     },
   });
+  
+  const selectedOwnerId = form.watch('owner');
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -241,7 +242,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                         <CommandList>
                             <CommandEmpty>No engineers found.</CommandEmpty>
                             <CommandGroup>
-                            {engineers.map((engineer) => (
+                            {engineers.filter(e => e.id !== selectedOwnerId).map((engineer) => (
                                 <CommandItem
                                 key={engineer.id}
                                 onSelect={() => {

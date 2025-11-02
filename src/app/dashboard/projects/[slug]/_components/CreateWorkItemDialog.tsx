@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -72,6 +71,8 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
   }, [project, form]);
 
   const isTypeSelectionDisabled = project.progressTrackingMode === 'task-driven' || project.progressTrackingMode === 'milestone-driven';
+  
+  const selectedOwnerId = form.watch('owner');
 
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -262,7 +263,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
                         <CommandList>
                             <CommandEmpty>No engineers found.</CommandEmpty>
                             <CommandGroup>
-                            {engineers.map((engineer) => (
+                            {engineers.filter(e => e.id !== selectedOwnerId).map((engineer) => (
                                 <CommandItem
                                 key={engineer.id}
                                 onSelect={() => {
