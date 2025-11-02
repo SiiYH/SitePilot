@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { DateInput } from '@/components/ui/date-input';
 
 
 interface EditWorkItemFormProps {
@@ -38,6 +41,10 @@ const formSchema = z.object({
   dueDate: z.date({ required_error: 'A due date is required.' }),
   status: z.enum(['Not Started', 'In Progress', 'Completed', 'Overdue']),
   type: z.enum(['Task', 'Milestone']),
+  billableAmount: z.any().optional(),
+  billableStatus: z.enum(['Not Billable', 'Unbilled', 'Billed', 'Paid']).optional(),
+  invoiceDate: z.date().optional(),
+  invoiceNo: z.string().optional(),
 });
 
 export default function EditWorkItemForm({ workItem, project, engineers, pathSegments }: EditWorkItemFormProps) {
@@ -55,6 +62,11 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       return undefined;
     }
   };
+  
+  const formatAmountForDisplay = (amount: number | undefined) => {
+    if (amount === undefined || isNaN(amount)) return '';
+    return new Intl.NumberFormat('en-US').format(amount);
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,6 +78,10 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       dueDate: getSafeDate(workItem.dueDate),
       status: workItem.status,
       type: workItem.type,
+      billableAmount: formatAmountForDisplay(workItem.billableAmount),
+      billableStatus: workItem.billableStatus || 'Not Billable',
+      invoiceDate: getSafeDate(workItem.invoiceDate),
+      invoiceNo: workItem.invoiceNo || '',
     },
   });
   
@@ -77,6 +93,8 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
     const updatedData: Partial<Task> = {
       ...values,
       dueDate: values.dueDate.toISOString(),
+      billableAmount: values.billableAmount ? parseFloat(String(values.billableAmount).replace(/,/g, '')) : undefined,
+      invoiceDate: values.invoiceDate?.toISOString(),
     };
 
     if (values.owner === 'unassigned') {
@@ -133,6 +151,33 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       router.refresh();
     }, 1000);
   };
+  
+  const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+    let input = e.target.value;
+    let cleaned = input.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    const [integerPart, decimalPart] = cleaned.split('.');
+    let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (decimalPart !== undefined) {
+      formatted += '.' + decimalPart.slice(0, 2);
+    }
+    field.onChange(formatted);
+  };
+
+  const handleNumericInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+    const value = e.target.value.replace(/,/g, '');
+    if (value && !isNaN(parseFloat(value))) {
+      const num = parseFloat(value);
+      const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(num);
+      field.onChange(formatted);
+    }
+  };
 
   return (
     <Card>
@@ -143,190 +188,258 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-             <FormField
+              <h4 className="text-sm font-semibold text-muted-foreground">General Details</h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                 <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select work item type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Task">Task</SelectItem>
+                            <SelectItem value="Milestone">Milestone</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Set initial status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Not Started">Not Started</SelectItem>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+              <FormField
                 control={form.control}
-                name="type"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select work item type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Task">Task</SelectItem>
-                        <SelectItem value="Milestone">Milestone</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Finalize plumbing" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Finalize plumbing" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Add more details about this work item..." {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="owner"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Owner (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an owner" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {engineers.map(e => (
-                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
+              <FormField
                 control={form.control}
-                name="contributors"
+                name="description"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Contributors (Optional)</FormLabel>
-                    <Popover>
-                    <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button variant="outline" role="combobox" className="w-full justify-between">
-                            {(() => {
-                              const length = field.value?.length ?? 0;
-                              return length > 0
-                                ? `${length} engineer(s) selected`
-                                : 'Select contributors...';
-                            })()}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                        <CommandInput placeholder="Search engineers..." />
-                        <CommandList>
-                            <CommandEmpty>No engineers found.</CommandEmpty>
-                            <CommandGroup>
-                            {engineers.filter(e => e.id !== selectedOwnerId).map((engineer) => (
-                                <CommandItem
-                                key={engineer.id}
-                                onSelect={() => {
-                                    const selected = field.value || [];
-                                    const newValue = selected.includes(engineer.id)
-                                    ? selected.filter((id) => id !== engineer.id)
-                                    : [...selected, engineer.id];
-                                    field.onChange(newValue);
-                                }}
-                                >
-                                <Check
-                                    className={cn(
-                                    'mr-2 h-4 w-4',
-                                    field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
-                                    )}
-                                />
-                                {engineer.name}
-                                </CommandItem>
-                            ))}
-                            </CommandGroup>
-                        </CommandList>
-                        </Command>
-                    </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Due Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full pl-3 text-left font-normal',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Set initial status" />
-                      </SelectTrigger>
+                      <Textarea placeholder="Add more details about this work item..." {...field} value={field.value ?? ''} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Not Started">Not Started</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="dueDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Due Date</FormLabel>
+                     <DateInput 
+                        value={field.value}
+                        onChange={field.onChange}
+                     />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            
+              <Separator />
+
+              <h4 className="text-sm font-semibold text-muted-foreground">Team Assignment</h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an owner" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {engineers.map(e => (
+                            <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="contributors"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Contributors (Optional)</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" role="combobox" className="w-full justify-between">
+                                {(() => {
+                                  const length = field.value?.length ?? 0;
+                                  return length > 0
+                                    ? `${length} engineer(s) selected`
+                                    : 'Select contributors...';
+                                })()}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                            <CommandInput placeholder="Search engineers..." />
+                            <CommandList>
+                                <CommandEmpty>No engineers found.</CommandEmpty>
+                                <CommandGroup>
+                                {engineers.filter(e => e.id !== selectedOwnerId).map((engineer) => (
+                                    <CommandItem
+                                    key={engineer.id}
+                                    onSelect={() => {
+                                        const selected = field.value || [];
+                                        const newValue = selected.includes(engineer.id)
+                                        ? selected.filter((id) => id !== engineer.id)
+                                        : [...selected, engineer.id];
+                                        field.onChange(newValue);
+                                    }}
+                                    >
+                                    <Check
+                                        className={cn(
+                                        'mr-2 h-4 w-4',
+                                        field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
+                                        )}
+                                    />
+                                    {engineer.name}
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                            </Command>
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
+
+              <Separator />
+
+              <h4 className="text-sm font-semibold text-muted-foreground">Financials (Optional)</h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="billableAmount"
+                  render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Billable Amount</FormLabel>
+                          <FormControl>
+                              <Input
+                                  type="text"
+                                  placeholder="e.g., 1,500.00"
+                                  {...field}
+                                  onChange={(e) => handleNumericInputChange(e, field)}
+                                  onBlur={(e) => handleNumericInputBlur(e, field)}
+                              />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="billableStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select billing status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Not Billable">Not Billable</SelectItem>
+                          <SelectItem value="Unbilled">Unbilled</SelectItem>
+                          <SelectItem value="Billed">Billed</SelectItem>
+                          <SelectItem value="Paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="invoiceNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice No.</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., INV-00123" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="invoiceDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Invoice Date</FormLabel>
+                      <DateInput 
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder='Select invoice date'
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => router.back()}>
