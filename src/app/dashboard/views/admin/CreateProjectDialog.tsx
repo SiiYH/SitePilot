@@ -32,9 +32,10 @@ import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface CreateProjectDialogProps {
-  engineers: User[];
+  users: User[];
   onProjectCreated: (project: Project) => void;
   companyId: string;
 }
@@ -53,10 +54,10 @@ const formSchema = z.object({
   jobLocation: z.string().optional(),
   distance: z.coerce.number().optional(),
   performanceBondNo: z.string().optional(),
-  performanceBondAmount: z.coerce.number().optional(),
+  performanceBondAmount: z.any().optional(),
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
-  insuranceAmount: z.coerce.number().optional(),
+  insuranceAmount: z.any().optional(),
   currency: z.string().optional(),
 });
 
@@ -72,7 +73,7 @@ const createSlug = (name: string) => {
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
-export default function CreateProjectDialog({ engineers, onProjectCreated, companyId }: CreateProjectDialogProps) {
+export default function CreateProjectDialog({ users, onProjectCreated, companyId }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -132,9 +133,12 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
     
     const projectId = `proj-${Date.now()}`;
     const jobNo = `JB-${Date.now()}`;
+    const now = new Date().toISOString();
 
     const newProject: Project = {
       ...values,
+      performanceBondAmount: values.performanceBondAmount ? parseFloat(String(values.performanceBondAmount).replace(/,/g, '')) : undefined,
+      insuranceAmount: values.insuranceAmount ? parseFloat(String(values.insuranceAmount).replace(/,/g, '')) : undefined,
       id: projectId,
       jobNo: jobNo,
       companyId: companyId,
@@ -145,7 +149,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
       progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
       progressTrackingModeHistory: [{
         mode: values.progressTrackingMode as ProgressTrackingMode,
-        date: new Date().toISOString(),
+        date: now,
         changedBy: user.id,
       }],
       imageUrl: `https://picsum.photos/seed/${projectId}/600/400`,
@@ -153,6 +157,10 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
       tasks: [],
       documents: [],
       milestones: [],
+      createdAt: now,
+      createdBy: user.id,
+      modifiedAt: now,
+      modifiedBy: user.id,
     };
     
     const projectDocRef = doc(firestore, 'projects', projectId);
@@ -169,6 +177,33 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
         description: `${newProject.name} has been successfully created.`,
       });
     }, 1000);
+  };
+  
+    const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+        let input = e.target.value;
+        let cleaned = input.replace(/[^0-9.]/g, '');
+        const parts = cleaned.split('.');
+        if (parts.length > 2) {
+        cleaned = parts[0] + '.' + parts.slice(1).join('');
+        }
+        const [integerPart, decimalPart] = cleaned.split('.');
+        let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        if (decimalPart !== undefined) {
+        formatted += '.' + decimalPart.slice(0, 2);
+        }
+        field.onChange(formatted);
+    };
+
+    const handleNumericInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+        const value = e.target.value.replace(/,/g, '');
+        if (value && !isNaN(parseFloat(value))) {
+        const num = parseFloat(value);
+        const formatted = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+        field.onChange(formatted);
+        }
   };
 
   return (
@@ -304,15 +339,23 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                         )}
                         />
                         <FormField
-                        control={form.control}
-                        name="performanceBondAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Performance Bond Amt.</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                            control={form.control}
+                            name="performanceBondAmount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Performance Bond Amt.</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="text"
+                                            placeholder="e.g., 500,000.00"
+                                            {...field}
+                                            onChange={(e) => handleNumericInputChange(e, field)}
+                                            onBlur={(e) => handleNumericInputBlur(e, field)}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -322,7 +365,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Gross Profit</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
+                            <FormControl><Input type="number" placeholder="e.g., 2,000,000" {...field} /></FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
@@ -346,7 +389,15 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Insurance Amt.</FormLabel>
-                                <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                                <FormControl>
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g., 100,000.00"
+                                        {...field}
+                                        onChange={(e) => handleNumericInputChange(e, field)}
+                                        onBlur={(e) => handleNumericInputBlur(e, field)}
+                                    />
+                                </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -418,7 +469,7 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                 name="assignedEngineers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Assign Engineers</FormLabel>
+                    <FormLabel>Assign Users</FormLabel>
                     <Controller
                       control={form.control}
                       name="assignedEngineers"
@@ -427,35 +478,35 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" className="w-full justify-between">
                               {field.value?.length > 0
-                                ? `${field.value.length} engineer(s) selected`
-                                : 'Select engineers...'}
+                                ? `${field.value.length} user(s) selected`
+                                : 'Select users...'}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                              <CommandInput placeholder="Search engineers..." />
+                              <CommandInput placeholder="Search users..." />
                               <CommandList>
-                                  <CommandEmpty>No engineers found.</CommandEmpty>
+                                  <CommandEmpty>No users found.</CommandEmpty>
                                   <CommandGroup>
-                                  {engineers.map((engineer) => (
+                                  {users.map((user) => (
                                       <CommandItem
-                                      key={engineer.id}
+                                      key={user.id}
                                       onSelect={() => {
                                           const selected = field.value || [];
-                                          const newValue = selected.includes(engineer.id)
-                                          ? selected.filter((id) => id !== engineer.id)
-                                          : [...selected, engineer.id];
+                                          const newValue = selected.includes(user.id)
+                                          ? selected.filter((id) => id !== user.id)
+                                          : [...selected, user.id];
                                           field.onChange(newValue);
                                       }}
                                       >
                                       <Check
                                           className={cn(
                                           'mr-2 h-4 w-4',
-                                          field.value?.includes(engineer.id) ? 'opacity-100' : 'opacity-0'
+                                          field.value?.includes(user.id) ? 'opacity-100' : 'opacity-0'
                                           )}
                                       />
-                                      {engineer.name}
+                                      {user.name} ({user.role})
                                       </CommandItem>
                                   ))}
                                   </CommandGroup>
@@ -539,3 +590,4 @@ export default function CreateProjectDialog({ engineers, onProjectCreated, compa
     </Dialog>
   );
 }
+
