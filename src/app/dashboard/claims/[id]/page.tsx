@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText, Hash, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
+import { ArrowLeft, DollarSign, Calendar, GanttChartSquare, Edit, User as UserIcon, Paperclip, MessageSquare, Save, CheckCircle, FileText, Hash, ThumbsDown, ThumbsUp, XCircle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -68,21 +69,8 @@ export default function ClaimDetailsPage() {
   const [permissionError, setPermissionError] = useState(false);
 
   useEffect(() => {
-    /* console.log("=== DIAGNOSTIC INFO ===");
-    console.log("Claim ID:", id);
-    console.log("User:", user);
-    console.log("User ID:", user?.id);
-    console.log("User Role:", user?.role);
-    console.log("Firestore:", firestore ? "Connected" : "Not connected");
-    console.log("====================="); */
-    
-    /* const docRef = doc(firestore, "claims", "claim-1760426427021");
-    getDoc(docRef).then(snap => console.log(snap.exists(), snap.data())); */
-
     if (!id || !firestore) return;
     
-    console.log("isloading01: ", isLoading);
-
     setIsLoading(true);
     setPermissionError(false);
 
@@ -90,9 +78,7 @@ export default function ClaimDetailsPage() {
     const unsub = onSnapshot(
       claimRef, 
       async (snapshot) => {
-        console.log('snapshot ', snapshot.exists());
         if (!snapshot.exists()) {
-    console.log("isloading02: ", isLoading);
           setClaimData(null);
           setIsLoading(false);
           notFound();
@@ -105,7 +91,6 @@ export default function ClaimDetailsPage() {
             const submittedByRef = claim.submittedBy ? doc(firestore, 'users', claim.submittedBy) : null;
             const approvedByRef = claim.approvedBy ? doc(firestore, 'users', claim.approvedBy) : null;
           
-            // 🔹 Try fetching all related documents
             const [projectSnap, submittedBySnap, approvedBySnap] = await Promise.all([
               getDoc(projectRef).catch((err) => {
                 console.error('❌ Project fetch error:', err.code, err.message);
@@ -125,7 +110,6 @@ export default function ClaimDetailsPage() {
                 : null,
             ]);
           
-            // 🔹 Build the objects safely
             const project = projectSnap?.exists()
               ? ({ id: projectSnap.id, ...projectSnap.data() } as Project)
               : undefined;
@@ -149,7 +133,6 @@ export default function ClaimDetailsPage() {
       (error) => {
         console.error("Firestore permission error:", error);
         setPermissionError(true);
-    console.log("isloading04: ", isLoading);
         setIsLoading(false);
         toast({
           variant: "destructive",
@@ -163,7 +146,6 @@ export default function ClaimDetailsPage() {
   }, [id, firestore, toast]);
 
   if (isLoading) {
-    console.log("isloading: ", isLoading);
     return (
         <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -331,6 +313,9 @@ export default function ClaimDetailsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {claim.type && (
+                         <InfoField icon={Info} label="Claim Type" value={claim.type} />
+                    )}
                     {claim.description && (
                          <InfoField icon={FileText} label="Description" value={claim.description} />
                     )}

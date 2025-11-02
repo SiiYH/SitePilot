@@ -9,7 +9,7 @@ import { Claim, Project, User } from "@/types";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown } from 'lucide-react';
+import { DollarSign, User as UserIcon, Calendar, FolderKanban, ArrowUpDown, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
@@ -48,9 +48,6 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
     const [filter, setFilter] = useState<StatusFilter>('All');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
 
-    // console.log(company?.id);
-    // console.log(claims);
-    // Query users from the same company
     const usersQuery = useMemoFirebase(() => {
         if (!firestore || !company?.id) return null;
         return query(collection(firestore, 'users'), where('companyId', '==', company.id));
@@ -139,6 +136,10 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                     </CardHeader>
                                     <CardContent className="space-y-3 text-sm">
                                         <div className="flex items-center gap-2">
+                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                            <span className="text-muted-foreground">{claim.type}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
                                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                                             <span className="font-semibold"><span className="text-xs text-muted-foreground">{claim.currency}</span> {claim.amount.toLocaleString()}</span>
                                         </div>
@@ -171,7 +172,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Claim</TableHead>
-                                <TableHead>e-Inv No.</TableHead>
+                                <TableHead>Type</TableHead>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Submitted By</TableHead>
                                 <TableHead>
@@ -200,7 +201,7 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
                                             className="cursor-pointer"
                                         >
                                             <TableCell className="font-medium">{claim.title}</TableCell>
-                                            <TableCell>{claim.eInvoiceNo || 'N/A'}</TableCell>
+                                            <TableCell>{claim.type}</TableCell>
                                             <TableCell>{getProjectName(claim.projectId)}</TableCell>
                                             <TableCell>
                                                 {submittedByUser ? (
@@ -237,6 +238,3 @@ export default function ClaimsOverview({ claims, projects }: ClaimsOverviewProps
         </Card>
     );
 }
-
-
-    

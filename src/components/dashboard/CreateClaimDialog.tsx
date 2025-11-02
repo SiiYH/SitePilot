@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Loader2, Upload, X } from 'lucide-react';
-import { Claim, CreateClaimDialogProps } from '@/types';
+import { Claim, ClaimType, CreateClaimDialogProps } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,10 +28,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { collection, doc } from 'firebase/firestore';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
+const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
   title: z.string().min(3, 'Claim title must be at least 3 characters.'),
+  type: z.enum(claimTypes, { required_error: "Claim type is required." }),
   eInvoiceNo: z.string().optional(),
   description: z.string().optional(),
   amount: z.string().refine(val => !isNaN(parseFloat(val.replace(/,/g, ''))), {
@@ -57,6 +59,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     defaultValues: {
       projectId: defaultProjectId || '',
       title: '',
+      type: 'Progress Claim',
       eInvoiceNo: '',
       description: '',
       amount: '',
@@ -71,6 +74,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       form.reset({
         projectId: defaultProjectId || '',
         title: '',
+        type: 'Progress Claim',
         eInvoiceNo: '',
         description: '',
         amount: '',
@@ -90,7 +94,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         fileInputRef.current.value = '';
       }
     }
-  }, [open, defaultProjectId, form, projects]);
+  }, [open, defaultProjectId, form, projects, selectedProjectId]);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -123,6 +127,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       projectId: values.projectId,
       companyId: company.id,
       title: values.title,
+      type: values.type,
       eInvoiceNo: values.eInvoiceNo,
       description: values.description,
       amount: parseFloat(values.amount.replace(/,/g, '')),
@@ -175,14 +180,6 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   }
 
-  /* const formatAmount = (value: string) => {
-    const numberValue = parseFloat(value.replace(/,/g, ''));
-    if (isNaN(numberValue)) {
-      return '';
-    }
-    return new Intl.NumberFormat('en-US').format(numberValue);
-  }; */
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -214,6 +211,28 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                       <SelectContent>
                         {projects.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Claim Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a claim type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {claimTypes.map(type => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -281,7 +300,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                     </FormItem>
                   )}
                 />
-                <FormField // Replace your current amount FormField with this updated version:
+                <FormField
                   control={form.control}
                   name="amount"
                   render={({ field }) => (
@@ -293,34 +312,20 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                           placeholder="e.g., 1,500.00"
                           value={field.value}
                           onChange={(e) => {
-                            // Get raw input value
                             let input = e.target.value;
-
-                            // Remove all non-digit and non-decimal characters
                             let cleaned = input.replace(/[^0-9.]/g, '');
-
-                            // Ensure only one decimal point
                             const parts = cleaned.split('.');
                             if (parts.length > 2) {
                               cleaned = parts[0] + '.' + parts.slice(1).join('');
                             }
-
-                            // Split into integer and decimal parts
                             const [integerPart, decimalPart] = cleaned.split('.');
-
-                            // Format integer part with thousand separators
                             let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-                            // Add decimal part back if it exists
                             if (decimalPart !== undefined) {
-                              formatted += '.' + decimalPart.slice(0, 2); // Limit to 2 decimal places
+                              formatted += '.' + decimalPart.slice(0, 2);
                             }
-
-                            // Update the field value
                             field.onChange(formatted);
                           }}
                           onBlur={(e) => {
-                            // Optional: Format on blur to ensure proper decimal places
                             const value = e.target.value.replace(/,/g, '');
                             if (value && !isNaN(parseFloat(value))) {
                               const num = parseFloat(value);

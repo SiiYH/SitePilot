@@ -110,11 +110,14 @@ export interface Project {
   modifiedBy?: string;
 }
 
+export type ClaimType = 'Progress Claim' | 'Variation Order' | 'Final Claim' | 'Materials on Site' | 'Retention Release';
+
 export interface Claim {
   id: string;
   projectId: string;
   companyId: string;
   title: string;
+  type: ClaimType;
   description?: string;
   amount: number;
   currency: string;
@@ -181,6 +184,3 @@ export type CreateUserData = {
     role: UserRole;
     companyId: string;
 };
-
-
-    

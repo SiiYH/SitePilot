@@ -19,7 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Upload, X } from 'lucide-react';
-import { Claim, Project } from '@/types';
+import { Claim, ClaimType, Project } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,10 +31,12 @@ import { useRouter } from 'next/navigation';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
+const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
   title: z.string().min(3, 'Claim title must be at least 3 characters.'),
+  type: z.enum(claimTypes, { required_error: "Claim type is required." }),
   eInvoiceNo: z.string().optional(),
   description: z.string().optional(),
   amount: z.string().refine(val => !isNaN(parseFloat(val.replace(/,/g, ''))), {
@@ -66,6 +68,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
     defaultValues: {
       projectId: claim.projectId,
       title: claim.title,
+      type: claim.type || 'Progress Claim',
       eInvoiceNo: claim.eInvoiceNo || '',
       description: claim.description || '',
       amount: claim.amount.toString(),
@@ -111,6 +114,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
       const updatedClaimData: any = {
         projectId: values.projectId,
         title: values.title,
+        type: values.type,
         amount: parseFloat(values.amount.replace(/,/g, '')),
         currency: values.currency,
         receiptImageUrls: allImageUrls, // Store only URLs, not base64
@@ -221,6 +225,28 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
                   </FormItem>
                 );
               }}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Claim Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a claim type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {claimTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
             <FormField
                     control={form.control}
@@ -407,5 +433,3 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
     </Card>
   );
 }
-
-    

@@ -248,6 +248,11 @@
           "type": "string",
           "description": "Title of the claim."
         },
+        "type": {
+          "type": "string",
+          "enum": ["Progress Claim", "Variation Order", "Final Claim", "Materials on Site", "Retention Release"],
+          "description": "Type of the claim."
+        },
         "description": {
           "type": "string",
           "description": "Detailed description of the claim."
@@ -304,6 +309,7 @@
         "projectId",
         "companyId",
         "title",
+        "type",
         "amount",
         "currency",
         "status",
@@ -499,6 +505,3 @@
     "reasoning": "The Firestore data structure is designed to support role-based access control and the core features of the SiteFlow application. It leverages structural segregation and denormalization to ensure authorization independence, making security rules simpler and more robust. User data is stored in `/users/{userId}`. Company data is stored in `/companies/{companyId}`. Project data is stored in `/projects/{projectId}`. Claims are in a top-level collection `/claims/{claimId}` for easy querying across all projects and companies, with `companyId` and `projectId` for filtering. Licenses are stored in `/licenses/{licenseId}` with the document ID as the license key for efficient validation. Tasks are stored within each project at `/projects/{projectId}/tasks/{taskId}`, with denormalized user information for easy role-based task assignment. Documents are stored in their own subcollection at `/projects/{projectId}/documents/{documentId}` to allow for more granular security rules, separating them from the main project document. This structure avoids hierarchical authorization dependencies (`get()` calls) and supports secure list operations by ensuring each collection has a homogeneous security posture."
   }
 }
-
-    
-    
