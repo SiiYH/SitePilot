@@ -34,6 +34,10 @@ export interface Task {
   projectName?: string;
   projectSlug?: string;
   projectId?: string;
+  billableAmount?: number;
+  billableStatus?: 'Not Billable' | 'Unbilled' | 'Billed' | 'Paid';
+  invoiceDate?: string;
+  invoiceNo?: string;
 }
 
 export interface Document {
