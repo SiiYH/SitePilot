@@ -49,6 +49,10 @@ export interface Milestone {
   name: string;
   status: 'Achieved' | 'Upcoming' | 'Delayed';
   date: string;
+  billableAmount?: number;
+  billableStatus?: 'Not Billable' | 'Unbilled' | 'Billed' | 'Paid';
+  invoiceDate?: string;
+  invoiceNo?: string;
 }
 
 export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'task-milestone-driven';

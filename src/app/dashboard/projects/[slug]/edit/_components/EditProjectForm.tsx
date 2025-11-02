@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +16,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockProjects, defaultProjectStatuses } from '@/lib/data'; // to update mock data
+import { mockProjects, defaultProjectStatuses } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
@@ -47,7 +45,7 @@ const formSchema = z.object({
   distance: z.coerce.number().optional(),
   performanceBondNo: z.string().optional(),
   performanceBondAmount: z.any().optional(),
-  grossProfit: z.coerce.number().optional(),
+  grossProfit: z.any().optional(),
   marginProfit: z.coerce.number().optional(),
   insuranceAmount: z.any().optional(),
   currency: z.string().optional(),
@@ -100,7 +98,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
       distance: project.distance || ('' as any),
       performanceBondNo: project.performanceBondNo || '',
       performanceBondAmount: formatAmountForDisplay(project.performanceBondAmount),
-      grossProfit: project.grossProfit || ('' as any),
+      grossProfit: formatAmountForDisplay(project.grossProfit),
       marginProfit: project.marginProfit || ('' as any),
       insuranceAmount: formatAmountForDisplay(project.insuranceAmount),
       currency: project.currency || 'MYR',
@@ -124,6 +122,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
     const updateData = {
       ...values,
       performanceBondAmount: values.performanceBondAmount ? parseFloat(String(values.performanceBondAmount).replace(/,/g, '')) : undefined,
+      grossProfit: values.grossProfit ? parseFloat(String(values.grossProfit).replace(/,/g, '')) : undefined,
       insuranceAmount: values.insuranceAmount ? parseFloat(String(values.insuranceAmount).replace(/,/g, '')) : undefined,
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
@@ -144,31 +143,31 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
     }, 1000);
   };
 
-    const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
-        let input = e.target.value;
-        let cleaned = input.replace(/[^0-9.]/g, '');
-        const parts = cleaned.split('.');
-        if (parts.length > 2) {
-        cleaned = parts[0] + '.' + parts.slice(1).join('');
-        }
-        const [integerPart, decimalPart] = cleaned.split('.');
-        let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        if (decimalPart !== undefined) {
-        formatted += '.' + decimalPart.slice(0, 2);
-        }
-        field.onChange(formatted);
-    };
+  const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+    let input = e.target.value;
+    let cleaned = input.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    const [integerPart, decimalPart] = cleaned.split('.');
+    let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (decimalPart !== undefined) {
+      formatted += '.' + decimalPart.slice(0, 2);
+    }
+    field.onChange(formatted);
+  };
 
-    const handleNumericInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
-        const value = e.target.value.replace(/,/g, '');
-        if (value && !isNaN(parseFloat(value))) {
-        const num = parseFloat(value);
-        const formatted = new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(num);
-        field.onChange(formatted);
-        }
+  const handleNumericInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+    const value = e.target.value.replace(/,/g, '');
+    if (value && !isNaN(parseFloat(value))) {
+      const num = parseFloat(value);
+      const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(num);
+      field.onChange(formatted);
+    }
   };
 
 
@@ -334,14 +333,26 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
                                                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                    <p>Gross Profit is auto-calculated based on other financial inputs.</p>
+                                                    <p className="font-medium">Formula: Revenue - Direct Costs</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Auto-calculated, but you can override
+                                                    </p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </div>
                                     <FormControl>
-                                        <Input type="number" placeholder="Auto-calculated" {...field} value={field.value || ''} disabled />
+                                        <Input 
+                                            type="text" 
+                                            placeholder="e.g., 150,000.00" 
+                                            {...field} 
+                                            onChange={(e) => handleNumericInputChange(e, field)}
+                                            onBlur={(e) => handleNumericInputBlur(e, field)}
+                                        />
                                     </FormControl>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        💡 Typically auto-calculated. Manual entry will override.
+                                    </p>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -506,5 +517,3 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
     </Card>
   );
 }
-
-
