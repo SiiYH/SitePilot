@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -24,30 +23,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 
-async function getClaim(firestore: Firestore, id: string): Promise<{ claim: Claim; project?: Project; submittedBy?: User; approvedBy?: User } | undefined> {
-    const claimRef = doc(firestore, 'claims', id);
-    const claimSnap = await getDoc(claimRef);
-  
-    if (!claimSnap.exists()) return undefined;
-  
-    const claim = { id: claimSnap.id, ...claimSnap.data() } as Claim;
-  
-    // Fetch project, submittedBy, approvedBy if present
-    const [projectSnap, submittedSnap, approvedSnap] = await Promise.all([
-      claim.projectId ? getDoc(doc(firestore, 'projects', claim.projectId)) : Promise.resolve(null),
-      claim.submittedBy ? getDoc(doc(firestore, 'users', claim.submittedBy)) : Promise.resolve(null),
-      claim.approvedBy ? getDoc(doc(firestore, 'users', claim.approvedBy)) : Promise.resolve(null),
-    ]);
-  
-    return {
-      claim,
-      project: projectSnap?.exists() ? ({ id: projectSnap.id, ...projectSnap.data() } as Project) : undefined,
-      submittedBy: submittedSnap?.exists() ? ({ id: submittedSnap.id, ...submittedSnap.data() } as User) : undefined,
-      approvedBy: approvedSnap?.exists() ? ({ id: approvedSnap.id, ...approvedSnap.data() } as User) : undefined,
-    };
-  }
-  
-
 const getInitials = (name: string) => {
     if (!name) return '';
     const names = name.split(' ');
@@ -56,7 +31,6 @@ const getInitials = (name: string) => {
     }
     return name.substring(0, 2).toUpperCase();
 };
-
 
 const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   'Paid': 'default',
@@ -90,42 +64,143 @@ export default function ClaimDetailsPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isEditingRemark, setIsEditingRemark] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState(false);
 
   useEffect(() => {
+    /* console.log("=== DIAGNOSTIC INFO ===");
+    console.log("Claim ID:", id);
+    console.log("User:", user);
+    console.log("User ID:", user?.id);
+    console.log("User Role:", user?.role);
+    console.log("Firestore:", firestore ? "Connected" : "Not connected");
+    console.log("====================="); */
+    
+    /* const docRef = doc(firestore, "claims", "claim-1760426427021");
+    getDoc(docRef).then(snap => console.log(snap.exists(), snap.data())); */
+
     if (!id || !firestore) return;
+    
+    console.log("isloading01: ", isLoading);
+
+    setIsLoading(true);
+    setPermissionError(false);
+
     const claimRef = doc(firestore, 'claims', id);
-    const unsub = onSnapshot(claimRef, async (snapshot) => {
-      if (!snapshot.exists()) {
+    const unsub = onSnapshot(
+      claimRef, 
+      async (snapshot) => {
+        console.log('snapshot ', snapshot.exists());
+        if (!snapshot.exists()) {
+    console.log("isloading02: ", isLoading);
+          setClaimData(null);
+          setIsLoading(false);
+          notFound();
+          return;
+        }
+        try {
+            const claim = { id: snapshot.id, ...snapshot.data() } as Claim;
+          
+            const projectRef = doc(firestore, 'projects', claim.projectId);
+            const submittedByRef = claim.submittedBy ? doc(firestore, 'users', claim.submittedBy) : null;
+            const approvedByRef = claim.approvedBy ? doc(firestore, 'users', claim.approvedBy) : null;
+          
+            // 🔹 Try fetching all related documents
+            const [projectSnap, submittedBySnap, approvedBySnap] = await Promise.all([
+              getDoc(projectRef).catch((err) => {
+                console.error('❌ Project fetch error:', err.code, err.message);
+                throw new Error(`Project fetch failed: ${err.message}`);
+              }),
+              submittedByRef
+                ? getDoc(submittedByRef).catch((err) => {
+                    console.error('❌ SubmittedBy fetch error:', err.code, err.message);
+                    throw new Error(`SubmittedBy fetch failed: ${err.message}`);
+                  })
+                : null,
+              approvedByRef
+                ? getDoc(approvedByRef).catch((err) => {
+                    console.error('❌ ApprovedBy fetch error:', err.code, err.message);
+                    throw new Error(`ApprovedBy fetch failed: ${err.message}`);
+                  })
+                : null,
+            ]);
+          
+            // 🔹 Build the objects safely
+            const project = projectSnap?.exists()
+              ? ({ id: projectSnap.id, ...projectSnap.data() } as Project)
+              : undefined;
+            const submittedBy = submittedBySnap?.exists()
+              ? ({ id: submittedBySnap.id, ...submittedBySnap.data() } as User)
+              : undefined;
+            const approvedBy = approvedBySnap?.exists()
+              ? ({ id: approvedBySnap.id, ...approvedBySnap.data() } as User)
+              : undefined;
+          
+            setClaimData({ claim, project, submittedBy, approvedBy });
+            setRemark(claim.remark || '');
+            setIsLoading(false);
+          } catch (err: any) {
+            console.error('🔥 Error fetching claim details:', err.code || err.name, err.message);
+            console.error('🧩 Full error object:', err);
+            setIsLoading(false);
+          }
+          
+      },
+      (error) => {
+        console.error("Firestore permission error:", error);
+        setPermissionError(true);
+    console.log("isloading04: ", isLoading);
+        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: "You don't have permission to view this claim.",
+        });
         setClaimData(null);
-        notFound();
-        return;
       }
-      const claim = { id: snapshot.id, ...snapshot.data() } as Claim;
-
-      const projectRef = doc(firestore, 'projects', claim.projectId);
-      const submittedByRef = claim.submittedBy ? doc(firestore, 'users', claim.submittedBy) : null;
-      const approvedByRef = claim.approvedBy ? doc(firestore, 'users', claim.approvedBy) : null;
-
-      const [projectSnap, submittedBySnap, approvedBySnap] = await Promise.all([
-          getDoc(projectRef),
-          submittedByRef ? getDoc(submittedByRef) : null,
-          approvedByRef ? getDoc(approvedByRef) : null,
-      ]);
-
-      const project = projectSnap.exists() ? { id: projectSnap.id, ...projectSnap.data() } as Project : undefined;
-      const submittedBy = submittedBySnap?.exists() ? { id: submittedBySnap.id, ...submittedBySnap.data() } as User : undefined;
-      const approvedBy = approvedBySnap?.exists() ? { id: approvedBySnap.id, ...approvedBySnap.data() } as User : undefined;
-
-      setClaimData({ claim, project, submittedBy, approvedBy });
-      setRemark(claim.remark || '');
-    });
+    );
     return () => unsub();
-  }, [id, firestore]);
+  }, [id, firestore, toast]);
 
-  if (!claimData || !user) {
+  if (isLoading) {
+    console.log("isloading: ", isLoading);
     return (
         <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (permissionError || !claimData || !user) {
+    return (
+        <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <XCircle className="h-6 w-6" />
+                        Access Denied
+                    </CardTitle>
+                    <CardDescription>
+                        You don't have permission to view this claim.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        This could be because:
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
+                        <li>You're not the claim submitter</li>
+                        <li>You don't have director privileges</li>
+                        <li>The claim doesn't exist</li>
+                    </ul>
+                    <Button asChild className="w-full">
+                        <Link href="/dashboard/claims">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Claims
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
     );
   }
@@ -137,19 +212,29 @@ export default function ClaimDetailsPage() {
   const handleApprove = async () => {
     if (!canManageClaim || !firestore) return;
     setIsSubmitting(true);
-    const claimRef = doc(firestore, 'claims', claim.id);
-    const updateData = {
-      status: 'Paid' as const,
-      approvedBy: user.id,
-      approvedAt: new Date().toISOString(),
-    };
-    await updateDoc(claimRef, updateData);
-    toast({
-      title: 'Claim Approved',
-      description: 'The claim has been marked as Paid.',
-      className: 'bg-green-100 text-green-800 border-green-200'
-    });
-    setIsSubmitting(false);
+    try {
+      const claimRef = doc(firestore, 'claims', claim.id);
+      const updateData = {
+        status: 'Paid' as const,
+        approvedBy: user.id,
+        approvedAt: new Date().toISOString(),
+      };
+      await updateDoc(claimRef, updateData);
+      toast({
+        title: 'Claim Approved',
+        description: 'The claim has been marked as Paid.',
+        className: 'bg-green-100 text-green-800 border-green-200'
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to approve claim.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleReject = async () => {
@@ -162,28 +247,36 @@ export default function ClaimDetailsPage() {
       return;
     }
     setIsSubmitting(true);
-    const claimRef = doc(firestore, 'claims', claim.id);
-    const updateData = {
-      status: 'Rejected' as const,
-      remark: rejectionReason,
-      approvedBy: null,
-      approvedAt: null,
-    };
-    await updateDoc(claimRef, updateData);
-    toast({
-      title: 'Claim Rejected',
-      description: 'The claim has been marked as Rejected.',
-    });
-    setIsSubmitting(false);
-    setRejectionReason('');
+    try {
+      const claimRef = doc(firestore, 'claims', claim.id);
+      const updateData = {
+        status: 'Rejected' as const,
+        remark: rejectionReason,
+        approvedBy: null,
+        approvedAt: null,
+      };
+      await updateDoc(claimRef, updateData);
+      toast({
+        title: 'Claim Rejected',
+        description: 'The claim has been marked as Rejected.',
+      });
+      setRejectionReason('');
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to reject claim.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleSaveRemark = async () => {
     try {
       const claimRef = doc(firestore, 'claims', claim.id);
-  
       await updateDoc(claimRef, { remark });
-  
       setClaimData(prevData => prevData ? { ...prevData, claim: { ...prevData.claim, remark } } : null);
       setIsEditingRemark(false);
       toast({
@@ -199,7 +292,6 @@ export default function ClaimDetailsPage() {
       });
     }
   };
-  
 
   return (
     <div className="space-y-6">
@@ -448,5 +540,3 @@ export default function ClaimDetailsPage() {
     </div>
   );
 }
-
-    

@@ -98,15 +98,34 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
       setDocumentNonBlocking(taskDocRef, newTask);
 
-      // Check if the new owner is already in the project's assigned team
+      const projectDocRef = doc(firestore, 'projects', project.id);
+      const usersToAdd = new Set<string>();
+
+      // Check owner
       if (values.owner && values.owner !== 'unassigned' && !project.assignedEngineers.includes(values.owner)) {
-        const projectDocRef = doc(firestore, 'projects', project.id);
-        updateDocumentNonBlocking(projectDocRef, {
-            assignedEngineers: arrayUnion(values.owner)
+        usersToAdd.add(values.owner);
+      }
+
+      // Check contributors
+      if (values.contributors) {
+        values.contributors.forEach(contributorId => {
+          if (!project.assignedEngineers.includes(contributorId)) {
+            usersToAdd.add(contributorId);
+          }
         });
+      }
+
+      if (usersToAdd.size > 0) {
+        const usersToAddArray = Array.from(usersToAdd);
+        updateDocumentNonBlocking(projectDocRef, {
+            assignedEngineers: arrayUnion(...usersToAddArray)
+        });
+        
+        const addedUsersNames = usersToAddArray.map(id => engineers.find(e => e.id === id)?.name).filter(Boolean);
+
         toast({
             title: 'Team Updated',
-            description: `${engineers.find(e => e.id === values.owner)?.name} has been added to the project team.`,
+            description: `${addedUsersNames.join(', ')} has been added to the project team.`,
         });
       }
     }

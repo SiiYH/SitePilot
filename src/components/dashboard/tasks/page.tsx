@@ -119,7 +119,7 @@ export default function MyTasksPage() {
                 <CardTitle>All My Work Items</CardTitle>
             </CardHeader>
             <CardContent>
-                <TasksTable tasks={filteredTasks} user={user} />
+                <TasksTable tasks={filteredTasks} user={user} users={[]} viewMode={'list'} />
             </CardContent>
         </Card>
     </div>

@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 
@@ -57,6 +58,8 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const router = useRouter();
+  // Add this state to track new files
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,56 +75,74 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
 
   const selectedProjectId = form.watch('projectId');
 
+  // Only auto-set currency when project changes AND it's different from current
   useEffect(() => {
-    if (selectedProjectId) {
+    if (selectedProjectId && selectedProjectId !== claim.projectId) {
+      // Only update currency if the project actually changed
       const projectCurrency = projects.find(p => p.id === selectedProjectId)?.currency;
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
       }
     }
-  }, [selectedProjectId, projects, form]);
+  }, [selectedProjectId, projects, form, claim.projectId]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore) {
       toast({ variant: "destructive", title: "Error", description: "Database not found." });
       return;
     }
     setIsLoading(true);
   
-    const claimDocRef = doc(firestore, 'claims', claim.id);
+    try {
+      const claimDocRef = doc(firestore, 'claims', claim.id);
   
-    // Create the update object and remove undefined/unnecessary fields
-    const updatedClaimData: any = {
-      projectId: values.projectId,
-      title: values.title,
-      amount: parseFloat(values.amount.replace(/,/g, '')),
-      currency: values.currency,
-      receiptImageUrls: imagePreviews,
-      status: 'Pending' as const,
-      submittedAt: new Date().toISOString(),
-    };
+      // Separate existing URLs from new uploads
+      const existingUrls = imagePreviews.filter(preview => preview.startsWith('http'));
+      
+      // Upload new images to Firebase Storage
+      let newImageUrls: string[] = [];
+      if (newImageFiles.length > 0) {
+        newImageUrls = await uploadImagesToStorage(newImageFiles);
+      }
   
-    // Only add optional fields if they have values
-    if (values.eInvoiceNo && values.eInvoiceNo.trim() !== '') {
-      updatedClaimData.eInvoiceNo = values.eInvoiceNo;
-    }
+      // Combine existing and new image URLs
+      const allImageUrls = [...existingUrls, ...newImageUrls];
   
-    if (values.description && values.description.trim() !== '') {
-      updatedClaimData.description = values.description;
-    }
+      const updatedClaimData: any = {
+        projectId: values.projectId,
+        title: values.title,
+        amount: parseFloat(values.amount.replace(/,/g, '')),
+        currency: values.currency,
+        receiptImageUrls: allImageUrls, // Store only URLs, not base64
+        status: 'Pending' as const,
+        submittedAt: new Date().toISOString(),
+      };
   
-    // Don't include receiptImages field - it's only for the form, not for Firestore
-    
-    updateDocumentNonBlocking(claimDocRef, updatedClaimData);
+      if (values.eInvoiceNo && values.eInvoiceNo.trim() !== '') {
+        updatedClaimData.eInvoiceNo = values.eInvoiceNo;
+      }
   
-    setTimeout(() => {
-      setIsLoading(false);
+      if (values.description && values.description.trim() !== '') {
+        updatedClaimData.description = values.description;
+      }
+  
+      await updateDocumentNonBlocking(claimDocRef, updatedClaimData);
+  
       toast({
         title: 'Claim Updated',
         description: `Your claim "${values.title}" has been re-submitted for review.`,
       });
       router.push(`/dashboard/claims/${claim.id}`);
-    }, 1000);
+    } catch (error) {
+      console.error('Error updating claim:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update claim. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,7 +150,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
     if (files) {
       const remainingSlots = 3 - imagePreviews.length;
       const filesToProcess = Array.from(files).slice(0, remainingSlots);
-
+  
       if (files.length > remainingSlots) {
         toast({
           variant: 'destructive',
@@ -137,7 +158,10 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
           description: `You can only upload up to 3 images. ${filesToProcess.length} images were added.`,
         });
       }
-
+  
+      // Store the actual File objects
+      setNewImageFiles(prev => [...prev, ...filesToProcess]);
+  
       filesToProcess.forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -150,7 +174,23 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
 
   const removeImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
-  }
+    setNewImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
+    const storage = getStorage();
+    const uploadPromises = files.map(async (file) => {
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      const storageRef = ref(storage, `claims/${claim.id}/${timestamp}-${randomId}`);
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    });
+  
+    return Promise.all(uploadPromises);
+  };
 
   return (
     <Card>
@@ -231,7 +271,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
                         <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
-                                <SelectValue placeholder="CUR" />
+                                <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>

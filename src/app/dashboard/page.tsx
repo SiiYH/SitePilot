@@ -49,32 +49,42 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchAllTasks = async () => {
+      try {
         if (!projects || projects.length === 0 || !firestore) {
-            setTasksLoading(false);
-            return;
+          setTasksLoading(false);
+          return;
         }
-
         setTasksLoading(true);
+        console.log("Fetching tasks for", projects.length, "projects");
+        
         const tasksPromises = projects.map(async (project) => {
+          try {
             const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
             const tasksSnap = await getDocs(tasksRef);
             return tasksSnap.docs.map(doc => ({
-                ...doc.data() as Task,
-                id: doc.id,
-                projectName: project.name,
-                projectSlug: project.slug,
-                projectId: project.id,
+              ...(doc.data() as Task),
+              id: doc.id,
+              projectId: project.id,
             }));
+          } catch (err) {
+            // console.error(`Failed to fetch tasks for project ${project.id}:`, err);
+            return []; // Return empty array for this project
+          }
         });
-
+  
         const allTasksArrays = await Promise.all(tasksPromises);
-        const flattenedTasks = allTasksArrays.flat();
-        setAllTasks(flattenedTasks);
+        setAllTasks(allTasksArrays.flat());
+      } catch (error) {
+        console.error("🔥 Task fetch error:", error);
+        setAllTasks([]); // Set empty array on error
+      } finally {
         setTasksLoading(false);
+      }
     };
-
+  
     fetchAllTasks();
   }, [projects, firestore]);
+  
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];

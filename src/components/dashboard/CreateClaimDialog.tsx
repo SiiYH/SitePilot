@@ -270,7 +270,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="CUR" />
+                            <SelectValue placeholder="MYR" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

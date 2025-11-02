@@ -28,19 +28,18 @@ export default function EditClaimPage() {
             
             setClaimLoading(true);
             const ref = doc(firestore, 'claims', id as string);
-            console.log('📄 Fetching path:', ref.path);
             
             try {
                 const snap = await getDoc(ref);
                 if (snap.exists()) {
                     setClaim({ id: snap.id, ...snap.data() } as Claim);
-                    console.log('✅ Claim loaded:', snap.id);
+                    // console.log('✅ Claim loaded:', snap.id);
                 } else {
-                    console.warn('⚠️ No claim found');
+                    // console.warn('⚠️ No claim found');
                     setClaim(null);
                 }
             } catch (error) {
-                console.error('🔥 Error loading claim:', error);
+                // console.error('🔥 Error loading claim:', error);
                 setClaim(null);
             } finally {
                 setClaimLoading(false);
@@ -66,9 +65,9 @@ export default function EditClaimPage() {
 
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
-    console.log('📦 claim =', claim);
+    /* console.log('📦 claim =', claim);
     console.log('🔄 claimLoading =', claimLoading);
-    console.log('👷 Assigned projects =', projects);
+    console.log('👷 Assigned projects =', projects); */
 
     // Wait for initial load to complete
     if (claimLoading || projectsLoading || !firestore || !company || !user) {

@@ -72,6 +72,10 @@ service cloud.firestore {
              companyDoc.data.licenseKey == licenseId &&
              companyDoc.data.activated == true;
     }
+    
+    function isClaimOwner(claimData) {
+      return isSignedIn() && request.auth.uid == claimData.submittedBy;
+    }
 
     // === User Rules ===
     match /users/{userId} {
@@ -80,6 +84,8 @@ service cloud.firestore {
         isAdminOrDirector() || 
         isSuperSystemAdmin()
       );
+      
+      allow read: if request.auth != null;
       
       allow list: if isSignedIn() || (
         isAdminOrDirector() || 
@@ -120,7 +126,11 @@ service cloud.firestore {
         isSuperSystemAdmin()
       );
       
-      allow create, update, delete: if isSignedIn() && (
+      allow create: if isSignedIn() && (
+        (isAdminOrDirector() || isSuperSystemAdmin())
+      );
+      
+      allow update, delete: if isSignedIn() && (
         (isAdminOrDirector() && getUserCompany() == companyId) ||
         isSuperSystemAdmin()
       );
@@ -159,9 +169,12 @@ service cloud.firestore {
 
     // === Claims Rules ===
     match /claims/{claimId} {
-      allow get: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        (isSameCompany() && (resource.data.submittedBy == request.auth.uid || isAdminOrDirector()))
+      allow get: if isSignedIn() && 
+        (isSameCompany() && (resource.data.submittedBy == request.auth.uid || isDirector()));
+      
+      allow read: if isSignedIn() && (
+        isClaimOwner(resource.data) || 
+        isDirector()
       );
       
       // Fixed: Removed dangerous "allow list: if true"
@@ -177,11 +190,12 @@ service cloud.firestore {
       
       allow update: if isSignedIn() && 
                        isSameCompany() &&
-                       (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
+                       (resource.data.submittedBy == request.auth.uid || isDirector());
       
-      allow delete: if isSignedIn() && 
-                       isSameCompany() &&
-                       (resource.data.submittedBy == request.auth.uid || isAdminOrDirector());
+      allow delete: if request.auth != null;
+      // if isSignedIn() && 
+      //                  isSameCompany() &&
+      //                  (resource.data.submittedBy == request.auth.uid || isDirector());
     }
 
     // === Task Rules ===
@@ -189,43 +203,45 @@ service cloud.firestore {
       function getProject() {
         return get(/databases/$(database)/documents/projects/$(projectId)).data;
       }
-      
+
       function canAccessParentProject() {
         let project = getProject();
-        return project.companyId == getUserCompany() && (
-          isAdminOrDirector() ||
-          project.assignedEngineers.hasAny([request.auth.uid])
-        );
+        return project.companyId == getUserCompany() &&
+               (isAdminOrDirector() || project.assignedEngineers.hasAny([request.auth.uid]));
       }
-      
-      // Fixed: Added check for task owner/contributors
+
       function isTaskOwnerOrContributor() {
         return resource.data.owner == request.auth.uid ||
-               (resource.data.contributors != null && 
+               (resource.data.contributors != null &&
                 resource.data.contributors.hasAny([request.auth.uid]));
       }
-      
-      allow get, list: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        canAccessParentProject()
-      );
-      
-      allow create: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        canAccessParentProject()
-      );
-      
-      // Fixed: Allow owners/contributors to update their tasks
+
+      // ✅ Read permissions
+      // Admin/Director can see all company tasks
+      // Engineer can only see if assigned to that project
+      allow get, read, list: if isSignedIn() && canAccessParentProject();
+
+      // ✅ Create permissions
+      // Admin/Director can create any task under company project
+      // Engineer can create if assigned to project
+      allow create: if isSignedIn() && canAccessParentProject();
+
+      // ✅ Update permissions
+      // Admin/Director can always edit
+      // Engineer can edit only their own or contributor tasks within assigned project
       allow update: if isSignedIn() && (
         isSuperSystemAdmin() ||
         (canAccessParentProject() && (isAdminOrDirector() || isTaskOwnerOrContributor()))
       );
-      
+
+      // ✅ Delete permissions
+      // Only Admin/Director (or system admin) can delete
       allow delete: if isSignedIn() && (
         isSuperSystemAdmin() ||
         (canAccessParentProject() && isAdminOrDirector())
       );
     }
+
 
     // === Document Rules ===
     match /projects/{projectId}/documents/{documentId} {
