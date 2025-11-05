@@ -38,7 +38,7 @@ export default function EngineerPerformancePage() {
         <div className="space-y-6">
           <div className="print-hidden flex flex-col gap-4">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight">engineer Performance Report</h2>
+                <h2 className="text-2xl font-bold tracking-tight">Engineer Performance Report</h2>
                 <p className="text-muted-foreground">
                 An overview of task completions, overdue tasks, and on-time rates.
                 </p>

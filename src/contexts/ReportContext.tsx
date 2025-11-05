@@ -162,7 +162,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     let tasksToFilter = allTasks;
 
     if (selectedEngineerId) {
-      tasksToFilter = tasksToFilter.filter(t => t.owner === selectedEngineerId);
+      tasksToFilter = tasksToFilter.filter(t => t.owner === selectedEngineerId || t.contributors?.includes(selectedEngineerId));
     }
     if (selectedProjectId) {
       tasksToFilter = tasksToFilter.filter(t => t.projectId === selectedProjectId);
@@ -218,7 +218,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     
     return engineers.map(engineer => {
       const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const assignedTasks = filteredTasks.filter(t => t.owner === engineer.id);
+      const assignedTasks = filteredTasks.filter(t => t.owner === engineer.id || t.contributors?.includes(engineer.id));
       const submittedClaims = filteredClaims.filter(c => c.submittedBy === engineer.id).map(claim => {
         const project = reportData.projects.find(p => p.id === claim.projectId);
         return {...claim, projectName: project?.name || 'N/A'};
