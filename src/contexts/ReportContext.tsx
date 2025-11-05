@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
@@ -24,10 +25,10 @@ interface SummaryData {
 
 interface PerformanceData {
   "engineer Name": string;
-  "Total Tasks": number;
-  "Completed Tasks": number;
-  "Overdue Tasks": number;
-  "On-Time Rate": number;
+  "avatarUrl"?: string;
+  "projects": Project[];
+  "tasks": Task[];
+  "claims": (Claim & {projectName?: string})[];
 }
 
 interface DetailedClaimData {
@@ -216,30 +217,22 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     if (!engineers.length) return [];
     
     return engineers.map(engineer => {
+      const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
       const assignedTasks = filteredTasks.filter(t => t.owner === engineer.id);
-      const totalTasks = assignedTasks.length;
-      const completedTasks = assignedTasks.filter(t => t.status === 'Completed').length;
-      const overdueTasks = assignedTasks.filter(t => t.status === 'Overdue').length;
-      
-      const onTimeTasks = assignedTasks.filter(t => {
-        try {
-          return t.status === 'Completed' && new Date(t.dueDate) >= new Date()
-        } catch {
-          return false;
-        }
-      }).length;
-
-      const onTimeRate = completedTasks > 0 ? (onTimeTasks / completedTasks) * 100 : 0;
+      const submittedClaims = filteredClaims.filter(c => c.submittedBy === engineer.id).map(claim => {
+        const project = reportData.projects.find(p => p.id === claim.projectId);
+        return {...claim, projectName: project?.name || 'N/A'};
+      });
 
       return {
         "engineer Name": engineer.name,
-        "Total Tasks": totalTasks,
-        "Completed Tasks": completedTasks,
-        "Overdue Tasks": overdueTasks,
-        "On-Time Rate": Math.round(onTimeRate),
+        "avatarUrl": engineer.avatarUrl,
+        "projects": assignedProjects,
+        "tasks": assignedTasks,
+        "claims": submittedClaims,
       };
     });
-  }, [engineers, filteredTasks]);
+  }, [engineers, filteredTasks, filteredProjects, filteredClaims, reportData.projects]);
 
   const detailedClaimsData: DetailedClaimData[] = useMemo(() => {
     return filteredClaims.map(claim => {
@@ -392,18 +385,18 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   };
   
   const exportPerformanceToExcel = (): XLSX.WorkBook => {
-    return createFormattedWorkbook(
-      performanceData,
-      'Engineer Performance',
-      'SitePilot - Engineer Performance Report',
-      {
-        'engineer Name': 20,
-        'Total Tasks': 12,
-        'Completed Tasks': 15,
-        'Overdue Tasks': 15,
-        'On-Time Rate': 15,
-      }
-    );
+    const flattenedData = performanceData.flatMap(e => [
+      { 'Category': 'Engineer', 'Value': e['engineer Name'] },
+      ...e.projects.map(p => ({ 'Category': 'Project', 'Value': p.name, 'Status': p.status, 'End Date': format(parseISO(p.endDate), 'yyyy-MM-dd') })),
+      ...e.tasks.map(t => ({ 'Category': 'Task', 'Value': t.title, 'Status': t.status, 'End Date': format(parseISO(t.dueDate), 'yyyy-MM-dd') })),
+      ...e.claims.map(c => ({ 'Category': 'Claim', 'Value': c.title, 'Status': c.status, 'End Date': format(parseISO(c.date), 'yyyy-MM-dd') })),
+      {}, // Empty row for spacing
+    ]);
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(flattenedData);
+    XLSX.utils.book_append_sheet(wb, ws, "Engineer Performance");
+    return wb;
   };
   
   const exportDetailedClaimsToExcel = (): XLSX.WorkBook => {
@@ -502,7 +495,6 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     // Add all sheets
     addFormattedSheet(projectStatusData, 'Project Status', 'Project Status Report');
     addFormattedSheet(summaryData, 'Engineer Summary', 'Engineer Summary Report');
-    addFormattedSheet(performanceData, 'Engineer Performance', 'Engineer Performance Report');
     addFormattedSheet(detailedClaimsData, 'Detailed Claims', 'Detailed Claims Report');
     addFormattedSheet(taskMilestoneData, 'Tasks & Milestones', 'Task & Milestone Report');
     

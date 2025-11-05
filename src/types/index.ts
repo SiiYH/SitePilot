@@ -59,7 +59,7 @@ export interface Milestone {
   invoiceNo?: string;
 }
 
-export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'task-milestone-driven';
+export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'mixed-mode';
 
 export type ProgressTrackingModeChange = {
   mode: ProgressTrackingMode;
