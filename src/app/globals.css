@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -88,58 +89,69 @@
 @media print {
   @page {
     size: A4;
-    margin: 1in;
+    margin: 2.54cm; /* 1 inch margin */
   }
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
   .print-hidden {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
   }
+
   .print-only-container > .printable-content {
     display: block !important;
   }
+
   .print-container {
     display: block !important;
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
+
    .print-card {
     border: 1px solid hsl(var(--border));
     box-shadow: none;
   }
-  
-  #print-header, #print-footer {
-      position: fixed;
-      width: 100%;
-  }
 
   #print-header {
-    top: 0;
+    position: fixed;
+    top: -1.5cm;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 1.5cm;
   }
   
   #print-footer {
-    bottom: 0;
+    position: fixed;
+    bottom: -1.5cm;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 1.5cm;
   }
   
   /* Page numbering */
   #print-footer .page-number::after {
-      content: counter(page);
-  }
-
-  #print-footer .total-pages::after {
-      content: counter(pages);
+      content: "Page " counter(page) " of " counter(pages);
   }
 
   .printable-content {
     display: block !important;
     width: 100%;
     overflow: visible;
+  }
+
+  #report-content {
+    width: 100%;
   }
 
   .print-break-after {
