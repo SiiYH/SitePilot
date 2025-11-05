@@ -156,7 +156,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
-    const allTasks: (Task & {projectId: string, projectName: string})[] = reportData.projects.flatMap(p => p.tasks.map(t => ({...t, projectId: p.id, projectName: p.name})));
+    const allTasks: (Task & {projectId: string, projectName: string})[] = reportData.projects.flatMap(p => (p.tasks || []).map(t => ({...t, projectId: p.id, projectName: p.name})));
     
     let tasksToFilter = allTasks;
 
@@ -194,7 +194,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       const dueSites = assignedProjects.filter(p => {
         try {
           const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
-          const hasOverdueTasks = p.tasks.some(t => t.owner === engineer.id && t.status === 'Overdue');
+          const hasOverdueTasks = (p.tasks || []).some(t => t.owner === engineer.id && t.status === 'Overdue');
           return isOverdue || hasOverdueTasks;
         } catch {
           return false;
@@ -261,8 +261,8 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const projectStatusData: ProjectStatusData[] = useMemo(() => {
     return filteredProjects.map(project => {
       const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
-      const totalWorkItems = project.tasks.length;
-      const completedWorkItems = project.tasks.filter(t => t.status === 'Completed').length;
+      const totalWorkItems = (project.tasks || []).length;
+      const completedWorkItems = (project.tasks || []).filter(t => t.status === 'Completed').length;
 
       return {
         "Project Name": project.name,

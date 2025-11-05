@@ -6,7 +6,6 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, QueryConstraint } from 'firebase/firestore';
 import { Claim, Project, User } from '@/types';
 import { Loader2 } from 'lucide-react';
-import { mockUsers } from '@/lib/data';
 
 export default function ReportsLayout({
   children,
@@ -35,15 +34,19 @@ export default function ReportsLayout({
     return query(collection(firestore, 'claims'), ...constraints);
   }, [firestore, company?.id, user?.id, user?.role]);
   
-  // Note: users are still from mock data as there's no /companies/{id}/users collection yet.
-  // This can be updated when user management is fully on Firestore.
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'users'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+  
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+  const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
 
-  const loading = authLoading || projectsLoading || claimsLoading;
+  const loading = authLoading || projectsLoading || claimsLoading || usersLoading;
   
   const reportData = {
-    users: mockUsers.filter(u => u.companyId === company?.id),
+    users: users || [],
     projects: projects || [],
     claims: claims || [],
   };
