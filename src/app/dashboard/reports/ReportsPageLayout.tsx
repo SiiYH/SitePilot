@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -97,6 +98,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
       toast({
         title: "Preview Ready",
         description: "Your PDF is ready to preview",
+        duration: 3000,
       });
     } catch (error) {
       console.error('PDF generation failed:', error);
