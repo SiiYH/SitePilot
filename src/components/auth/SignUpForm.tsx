@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { UserRole } from '@/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -82,12 +84,12 @@ export default function SignUpForm() {
     }
 
     // Role is defaulted to 'engineer' on signup now.
-    const user = await signUp({ ...values, role: '' });
-    if (!user) {
+    const { user, error } = await signUp({ ...values, role: '' });
+    if (error) {
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: 'An account with these details may already exist.',
+        description: error,
       });
     }
     setIsLoading(false);
@@ -136,12 +138,21 @@ export default function SignUpForm() {
                     </FormControl>
                     <FormLabel className="font-normal">Email</FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="phone" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Phone</FormLabel>
-                  </FormItem>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="phone" disabled />
+                          </FormControl>
+                           <Label className="font-normal opacity-50 cursor-not-allowed">Phone</Label>
+                        </FormItem>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Coming soon!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </RadioGroup>
               </FormControl>
               <FormMessage />
@@ -171,7 +182,7 @@ export default function SignUpForm() {
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="+1 555-123-4567" {...field} value={field.value ?? ''}/>
+                  <Input placeholder="+60123456789" {...field} value={field.value ?? ''}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>

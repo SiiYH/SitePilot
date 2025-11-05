@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const emailSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -90,16 +91,10 @@ export default function LoginForm() {
   };
 
   const onPhoneSubmit = async (values: z.infer<typeof phoneSchema>) => {
-    setIsLoading(true);
-    const { user, error } = await login(values);
-    if (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: error,
-      });
-    }
-    setIsLoading(false);
+    toast({
+        title: 'Feature Not Available',
+        description: 'Phone login is coming soon.',
+    });
   };
   
 
@@ -109,9 +104,18 @@ export default function LoginForm() {
         <TabsTrigger value="email">
           <Mail className="mr-2 h-4 w-4" /> Email
         </TabsTrigger>
-        <TabsTrigger value="phone">
-          <Phone className="mr-2 h-4 w-4" /> Phone
-        </TabsTrigger>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger value="phone" disabled className="cursor-not-allowed">
+                <Phone className="mr-2 h-4 w-4" /> Phone
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Coming soon!</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </TabsList>
       <TabsContent value="email">
         <Form {...formEmail}>
@@ -138,28 +142,7 @@ export default function LoginForm() {
         </Form>
       </TabsContent>
       <TabsContent value="phone">
-        <Form {...formPhone}>
-          <form onSubmit={formPhone.handleSubmit(onPhoneSubmit)} className="space-y-4">
-            <FormField
-              control={formPhone.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+60123456789" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <PasswordField form={formPhone} showPassword={showPassword} setShowPassword={setShowPassword} />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Log In
-            </Button>
-          </form>
-        </Form>
+        {/* Content can be a message or just empty since it's disabled */}
       </TabsContent>
     </Tabs>
   );
