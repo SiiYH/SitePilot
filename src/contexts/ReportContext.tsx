@@ -12,6 +12,7 @@ interface ReportDataContext {
   users: User[];
   projects: Project[];
   claims: Claim[];
+  tasks: Task[];
 }
 
 interface SummaryData {
@@ -157,9 +158,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   }, [reportData.claims, interval, selectedEngineerId, selectedProjectId]);
   
   const filteredTasks = useMemo(() => {
-    const allTasks: (Task & {projectId: string, projectName: string})[] = reportData.projects.flatMap(p => (p.tasks || []).map(t => ({...t, projectId: p.id, projectName: p.name})));
-    
-    let tasksToFilter = allTasks;
+    let tasksToFilter = reportData.tasks;
 
     if (selectedEngineerId) {
       tasksToFilter = tasksToFilter.filter(t => t.owner === selectedEngineerId || t.contributors?.includes(selectedEngineerId));
@@ -177,7 +176,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       });
     }
     return tasksToFilter;
-  }, [reportData.projects, interval, selectedEngineerId, selectedProjectId]);
+  }, [reportData.tasks, interval, selectedEngineerId, selectedProjectId]);
 
   const summaryData: SummaryData[] = useMemo(() => {
     if (!engineers.length) return [];
@@ -254,12 +253,15 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   const projectStatusData: ProjectStatusData[] = useMemo(() => {
     return filteredProjects.map(project => {
       const assignedEngineers = project.assignedEngineers.map(id => reportData.users.find(u => u.id === id)?.name || 'N/A').join(', ');
-      const totalWorkItems = (project.tasks || []).length;
-      const completedWorkItems = (project.tasks || []).filter(t => t.status === 'Completed').length;
+      
+      // Use the correctly fetched tasks from the context
+      const projectTasks = reportData.tasks.filter(t => t.projectId === project.id);
+      const totalWorkItems = projectTasks.length;
+      const completedWorkItems = projectTasks.filter(t => t.status === 'Completed').length;
 
       return {
         "Project Name": project.name,
-        "Progress": getProjectProgress(project),
+        "Progress": getProjectProgress({...project, tasks: projectTasks}),
         "Status": project.status,
         "Work Items": `${completedWorkItems}/${totalWorkItems}`,
         "Start Date": project.startDate,
@@ -270,7 +272,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         "Currency": project.currency || 'N/A',
       }
     });
-  }, [filteredProjects, reportData.users]);
+  }, [filteredProjects, reportData.users, reportData.tasks]);
 
   const taskMilestoneData: TaskMilestoneData[] = useMemo(() => {
     return filteredTasks.map(task => {
@@ -278,7 +280,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       return {
         "Work Item Title": task.title,
         "Type": task.type,
-        "Project Name": task.projectName,
+        "Project Name": task.projectName || 'N/A',
         "Owner": owner?.name || 'N/A',
         "Due Date": task.dueDate,
         "Status": task.status,

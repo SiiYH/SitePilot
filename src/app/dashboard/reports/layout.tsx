@@ -3,9 +3,10 @@
 import { ReportProvider } from '@/contexts/ReportContext';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, QueryConstraint } from 'firebase/firestore';
-import { Claim, Project, User } from '@/types';
+import { collection, query, where, QueryConstraint, getDocs } from 'firebase/firestore';
+import { Claim, Project, User, Task } from '@/types';
 import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function ReportsLayout({
   children,
@@ -14,6 +15,8 @@ export default function ReportsLayout({
 }) {
   const { company, loading: authLoading, user } = useAuth();
   const firestore = useFirestore();
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -43,12 +46,45 @@ export default function ReportsLayout({
   const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
   const { data: users, isLoading: usersLoading } = useCollection<User>(usersQuery);
 
-  const loading = authLoading || projectsLoading || claimsLoading || usersLoading;
+  useEffect(() => {
+    const fetchAllTasks = async () => {
+      if (!projects || projects.length === 0 || !firestore) {
+        setTasksLoading(false);
+        return;
+      }
+      setTasksLoading(true);
+      try {
+        const tasksPromises = projects.map(async (project) => {
+          const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
+          const tasksSnap = await getDocs(tasksRef);
+          return tasksSnap.docs.map(doc => ({
+            ...(doc.data() as Task),
+            id: doc.id,
+            projectId: project.id,
+            projectName: project.name
+          }));
+        });
+  
+        const allTasksArrays = await Promise.all(tasksPromises);
+        setAllTasks(allTasksArrays.flat());
+      } catch (error) {
+        console.error("Error fetching tasks for reports:", error);
+        setAllTasks([]);
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+  
+    fetchAllTasks();
+  }, [projects, firestore]);
+
+  const loading = authLoading || projectsLoading || claimsLoading || usersLoading || tasksLoading;
   
   const reportData = {
     users: users || [],
     projects: projects || [],
     claims: claims || [],
+    tasks: allTasks || [],
   };
 
   if (loading) {

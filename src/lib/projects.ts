@@ -1,16 +1,29 @@
 
 
-import { Project } from '@/types';
+import { Project, Task } from '@/types';
 
-export function getProjectProgress(project: Project): number {
+// Overload signatures for type safety
+export function getProjectProgress(project: Project & { tasks?: Task[] }): number;
+export function getProjectProgress(project: Omit<Project, 'tasks'>, tasks: Task[]): number;
+
+/**
+ * Calculates the progress of a project based on its tracking mode.
+ * It can accept tasks either as a property of the project object or as a separate argument.
+ * @param project - The project object.
+ * @param tasks - Optional array of tasks if not included in the project object.
+ * @returns The project progress as a percentage (0-100).
+ */
+export function getProjectProgress(project: Project, tasks?: Task[]): number {
+  const projectTasks = tasks || project.tasks || [];
+
   if (project.progressTrackingMode === 'manual') {
     return project.progress;
   }
   
   if (project.progressTrackingMode === 'task-driven') {
-    if (project.tasks.length === 0) return 0;
-    const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
-    return Math.round((completedTasks / project.tasks.length) * 100);
+    if (projectTasks.length === 0) return 0;
+    const completedTasks = projectTasks.filter(t => t.status === 'Completed').length;
+    return Math.round((completedTasks / projectTasks.length) * 100);
   }
   
   if (project.progressTrackingMode === 'milestone-driven') {
@@ -19,9 +32,9 @@ export function getProjectProgress(project: Project): number {
     return Math.round((achievedMilestones / project.milestones.length) * 100);
   }
 
-  if (project.progressTrackingMode === 'task-milestone-driven') {
-    const totalTasks = project.tasks.length;
-    const completedTasks = project.tasks.filter(t => t.status === 'Completed').length;
+  if (project.progressTrackingMode === 'mixed-mode') { // Corrected from 'task-milestone-driven'
+    const totalTasks = projectTasks.length;
+    const completedTasks = projectTasks.filter(t => t.status === 'Completed').length;
     const totalMilestones = project.milestones.length;
     const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved').length;
 
