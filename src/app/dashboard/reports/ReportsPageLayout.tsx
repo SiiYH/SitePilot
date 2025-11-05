@@ -54,6 +54,19 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         });
         return;
       }
+      
+      // If it's the performance report, force accordions open
+      const isPerformanceReport = pathname.includes('/engineer-performance');
+      const accordionTriggers = isPerformanceReport 
+        ? element.querySelectorAll<HTMLElement>('[data-state="closed"][data-radix-collection-item]')
+        : [];
+      
+      // Temporarily open all accordions for capture
+      accordionTriggers.forEach(trigger => trigger.click());
+      
+      // Brief delay to allow content to render before capturing
+      await new Promise(resolve => setTimeout(resolve, 500));
+
 
       // Generate canvas from HTML
       const canvas = await html2canvas(element, {
@@ -62,6 +75,10 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         logging: false,
         backgroundColor: '#ffffff',
       });
+      
+      // Close the accordions again
+      accordionTriggers.forEach(trigger => trigger.click());
+
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({

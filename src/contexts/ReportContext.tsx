@@ -385,17 +385,53 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   };
   
   const exportPerformanceToExcel = (): XLSX.WorkBook => {
-    const flattenedData = performanceData.flatMap(e => [
-      { 'Category': 'Engineer', 'Value': e['engineer Name'] },
-      ...e.projects.map(p => ({ 'Category': 'Project', 'Value': p.name, 'Status': p.status, 'End Date': format(parseISO(p.endDate), 'yyyy-MM-dd') })),
-      ...e.tasks.map(t => ({ 'Category': 'Task', 'Value': t.title, 'Status': t.status, 'End Date': format(parseISO(t.dueDate), 'yyyy-MM-dd') })),
-      ...e.claims.map(c => ({ 'Category': 'Claim', 'Value': c.title, 'Status': c.status, 'End Date': format(parseISO(c.date), 'yyyy-MM-dd') })),
-      {}, // Empty row for spacing
-    ]);
-
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(flattenedData);
-    XLSX.utils.book_append_sheet(wb, ws, "Engineer Performance");
+
+    performanceData.forEach(engineerData => {
+        const engineerName = engineerData["engineer Name"];
+        const sheetName = engineerName.substring(0, 31); // Sheet names must be <= 31 chars
+
+        const ws_data: any[][] = [];
+
+        // Title
+        ws_data.push([`Engineer Performance: ${engineerName}`]);
+        ws_data.push([]);
+
+        // Projects
+        ws_data.push(["Assigned Projects"]);
+        const projectHeaders = ["Project Name", "Status", "End Date"];
+        ws_data.push(projectHeaders);
+        engineerData.projects.forEach(p => {
+            ws_data.push([p.name, p.status, parseISO(p.endDate)]);
+        });
+        ws_data.push([]);
+
+        // Tasks
+        ws_data.push(["Assigned Tasks"]);
+        const taskHeaders = ["Task Title", "Project", "Due Date", "Status"];
+        ws_data.push(taskHeaders);
+        engineerData.tasks.forEach(t => {
+            ws_data.push([t.title, t.projectName, parseISO(t.dueDate), t.status]);
+        });
+        ws_data.push([]);
+
+        // Claims
+        ws_data.push(["Submitted Claims"]);
+        const claimHeaders = ["Claim Title", "Project", "Amount", "Currency", "Status"];
+        ws_data.push(claimHeaders);
+        engineerData.claims.forEach(c => {
+            ws_data.push([c.title, c.projectName, c.amount, c.currency, c.status]);
+        });
+        ws_data.push([]);
+
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        
+        // Add basic formatting (e.g., column widths)
+        ws['!cols'] = [ {wch:30}, {wch:20}, {wch:15}, {wch:10}, {wch:10} ];
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
     return wb;
   };
   
