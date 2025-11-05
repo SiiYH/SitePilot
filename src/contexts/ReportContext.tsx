@@ -25,6 +25,7 @@ interface SummaryData {
 }
 
 interface PerformanceData {
+  id: string | undefined;
   "engineer Name": string;
   "avatarUrl"?: string;
   "projects": Project[];
