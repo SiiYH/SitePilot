@@ -102,6 +102,7 @@ export default function EngineerPerformanceReport() {
                             <TableRow>
                               <TableHead>Task Title</TableHead>
                               <TableHead>Project</TableHead>
+                              <TableHead>Role</TableHead>
                               <TableHead>Due Date</TableHead>
                               <TableHead className="text-right">Status</TableHead>
                             </TableRow>
@@ -111,6 +112,11 @@ export default function EngineerPerformanceReport() {
                               <TableRow key={task.id}>
                                 <TableCell className="font-medium">{task.title}</TableCell>
                                 <TableCell>{task.projectName}</TableCell>
+                                <TableCell>
+                                  <Badge variant={task.owner === engineerData.id ? 'default' : 'secondary'}>
+                                    {task.owner === engineerData.id ? 'Owner' : 'Contributor'}
+                                  </Badge>
+                                </TableCell>
                                 <TableCell>{format(parseISO(task.dueDate), 'MMM dd, yyyy')}</TableCell>
                                 <TableCell className="text-right">
                                     <Badge variant={statusVariant[task.status] || 'outline'}>{task.status}</Badge>
