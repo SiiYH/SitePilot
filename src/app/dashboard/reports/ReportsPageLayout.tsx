@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +15,7 @@ import { useReportContext } from '@/contexts/ReportContext';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { PDFPreviewModal } from '@/components/dashboard/reports/PDFPreviewModal';
+import { exportEngineerPerformanceToPDF, createPDFPreviewUrl, exportEngineerSummaryToPDF, exportDetailedClaimsToPDF, exportProjectStatusToPDF, exportTaskMilestoneToPDF } from '@/lib/pdfExporter';
 
 export default function ReportsPageLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -42,71 +42,97 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         description: "Please wait while we prepare your document.",
       });
 
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
+      let blob: Blob;
 
-      const element = document.getElementById('report-content');
-      if (!element) {
-        toast({
-          title: "Error",
-          description: "Report content not found",
-          variant: "destructive",
+      // Use proper PDF generation for engineer performance
+      if (pathname.includes('/engineer-performance')) {
+        blob = exportEngineerPerformanceToPDF(context.performanceData, {
+          companyName: company?.name,
+          userName: user?.name,
+          dateRange: context.dateRange,
         });
-        return;
+      }else if (pathname.includes('/engineer-summary')) {
+        blob = exportEngineerSummaryToPDF(context.summaryData, {
+          companyName: company?.name,
+          userName: user?.name,
+          dateRange: context.dateRange,
+        });
+      }else if (pathname.includes('/detailed-claims')) {
+        blob = exportDetailedClaimsToPDF(context.detailedClaimsData, {
+          companyName: company?.name,
+          userName: user?.name,
+          dateRange: context.dateRange,
+        });
+      } else if (pathname.includes('/project-status')) {
+        blob = exportProjectStatusToPDF(context.projectStatusData, {
+          companyName: company?.name,
+          userName: user?.name,
+          dateRange: context.dateRange,
+        });
+      }
+      else if (pathname.includes('/task-milestone-report')) {
+        blob = exportTaskMilestoneToPDF(context.taskMilestoneData, {
+          companyName: company?.name,
+          userName: user?.name,
+          dateRange: context.dateRange,
+        });
       }
       
-      // If it's the performance report, force accordions open
-      const isPerformanceReport = pathname.includes('/engineer-performance');
-      const accordionTriggers = isPerformanceReport 
-        ? element.querySelectorAll<HTMLElement>('[data-state="closed"][data-radix-collection-item]')
-        : [];
-      
-      // Temporarily open all accordions for capture
-      accordionTriggers.forEach(trigger => trigger.click());
-      
-      // Brief delay to allow content to render before capturing
-      await new Promise(resolve => setTimeout(resolve, 500));
+      else {
+        // For other reports, use html2canvas approach
+        const { default: jsPDF } = await import('jspdf');
+        const { default: html2canvas } = await import('html2canvas');
 
+        const element = document.getElementById('report-content');
+        if (!element) {
+          toast({
+            title: "Error",
+            description: "Report content not found",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      // Generate canvas from HTML
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-      
-      // Close the accordions again
-      accordionTriggers.forEach(trigger => trigger.click());
+        // Brief delay to allow content to render
+        await new Promise(resolve => setTimeout(resolve, 300));
 
+        // Generate canvas from HTML
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+        });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
 
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
 
-      // Add pages
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
+        // Add pages
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        blob = pdf.output('blob');
       }
 
-      // Create blob and preview URL
-      const blob = pdf.output('blob');
-      const url = URL.createObjectURL(blob);
+      // Create preview URL
+      const url = createPDFPreviewUrl(blob);
       
       setPdfBlob(blob);
       setPdfPreviewUrl(url);
@@ -161,7 +187,25 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
 
   // Browser print (alternative option)
   const handlePrint = () => {
-    window.print();
+    // For performance report, we need to open accordions first
+    if (pathname.includes('/engineer-performance')) {
+      const element = document.getElementById('report-content');
+      if (element) {
+        const accordionTriggers = element.querySelectorAll<HTMLElement>('[data-state="closed"][data-radix-collection-item]');
+        accordionTriggers.forEach(trigger => trigger.click());
+        
+        // Print after accordions are opened
+        setTimeout(() => {
+          window.print();
+          // Close accordions after print
+          setTimeout(() => {
+            accordionTriggers.forEach(trigger => trigger.click());
+          }, 500);
+        }, 500);
+      }
+    } else {
+      window.print();
+    }
   };
 
   // Enhanced Excel export with formatting

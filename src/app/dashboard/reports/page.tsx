@@ -14,18 +14,6 @@ import TaskMilestoneReport from '@/components/dashboard/views/admin/TaskMileston
 
 const reports = [
   {
-    title: 'Project Status Report',
-    description: 'An overview of all projects, their progress, and key metrics.',
-    href: '/dashboard/reports/project-status',
-    icon: FolderKanban,
-  },
-  {
-    title: 'Task & Milestone Report',
-    description: 'A detailed list of all tasks and milestones across projects.',
-    href: '/dashboard/reports/task-milestone-report',
-    icon: GanttChartSquare,
-  },
-  {
     title: 'Engineer Summary Report',
     description: 'A summary of performance and financial metrics for each engineer.',
     href: '/dashboard/reports/engineer-summary',
@@ -42,6 +30,18 @@ const reports = [
     description: 'A detailed breakdown of all claims, filterable by engineer and date.',
     href: '/dashboard/reports/detailed-claims',
     icon: FileText,
+  },
+  {
+    title: 'Project Status Report',
+    description: 'An overview of all projects, their progress, and key metrics.',
+    href: '/dashboard/reports/project-status',
+    icon: FolderKanban,
+  },
+  {
+    title: 'Task & Milestone Report',
+    description: 'A detailed list of all tasks and milestones across projects.',
+    href: '/dashboard/reports/task-milestone-report',
+    icon: GanttChartSquare,
   },
 ];
 

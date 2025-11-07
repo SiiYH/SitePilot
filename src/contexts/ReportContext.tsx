@@ -25,11 +25,11 @@ interface SummaryData {
 }
 
 interface PerformanceData {
-  id: string | undefined;
+  id: string; // ✅ Add this
   "engineer Name": string;
   "avatarUrl"?: string;
   "projects": Project[];
-  "tasks": Task[];
+  "tasks": (Task & {projectName?: string})[]; // ✅ Add projectName to task type
   "claims": (Claim & {projectName?: string})[];
 }
 
@@ -218,13 +218,22 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     
     return engineers.map(engineer => {
       const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const assignedTasks = filteredTasks.filter(t => t.owner === engineer.id || t.contributors?.includes(engineer.id));
-      const submittedClaims = filteredClaims.filter(c => c.submittedBy === engineer.id).map(claim => {
-        const project = reportData.projects.find(p => p.id === claim.projectId);
-        return {...claim, projectName: project?.name || 'N/A'};
-      });
-
+      const assignedTasks = filteredTasks
+        .filter(t => t.owner === engineer.id || t.contributors?.includes(engineer.id))
+        .map(task => {
+          // ✅ Add project name to each task
+          const project = reportData.projects.find(p => p.id === task.projectId);
+          return { ...task, projectName: project?.name || 'N/A' };
+        });
+      const submittedClaims = filteredClaims
+        .filter(c => c.submittedBy === engineer.id)
+        .map(claim => {
+          const project = reportData.projects.find(p => p.id === claim.projectId);
+          return {...claim, projectName: project?.name || 'N/A'};
+        });
+  
       return {
+        id: engineer.id, // ✅ Add engineer ID
         "engineer Name": engineer.name,
         "avatarUrl": engineer.avatarUrl,
         "projects": assignedProjects,
@@ -389,52 +398,44 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   
   const exportPerformanceToExcel = (): XLSX.WorkBook => {
     const wb = XLSX.utils.book_new();
-
+  
     performanceData.forEach(engineerData => {
-        const engineerName = engineerData["engineer Name"];
-        const sheetName = engineerName.substring(0, 31); // Sheet names must be <= 31 chars
-
-        const ws_data: any[][] = [];
-
-        // Title
-        ws_data.push([`Engineer Performance: ${engineerName}`]);
-        ws_data.push([]);
-
-        // Projects
-        ws_data.push(["Assigned Projects"]);
-        const projectHeaders = ["Project Name", "Status", "End Date"];
-        ws_data.push(projectHeaders);
-        engineerData.projects.forEach(p => {
-            ws_data.push([p.name, p.status, parseISO(p.endDate)]);
-        });
-        ws_data.push([]);
-
-        // Tasks
-        ws_data.push(["Assigned Tasks"]);
-        const taskHeaders = ["Task Title", "Project", "Due Date", "Status"];
-        ws_data.push(taskHeaders);
-        engineerData.tasks.forEach(t => {
-            ws_data.push([t.title, t.projectName, parseISO(t.dueDate), t.status]);
-        });
-        ws_data.push([]);
-
-        // Claims
-        ws_data.push(["Submitted Claims"]);
-        const claimHeaders = ["Claim Title", "Project", "Amount", "Currency", "Status"];
-        ws_data.push(claimHeaders);
-        engineerData.claims.forEach(c => {
-            ws_data.push([c.title, c.projectName, c.amount, c.currency, c.status]);
-        });
-        ws_data.push([]);
-
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        
-        // Add basic formatting (e.g., column widths)
-        ws['!cols'] = [ {wch:30}, {wch:20}, {wch:15}, {wch:10}, {wch:10} ];
-
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      const engineerName = engineerData["engineer Name"];
+      const sheetName = engineerName.substring(0, 31);
+      const ws_data: any[][] = [];
+  
+      ws_data.push([`Engineer Performance: ${engineerName}`]);
+      ws_data.push([]);
+  
+      // Projects
+      ws_data.push(["Assigned Projects"]);
+      ws_data.push(["Project Name", "Status", "End Date"]);
+      engineerData.projects.forEach(p => {
+        ws_data.push([p.name, p.status, p.endDate]);
+      });
+      ws_data.push([]);
+  
+      // Tasks - ✅ Now includes projectName
+      ws_data.push(["Assigned Tasks"]);
+      ws_data.push(["Task Title", "Project", "Role", "Due Date", "Status"]);
+      engineerData.tasks.forEach(t => {
+        const role = t.owner === engineerData.id ? 'Owner' : 'Contributor';
+        ws_data.push([t.title, t.projectName || 'N/A', role, t.dueDate, t.status]);
+      });
+      ws_data.push([]);
+  
+      // Claims
+      ws_data.push(["Submitted Claims"]);
+      ws_data.push(["Claim Title", "Project", "Amount", "Currency", "Status"]);
+      engineerData.claims.forEach(c => {
+        ws_data.push([c.title, c.projectName || 'N/A', c.amount, c.currency, c.status]);
+      });
+  
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      ws['!cols'] = [{wch:30}, {wch:25}, {wch:15}, {wch:12}, {wch:12}];
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
-
+  
     return wb;
   };
   

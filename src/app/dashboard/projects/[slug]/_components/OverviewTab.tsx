@@ -174,7 +174,7 @@ export default function OverviewTab({ project, assignedUsers, user, onProjectUpd
                      <Separator/>
                     <h3 className="text-base font-semibold">Site Information</h3>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <InfoField label="Job No." value={project.jobNo} />
+                        <InfoField label="Job No." value={project.id} />
                         <InfoField label="Order No." value={project.orderNo} />
                         <InfoField label="Site Name" value={project.siteName} />
                         <InfoField label="Job Location" value={project.jobLocation} />
