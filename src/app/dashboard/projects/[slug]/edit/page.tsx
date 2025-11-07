@@ -6,19 +6,17 @@ import { notFound, useParams } from 'next/navigation';
 import { Project, User } from '@/types';
 import EditProjectForm from './_components/EditProjectForm';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 
-async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
+async function getProject(id: string, firestore: any): Promise<Project | undefined> {
   if (!firestore) return undefined;
-  const projectsRef = collection(firestore, 'projects');
-  const q = query(projectsRef, where('slug', '==', slug), limit(1));
-  const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const projectDoc = querySnapshot.docs[0];
+  const projectDocRef = doc(firestore, 'projects', id);
+  const projectDoc = await getDoc(projectDocRef);
+  if (projectDoc.exists()) {
     return { id: projectDoc.id, ...projectDoc.data() } as Project;
   }
   return undefined;
@@ -26,7 +24,7 @@ async function getProject(slug: string, firestore: any): Promise<Project | undef
 
 export default function EditProjectPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const id = params.slug as string;
   const { company } = useAuth();
   const firestore = useFirestore();
   const [project, setProject] = useState<Project | undefined>(undefined);
@@ -40,8 +38,8 @@ export default function EditProjectPage() {
   const { data: users, isLoading: loadingUsers } = useCollection<User>(usersQuery);
 
   useEffect(() => {
-    if (slug && firestore) {
-      getProject(slug, firestore).then(projectData => {
+    if (id && firestore) {
+      getProject(id, firestore).then(projectData => {
         if (projectData) {
           setProject(projectData);
         } else {
@@ -50,7 +48,7 @@ export default function EditProjectPage() {
         setLoadingProject(false);
       });
     }
-  }, [slug, firestore]);
+  }, [id, firestore]);
   
   if (loadingProject || loadingUsers) {
     return (

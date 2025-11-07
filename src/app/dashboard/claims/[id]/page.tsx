@@ -309,7 +309,7 @@ export default function ClaimDetailsPage() {
                         </div>
                     </div>
                     <CardDescription>
-                        Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
+                        Submitted on {format(new Date(claim.date), 'PPP')} for {project ? <Link href={`/dashboard/projects/${project.id}`} className="text-primary hover:underline font-medium">{project.name}</Link> : 'N/A'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -329,7 +329,7 @@ export default function ClaimDetailsPage() {
 
                         {project && (
                             <InfoField icon={GanttChartSquare} label="Associated Project">
-                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
+                                <Link href={`/dashboard/projects/${project.id}`} className="text-primary hover:underline font-medium">
                                     {project.name}
                                 </Link>
                             </InfoField>

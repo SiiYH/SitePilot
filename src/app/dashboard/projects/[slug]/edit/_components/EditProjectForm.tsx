@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -138,7 +139,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
         description: `${values.name} has been successfully updated.`,
       });
       setIsLoading(false);
-      router.replace(`/dashboard/projects/${project.slug}`);
+      router.replace(`/dashboard/projects/${project.id}`);
       router.refresh();
     }, 1000);
   };
@@ -235,7 +236,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormItem>
                         <FormLabel>Job No.</FormLabel>
-                        <FormControl><Input value={project.jobNo} disabled /></FormControl>
+                        <FormControl><Input value={project.id} disabled /></FormControl>
                     </FormItem>
                     <FormField
                     control={form.control}

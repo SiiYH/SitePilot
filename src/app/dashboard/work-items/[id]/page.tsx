@@ -194,7 +194,7 @@ export default function WorkItemDetailsPage() {
 
                         {project && (
                             <InfoField icon={FolderKanban} label="Associated Project">
-                                <Link href={`/dashboard/projects/${project.slug}`} className="text-primary hover:underline font-medium">
+                                <Link href={`/dashboard/projects/${project.id}`} className="text-primary hover:underline font-medium">
                                     {project.name}
                                 </Link>
                             </InfoField>
@@ -267,4 +267,3 @@ export default function WorkItemDetailsPage() {
     </div>
   );
 }
-

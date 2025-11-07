@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -168,7 +169,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                 {showProjectColumn && task.projectSlug && (
                     <div className="flex items-center gap-2">
                         <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                        <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                        <Link href={`/dashboard/projects/${task.projectId}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                             {task.projectName}
                         </Link>
                     </div>
@@ -303,7 +304,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                                 {showProjectColumn && (
                                 <TableCell>
                                     {task.projectSlug ? (
-                                    <Link href={`/dashboard/projects/${task.projectSlug}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                                    <Link href={`/dashboard/projects/${task.projectId}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                                         {task.projectName}
                                     </Link>
                                     ) : (
@@ -377,4 +378,3 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     </>
   );
 }
-    

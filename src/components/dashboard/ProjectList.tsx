@@ -50,8 +50,8 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  const handleRowClick = (slug: string) => {
-    router.push(`/dashboard/projects/${slug}`);
+  const handleRowClick = (projectId: string) => {
+    router.push(`/dashboard/projects/${projectId}`);
   };
 
   const handleSort = (key: SortKey) => {
@@ -101,7 +101,7 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
                 .map(id => users.find(u => u.id === id))
                 .filter((u): u is any => !!u);
             return (
-                <Card key={project.id} onClick={() => handleRowClick(project.slug)} className="cursor-pointer transition-shadow hover:shadow-md">
+                <Card key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer transition-shadow hover:shadow-md">
                     <CardHeader>
                         <div className="flex items-start justify-between gap-4">
                             <h3 className="font-semibold text-lg">{project.name}</h3>
@@ -166,7 +166,7 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
                           .filter((u): u is any => !!u);
 
                       return (
-                          <TableRow key={project.id} onClick={() => handleRowClick(project.slug)} className="cursor-pointer">
+                          <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
                               <TableCell className="font-medium">{project.name}</TableCell>
                               <TableCell>
                                   <ProjectStatusBadge statusId={project.status} />

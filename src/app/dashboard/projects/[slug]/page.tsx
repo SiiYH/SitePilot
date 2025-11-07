@@ -29,13 +29,11 @@ import { useToast } from '@/hooks/use-toast';
 import UploadDocumentDialog from './_components/UploadDocumentDialog';
 
 
-async function getProject(slug: string, firestore: any): Promise<Project | undefined> {
+async function getProject(id: string, firestore: any): Promise<Project | undefined> {
   if (!firestore) return undefined;
-  const projectsRef = collection(firestore, 'projects');
-  const q = query(projectsRef, where('slug', '==', slug), limit(1));
-  const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const projectDoc = querySnapshot.docs[0];
+  const projectDocRef = doc(firestore, 'projects', id);
+  const projectDoc = await getDoc(projectDocRef);
+  if (projectDoc.exists()) {
     return { id: projectDoc.id, ...projectDoc.data() } as Project;
   }
   return undefined;
@@ -79,7 +77,7 @@ async function getUsersFromClaims(claims: Claim[], firestore: any): Promise<User
 
 export default function ProjectDetailsPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const id = params.slug as string;
   const { user, company, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   const storage = useStorage();
@@ -152,19 +150,17 @@ export default function ProjectDetailsPage() {
 
   // Real-time listener for project data
   useEffect(() => {
-    if (!slug || !user || !firestore) return;
+    if (!id || !user || !firestore) return;
 
     setLoading(true);
 
-    const projectsRef = collection(firestore, 'projects');
-    const q = query(projectsRef, where('slug', '==', slug), limit(1));
+    const projectRef = doc(firestore, 'projects', id);
 
     const unsubscribe = onSnapshot(
-      q,
+      projectRef,
       async (snapshot) => {
-        if (!snapshot.empty) {
-          const projectDoc = snapshot.docs[0];
-          const projectData = { id: projectDoc.id, ...projectDoc.data() } as Project;
+        if (snapshot.exists()) {
+          const projectData = { id: snapshot.id, ...snapshot.data() } as Project;
           setProject(projectData);
 
           // Fetch assigned users
@@ -187,7 +183,7 @@ export default function ProjectDetailsPage() {
     );
 
     return () => unsubscribe();
-  }, [slug, user, firestore, toast]);
+  }, [id, user, firestore, toast]);
 
   useEffect(() => {
     if (!claims || !firestore) return;
@@ -358,7 +354,7 @@ export default function ProjectDetailsPage() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {canEditProject && (
               <Button variant="outline" asChild className="w-full sm:w-auto">
-                <Link href={`/dashboard/projects/${projectWithTasks.slug}/edit`}>
+                <Link href={`/dashboard/projects/${projectWithTasks.id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Project
                 </Link>
