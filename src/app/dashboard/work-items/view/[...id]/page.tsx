@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, Landmark, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2, Wrench, DollarSign, Receipt } from 'lucide-react';
+import { ArrowLeft, Calendar, Landmark, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2, Wrench, DollarSign, Receipt, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -243,7 +243,7 @@ export default function WorkItemDetailsPage() {
   const contributors = itemUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
   const Icon = typeIcon[workItem.type] || Wrench;
   
-  const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
+  const getSafeDate = (dateValue: string | Date | undefined | null): Date | null => {
     if (!dateValue) return null;
     if (dateValue instanceof Date) return dateValue;
     try {
@@ -254,6 +254,7 @@ export default function WorkItemDetailsPage() {
   };
 
   const dueDate = getSafeDate(workItem.dueDate);
+  const completedDate = getSafeDate(workItem.completedAt);
   const invoiceDate = getSafeDate(workItem.invoiceDate);
   const hasFinancials = workItem.billableAmount !== undefined && workItem.billableAmount > 0;
 
@@ -310,6 +311,14 @@ export default function WorkItemDetailsPage() {
                     {dueDate ? format(dueDate, 'PPP') : 'Not set'}
                   </p>
                 </InfoField>
+
+                {workItem.status === 'Completed' && completedDate && (
+                  <InfoField icon={CheckCircle} label="Completed On">
+                    <p className="font-semibold text-foreground">
+                      {format(completedDate, 'PPP')}
+                    </p>
+                  </InfoField>
+                )}
 
                 {project && (
                   <InfoField icon={FolderKanban} label="Project">
