@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { PlusCircle, Loader2, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { Task, User, CreateWorkItemDialogProps } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -43,7 +43,7 @@ const formSchema = z.object({
   type: z.enum(['Task', 'Milestone']),
   billableAmount: z.any().optional(),
   billableStatus: z.enum(['Not Billable', 'Unbilled', 'Billed', 'Paid']).optional(),
-  invoiceDate: z.date().optional(),
+  invoiceDate: z.date().optional().nullable(),
   invoiceNo: z.string().optional(),
 });
 
@@ -64,7 +64,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
       billableStatus: 'Not Billable',
       billableAmount: '',
-      invoiceDate: undefined,
+      invoiceDate: null,
       invoiceNo: '',
     },
   });
@@ -88,7 +88,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-
+  
     const newTaskId = `task-${Date.now()}`;
     const newTask: Omit<Task, 'id'> = {
       title: values.title,
@@ -102,14 +102,14 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       projectName: project.name,
       billableAmount: values.billableAmount ? parseFloat(String(values.billableAmount).replace(/,/g, '')) : undefined,
       billableStatus: values.billableStatus,
-      invoiceDate: values.invoiceDate ? values.invoiceDate.toISOString() : undefined,
+      invoiceDate: values.invoiceDate ? values.invoiceDate.toISOString() : null,
       invoiceNo: values.invoiceNo,
     };
-
+  
     if (values.owner && values.owner !== 'unassigned') {
       (newTask as Task).owner = values.owner;
     }
-    
+  
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
       setDocumentNonBlocking(taskDocRef, newTask);
@@ -159,7 +159,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
         type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
         billableStatus: 'Not Billable',
         billableAmount: '',
-        invoiceDate: undefined,
+        invoiceDate: null,
         invoiceNo: '',
       });
       toast({
@@ -314,6 +314,8 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
+                          fromDate={parseISO(project.startDate)}
+                          toDate={parseISO(project.endDate)}
                           initialFocus
                         />
                       </PopoverContent>
@@ -472,7 +474,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
                     <FormItem className="flex flex-col">
                       <FormLabel>Invoice Date</FormLabel>
                       <DateInput 
-                          value={field.value}
+                          value={field.value || undefined}
                           onChange={field.onChange}
                           placeholder='Select invoice date'
                       />

@@ -85,8 +85,13 @@ function AssignedTeam({ users, currentUser }: { users: User[], currentUser: User
 
 
 export default function OverviewTab({ project, assignedUsers, user, onProjectUpdate }: { project: Project, assignedUsers: User[], user: User, onProjectUpdate: (project: Project) => void }) {
-    const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
-    const upcomingMilestones = project.milestones.filter(m => m.status === 'Upcoming');
+    /* const achievedMilestones = project.milestones.filter(m => m.status === 'Achieved');
+    const upcomingMilestones = project.milestones.filter(m => m.status === 'Upcoming'); */
+    const milestones = (project.tasks || []).filter(task => task.type === 'Milestone');
+
+    const achievedMilestones = milestones.filter(m => m.status === 'Completed');
+    const upcomingMilestones = milestones.filter(m => m.status === 'In Progress' || m.status === 'Not Started');
+
     const canViewFinancials = user.role === 'admin' || user.role === 'director';
     const canEditManualProgress = user.role === 'admin' || user.role === 'director';
     const calculatedProgress = getProjectProgress(project);
@@ -210,8 +215,8 @@ export default function OverviewTab({ project, assignedUsers, user, onProjectUpd
                              <ul className="space-y-2 text-sm text-muted-foreground">
                                 {achievedMilestones.map(m => (
                                     <li key={m.id} className="flex justify-between">
-                                        <span>{m.name}</span>
-                                        <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
+                                        <span>{m.title}</span>
+                                        <span>{format(new Date(m.dueDate), 'MMM, yyyy')}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -232,8 +237,8 @@ export default function OverviewTab({ project, assignedUsers, user, onProjectUpd
                             <ul className="space-y-2 text-sm text-muted-foreground">
                             {upcomingMilestones.map(m => (
                                     <li key={m.id} className="flex justify-between">
-                                        <span>{m.name}</span>
-                                        <span>{format(new Date(m.date), 'MMM, yyyy')}</span>
+                                        <span>{m.title}</span>
+                                        <span>{format(new Date(m.dueDate), 'MMM, yyyy')}</span>
                                     </li>
                                 ))}
                             </ul>

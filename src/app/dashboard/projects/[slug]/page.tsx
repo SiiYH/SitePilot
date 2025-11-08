@@ -202,6 +202,7 @@ export default function ProjectDetailsPage() {
     };
   }, [project, tasks]);
 
+
   const handleClaimCreated = (newClaim: Claim) => {
     // This is handled by useCollection now
   };

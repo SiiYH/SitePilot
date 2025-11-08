@@ -86,6 +86,7 @@ function AssignedTeam({ users, currentUser }: { users: User[], currentUser: User
 
 export default function OverviewTab({ project, assignedUsers, user, onProjectUpdate }: { project: Project, assignedUsers: User[], user: User, onProjectUpdate: (project: Project) => void }) {
     const milestones = (project.tasks || []).filter(task => task.type === 'Milestone');
+
     const achievedMilestones = milestones.filter(m => m.status === 'Completed');
     const upcomingMilestones = milestones.filter(m => m.status === 'In Progress' || m.status === 'Not Started');
 
