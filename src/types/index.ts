@@ -31,12 +31,13 @@ export interface Task {
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Overdue';
   dueDate: string;
   createdAt: string;
+  completedAt?: string | null; // Added field
   projectName?: string;
   projectSlug?: string;
   projectId?: string;
   billableAmount?: number;
   billableStatus?: 'Not Billable' | 'Unbilled' | 'Billed' | 'Paid';
-  invoiceDate?: string;
+  invoiceDate?: string | null;
   invoiceNo?: string;
 }
 
@@ -77,7 +78,6 @@ export interface ProjectStatus {
 
 export interface Project {
   id: string;
-  slug: string;
   name: string;
   description: string;
   status: string; // Now refers to the ID of a ProjectStatus

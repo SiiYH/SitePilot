@@ -184,8 +184,16 @@ export default function WorkItemDetailsPage() {
       const projectId = idParts[1];
       const taskId = idParts[3];
       const taskRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
+      
+      const updateData: { status: Task['status'], completedAt?: string | null } = { status: newStatus };
 
-      await updateDoc(taskRef, { status: newStatus });
+      if (newStatus === 'Completed') {
+        updateData.completedAt = new Date().toISOString();
+      } else if (workItem.status === 'Completed') {
+        updateData.completedAt = null;
+      }
+
+      await updateDoc(taskRef, updateData);
 
       toast({
         title: "Status Updated",

@@ -111,7 +111,17 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
     if (!projectId) return;
     
     const taskDocRef = doc(firestore, 'projects', projectId, 'tasks', taskId);
-    updateDocumentNonBlocking(taskDocRef, { status: newStatus });
+    const updateData: { status: Task['status'], completedAt?: string | null } = { status: newStatus };
+
+    const currentTask = tasks.find(t => t.id === taskId);
+
+    if (newStatus === 'Completed') {
+      updateData.completedAt = new Date().toISOString();
+    } else if (currentTask?.status === 'Completed' && newStatus !== 'Completed') {
+      updateData.completedAt = null;
+    }
+
+    updateDocumentNonBlocking(taskDocRef, updateData);
 
     toast({
         title: "Status Updated",
@@ -133,7 +143,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
       router.push(`/dashboard/work-items/view/${pathSegments.join('/')}`);
   };
 
-    const showProjectColumn = sortedTasks.some(task => task.projectName && task.projectSlug);
+    const showProjectColumn = sortedTasks.some(task => task.projectName);
 
     const showAssignedToColumn = new Set(sortedTasks.map(t => t.owner)).size > 1 || sortedTasks.some(t => !t.owner || (t.contributors && t.contributors.length > 0));
 
@@ -166,7 +176,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                 </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm flex-grow">
-                {showProjectColumn && task.projectSlug && (
+                {showProjectColumn && task.projectName && (
                     <div className="flex items-center gap-2">
                         <FolderKanban className="h-4 w-4 text-muted-foreground" />
                         <Link href={`/dashboard/projects/${task.projectId}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
@@ -221,7 +231,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
             </CardContent>
             <div className="p-6 pt-0" onClick={(e) => e.stopPropagation()}>
                 {canEditTask ? (
-                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId, newStatus)}>
+                    <Select value={task.status} onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, task.projectId!, newStatus)}>
                     <SelectTrigger>
                         <SelectValue placeholder="Set status" />
                     </SelectTrigger>
@@ -303,7 +313,7 @@ export default function TasksTable({ tasks: initialTasks, user, users, viewMode 
                                 </TableCell>
                                 {showProjectColumn && (
                                 <TableCell>
-                                    {task.projectSlug ? (
+                                    {task.projectId ? (
                                     <Link href={`/dashboard/projects/${task.projectId}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                                         {task.projectName}
                                     </Link>
