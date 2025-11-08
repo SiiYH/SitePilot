@@ -88,7 +88,7 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-
+  
     const newTaskId = `task-${Date.now()}`;
     const newTask: Omit<Task, 'id'> = {
       title: values.title,
@@ -100,16 +100,32 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       createdAt: new Date().toISOString(),
       projectId: project.id,
       projectName: project.name,
-      billableAmount: values.billableAmount ? parseFloat(String(values.billableAmount).replace(/,/g, '')) : undefined,
-      billableStatus: values.billableStatus,
-      invoiceDate: values.invoiceDate?.toISOString(),
-      invoiceNo: values.invoiceNo,
     };
-
+  
     if (values.owner && values.owner !== 'unassigned') {
       (newTask as Task).owner = values.owner;
     }
-    
+  
+    // Only add financial fields if they have values
+    if (values.billableAmount) {
+      const amount = parseFloat(String(values.billableAmount).replace(/,/g, ''));
+      if (!isNaN(amount)) {
+        (newTask as any).billableAmount = amount;
+      }
+    }
+  
+    if (values.billableStatus && values.billableStatus !== 'Not Billable') {
+      (newTask as any).billableStatus = values.billableStatus;
+    }
+  
+    if (values.invoiceDate) {
+      (newTask as any).invoiceDate = values.invoiceDate.toISOString();
+    }
+  
+    if (values.invoiceNo && values.invoiceNo.trim() !== '') {
+      (newTask as any).invoiceNo = values.invoiceNo;
+    }
+        
     if (firestore) {
       const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
       setDocumentNonBlocking(taskDocRef, newTask);

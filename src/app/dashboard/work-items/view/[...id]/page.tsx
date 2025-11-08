@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calendar, Landmark, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2, Wrench } from 'lucide-react';
+import { ArrowLeft, Calendar, Landmark, Edit, User as UserIcon, FolderKanban, Users, FileText, Loader2, Wrench, DollarSign, Receipt } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { doc, onSnapshot, collection, query, where, documentId, updateDoc } from 'firebase/firestore';
+import { Separator } from '@/components/ui/separator';
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -228,6 +230,7 @@ export default function WorkItemDetailsPage() {
 
   const canManageWorkItem = user.role === 'admin' || user.role === 'director' || workItem.owner === user.id || workItem.contributors?.includes(user.id);
   const canEditWorkItem = user.role === 'admin' || user.role === 'director';
+  const canViewFinancials = user.role === 'admin' || user.role === 'director';
   const owner = itemUsers?.find(u => u.id === workItem.owner);
   const contributors = itemUsers?.filter(u => workItem.contributors?.includes(u.id)) || [];
   const Icon = typeIcon[workItem.type] || Wrench;
@@ -243,6 +246,9 @@ export default function WorkItemDetailsPage() {
   };
 
   const dueDate = getSafeDate(workItem.dueDate);
+  const invoiceDate = getSafeDate(workItem.invoiceDate);
+  const hasFinancials = workItem.billableAmount !== undefined && workItem.billableAmount > 0;
+
 
   return (
     <div className="space-y-6 pb-8">
@@ -292,7 +298,7 @@ export default function WorkItemDetailsPage() {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <InfoField icon={Calendar} label="Due Date">
-                  <p className="font-semibold text-foreground">
+                   <p className="font-semibold text-foreground">
                     {dueDate ? format(dueDate, 'PPP') : 'Not set'}
                   </p>
                 </InfoField>
@@ -300,7 +306,7 @@ export default function WorkItemDetailsPage() {
                 {project && (
                   <InfoField icon={FolderKanban} label="Project">
                     <Link 
-                      href={`/dashboard/projects/${project.slug}`} 
+                      href={`/dashboard/projects/${project.id}`} 
                       className="inline-flex items-center font-semibold text-primary hover:underline underline-offset-4"
                     >
                       {project.name}
@@ -338,6 +344,35 @@ export default function WorkItemDetailsPage() {
                   )}
                 </div>
               </div>
+              
+              {canViewFinancials && hasFinancials && (
+                <>
+                  <Separator />
+                  <div className="space-y-6">
+                    <h3 className="font-semibold text-foreground">Financials</h3>
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <InfoField icon={DollarSign} label="Billable Amount">
+                        <p className="font-semibold text-foreground">
+                           {workItem.billableAmount?.toLocaleString('en-US', { style: 'currency', currency: project?.currency || 'USD' })}
+                        </p>
+                      </InfoField>
+                      <InfoField icon={Receipt} label="Billing Status">
+                        <Badge variant="secondary">{workItem.billableStatus}</Badge>
+                      </InfoField>
+                       <InfoField icon={Receipt} label="Invoice No.">
+                        <p className="font-semibold text-foreground">
+                          {workItem.invoiceNo || 'N/A'}
+                        </p>
+                      </InfoField>
+                      <InfoField icon={Calendar} label="Invoice Date">
+                        <p className="font-semibold text-foreground">
+                          {invoiceDate ? format(invoiceDate, 'PPP') : 'N/A'}
+                        </p>
+                      </InfoField>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

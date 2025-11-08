@@ -23,7 +23,7 @@ import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import CreateWorkItemDialog from './_components/CreateWorkItemDialog';
 import { useFirestore, useStorage, errorEmitter, FirestorePermissionError, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy, documentId } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, orderBy, documentId, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import UploadDocumentDialog from './_components/UploadDocumentDialog';
@@ -405,7 +405,7 @@ export default function ProjectDetailsPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <TasksTable tasks={tasks || []} user={user} users={companyUsers || []} />
+                <TasksTable tasks={tasks || []} user={user} users={companyUsers || []} viewMode={'list'} />
               )}
             </CardContent>
           </Card>
