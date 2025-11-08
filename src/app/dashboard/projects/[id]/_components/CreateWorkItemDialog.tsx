@@ -1,37 +1,37 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Check, ChevronsUpDown, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Task, User, Project } from '@/types';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { PlusCircle, Loader2, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
+import { Task, User, CreateWorkItemDialogProps } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, arrayUnion } from 'firebase/firestore';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, arrayUnion } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { DateInput } from '@/components/ui/date-input';
 
-
-interface EditWorkItemFormProps {
-  workItem: Task;
-  project: Project;
-  engineers: User[];
-  pathSegments: string[];
-}
 
 const formSchema = z.object({
   title: z.string().min(3, 'Work item title must be at least 3 characters.'),
@@ -39,73 +39,80 @@ const formSchema = z.object({
   owner: z.string().optional(),
   contributors: z.array(z.string()).optional(),
   dueDate: z.date({ required_error: 'A due date is required.' }),
-  status: z.enum(['Not Started', 'In Progress', 'Completed', 'Overdue']),
+  status: z.enum(['Not Started', 'In Progress', 'Completed']),
   type: z.enum(['Task', 'Milestone']),
   billableAmount: z.any().optional(),
   billableStatus: z.enum(['Not Billable', 'Unbilled', 'Billed', 'Paid']).optional(),
-  invoiceDate: z.date().optional().nullable(),
+  invoiceDate: z.date().optional(),
   invoiceNo: z.string().optional(),
 });
 
-export default function EditWorkItemForm({ workItem, project, engineers, pathSegments }: EditWorkItemFormProps) {
-  const router = useRouter();
+export default function CreateWorkItemDialog({ project, engineers, onWorkItemCreated }: CreateWorkItemDialogProps) {
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const getSafeDate = (dateValue: string | Date | undefined): Date | undefined => {
-    if (!dateValue) return undefined;
-    if (dateValue instanceof Date) return dateValue;
-    try {
-      return parseISO(dateValue);
-    } catch (error) {
-      return undefined;
-    }
-  };
-  
-  const formatAmountForDisplay = (amount: number | undefined) => {
-    if (amount === undefined || isNaN(amount)) return '';
-    return new Intl.NumberFormat('en-US').format(amount);
-  };
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: workItem.title,
-      description: workItem.description || '',
-      owner: workItem.owner || 'unassigned',
-      contributors: workItem.contributors || [],
-      dueDate: getSafeDate(workItem.dueDate),
-      status: workItem.status,
-      type: workItem.type,
-      billableAmount: formatAmountForDisplay(workItem.billableAmount),
-      billableStatus: workItem.billableStatus || 'Not Billable',
-      invoiceDate: getSafeDate(workItem.invoiceDate) || null,
-      invoiceNo: workItem.invoiceNo || '',
+      title: '',
+      description: '',
+      owner: 'unassigned',
+      contributors: [],
+      status: 'Not Started',
+      type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
+      billableStatus: 'Not Billable',
+      billableAmount: '',
+      invoiceDate: undefined,
+      invoiceNo: '',
     },
   });
   
+  useEffect(() => {
+    if (project) {
+      let defaultType: 'Task' | 'Milestone' = 'Task';
+      if (project.progressTrackingMode === 'task-driven') {
+        defaultType = 'Task';
+      } else if (project.progressTrackingMode === 'milestone-driven') {
+        defaultType = 'Milestone';
+      }
+      form.setValue('type', defaultType);
+    }
+  }, [project, form]);
+
+  const isTypeSelectionDisabled = project.progressTrackingMode === 'task-driven' || project.progressTrackingMode === 'milestone-driven';
+  
   const selectedOwnerId = form.watch('owner');
+
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
 
-    const updatedData: Partial<Task> = {
-      ...values,
+    const newTaskId = `task-${Date.now()}`;
+    const newTask: Omit<Task, 'id'> = {
+      title: values.title,
+      description: values.description,
+      contributors: values.contributors,
+      status: values.status,
       dueDate: values.dueDate.toISOString(),
+      type: values.type,
+      createdAt: new Date().toISOString(),
+      projectId: project.id,
+      projectName: project.name,
       billableAmount: values.billableAmount ? parseFloat(String(values.billableAmount).replace(/,/g, '')) : undefined,
-      invoiceDate: values.invoiceDate ? values.invoiceDate.toISOString() : null,
+      billableStatus: values.billableStatus,
+      invoiceDate: values.invoiceDate ? values.invoiceDate.toISOString() : undefined,
+      invoiceNo: values.invoiceNo,
     };
 
-    if (values.owner === 'unassigned') {
-        delete updatedData.owner;
-    } else {
-        updatedData.owner = values.owner;
+    if (values.owner && values.owner !== 'unassigned') {
+      (newTask as Task).owner = values.owner;
     }
     
     if (firestore) {
-      const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', workItem.id);
-      updateDocumentNonBlocking(taskDocRef, updatedData);
+      const taskDocRef = doc(firestore, 'projects', project.id, 'tasks', newTaskId);
+      setDocumentNonBlocking(taskDocRef, newTask);
 
       const projectDocRef = doc(firestore, 'projects', project.id);
       const usersToAdd = new Set<string>();
@@ -138,17 +145,27 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
         });
       }
     }
-    
+
     setTimeout(() => {
-      toast({
-        title: 'Work Item Updated',
-        description: `${values.title} has been successfully updated.`,
-      });
+      onWorkItemCreated({ ...newTask, id: newTaskId }); // Optimistic update
       setIsLoading(false);
-      
-      const viewPath = pathSegments.join('/');
-      router.replace(`/dashboard/work-items/view/${viewPath}`);
-      router.refresh();
+      setOpen(false);
+      form.reset({
+        title: '',
+        description: '',
+        owner: 'unassigned',
+        contributors: [],
+        status: 'Not Started',
+        type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
+        billableStatus: 'Not Billable',
+        billableAmount: '',
+        invoiceDate: undefined,
+        invoiceNo: '',
+      });
+      toast({
+        title: 'Work Item Created',
+        description: `"${newTask.title}" has been added to the project.`,
+      });
     }, 1000);
   };
   
@@ -180,14 +197,21 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
   };
 
   return (
-    <Card>
-      <CardHeader>
-          <CardTitle>Work Item Information</CardTitle>
-          <CardDescription>Update the form below and click save.</CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Work Item
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create New Work Item</DialogTitle>
+          <DialogDescription>Fill in the details for the new task or milestone.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
               <h4 className="text-sm font-semibold text-muted-foreground">General Details</h4>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                  <FormField
@@ -199,6 +223,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                         <Select 
                           onValueChange={field.onChange} 
                           defaultValue={field.value}
+                          disabled={isTypeSelectionDisabled}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -219,7 +244,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>Initial Status</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -250,14 +275,14 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                   </FormItem>
                 )}
               />
-              <FormField
+               <FormField
                 control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Add more details about this work item..." {...field} value={field.value ?? ''} />
+                      <Textarea placeholder="Add more details about this work item..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -269,15 +294,35 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Due Date</FormLabel>
-                     <DateInput 
-                        value={field.value}
-                        onChange={field.onChange}
-                     />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            
+
               <Separator />
 
               <h4 className="text-sm font-semibold text-muted-foreground">Team Assignment</h4>
@@ -314,15 +359,12 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                         <Popover>
                         <PopoverTrigger asChild>
                             <FormControl>
-                              <Button variant="outline" role="combobox" className="w-full justify-between">
-                                {(() => {
-                                  const length = field.value?.length ?? 0;
-                                  return length > 0
-                                    ? `${length} engineer(s) selected`
-                                    : 'Select contributors...';
-                                })()}
+                            <Button variant="outline" role="combobox" className="w-full justify-between">
+                                {field.value?.length > 0
+                                ? `${field.value.length} engineer(s) selected`
+                                : 'Select contributors...'}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
+                            </Button>
                             </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -417,7 +459,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                     <FormItem>
                       <FormLabel>Invoice No.</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., INV-00123" {...field} value={field.value ?? ''} />
+                        <Input placeholder="e.g., INV-00123" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -430,7 +472,7 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                     <FormItem className="flex flex-col">
                       <FormLabel>Invoice Date</FormLabel>
                       <DateInput 
-                          value={field.value || undefined}
+                          value={field.value}
                           onChange={field.onChange}
                           placeholder='Select invoice date'
                       />
@@ -440,18 +482,20 @@ export default function EditWorkItemForm({ workItem, project, engineers, pathSeg
                 />
               </div>
 
-          </CardContent>
-          <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Item
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
+
