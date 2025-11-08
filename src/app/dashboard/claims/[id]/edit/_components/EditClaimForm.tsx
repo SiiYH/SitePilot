@@ -134,7 +134,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   
       toast({
         title: 'Claim Updated',
-        description: `Your claim "${values.title}" has been re-submitted for review.`,
+        description: `Your claim "${values.title}" has been re-submitted.`,
       });
       router.push(`/dashboard/claims/${claim.id}`);
     } catch (error) {

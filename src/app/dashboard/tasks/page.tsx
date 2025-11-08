@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -62,49 +62,65 @@ export default function MyTasksPage() {
     );
   }, [allProjects, user]);
 
-  // Fetch tasks from all accessible projects
+  // Subscribe to real-time tasks from all accessible projects
   useEffect(() => {
-    const fetchAllTasks = async () => {
-      if (!firestore || !accessibleProjects.length) {
-        setAllTasksData([]);
-        return;
-      }
+    if (!firestore || !accessibleProjects.length) {
+      setAllTasksData([]);
+      setTasksLoading(false);
+      return;
+    }
 
-      setTasksLoading(true);
-      try {
-        const tasksPromises = accessibleProjects.map(async (project) => {
-          const tasksQuery = query(collection(firestore, 'projects', project.id, 'tasks'));
-          const snapshot = await getDocs(tasksQuery);
-          
-          return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            projectId: project.id,
-            projectName: project.name,
-            projectSlug: project.slug,
-          } as Task));
-        });
+    setTasksLoading(true);
+    const unsubscribers: (() => void)[] = [];
+    const tasksMap = new Map<string, Task>();
 
-        const tasksArrays = await Promise.all(tasksPromises);
-        const allTasks = tasksArrays.flat();
-        
-        // Sort by creation date (newest first)
-        allTasks.sort((a, b) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
-          return dateB - dateA;
-        });
+    // Subscribe to each project's tasks
+    accessibleProjects.forEach((project) => {
+      const tasksQuery = query(collection(firestore, 'projects', project.id, 'tasks'));
+      
+      const unsubscribe = onSnapshot(
+        tasksQuery,
+        (snapshot) => {
+          // Update tasks for this project
+          snapshot.docChanges().forEach((change) => {
+            const taskId = `${project.id}_${change.doc.id}`;
+            
+            if (change.type === 'removed') {
+              tasksMap.delete(taskId);
+            } else {
+              tasksMap.set(taskId, {
+                id: change.doc.id,
+                ...change.doc.data(),
+                projectId: project.id,
+                projectName: project.name,
+                projectSlug: project.slug,
+              } as Task);
+            }
+          });
 
-        setAllTasksData(allTasks);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        setAllTasksData([]);
-      } finally {
-        setTasksLoading(false);
-      }
+          // Convert map to array and sort
+          const allTasks = Array.from(tasksMap.values()).sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA;
+          });
+
+          setAllTasksData(allTasks);
+          setTasksLoading(false);
+        },
+        (error) => {
+          console.error('Error listening to tasks:', error);
+          setTasksLoading(false);
+        }
+      );
+
+      unsubscribers.push(unsubscribe);
+    });
+
+    // Cleanup all listeners on unmount or when dependencies change
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
     };
-
-    fetchAllTasks();
   }, [firestore, accessibleProjects]);
 
   // Filter tasks based on user role and selections

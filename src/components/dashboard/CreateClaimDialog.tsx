@@ -147,7 +147,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       setOpen(false);
       toast({
         title: 'Claim Created',
-        description: `Your claim "${newClaimData.title}" has been submitted for review.`,
+        description: `Your claim "${newClaimData.title}" has been submitted.`,
       });
     }, 1000);
   };

@@ -6,7 +6,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Project, User } from '@/types';
 import EditProjectForm from './_components/EditProjectForm';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, limit, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
