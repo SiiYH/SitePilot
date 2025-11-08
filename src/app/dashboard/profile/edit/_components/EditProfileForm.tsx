@@ -80,8 +80,8 @@ export default function EditProfileForm() {
     defaultValues: {
       name: user?.name || '',
       email: user?.email || '',
-      phoneAreaCode: areaCode,
-      phoneNumber: number,
+      phoneAreaCode: areaCode || '+60',
+      phoneNumber: number || '',
     },
   });
 

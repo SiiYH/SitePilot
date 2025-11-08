@@ -63,6 +63,9 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
       status: 'Not Started',
       type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
       billableStatus: 'Not Billable',
+      billableAmount: '',
+      invoiceDate: undefined,
+      invoiceNo: '',
     },
   });
   
@@ -155,6 +158,9 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
         status: 'Not Started',
         type: project.progressTrackingMode === 'task-driven' ? 'Task' : project.progressTrackingMode === 'milestone-driven' ? 'Milestone' : 'Task',
         billableStatus: 'Not Billable',
+        billableAmount: '',
+        invoiceDate: undefined,
+        invoiceNo: '',
       });
       toast({
         title: 'Work Item Created',
