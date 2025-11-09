@@ -50,6 +50,12 @@ const nextConfig: NextConfig = {
         ],
       })
     );
+    
+    // This is the crucial part to prevent the worker from being bundled on the server.
+    if (isServer) {
+        config.externals.push('pdfjs-dist/build/pdf.worker.min.mjs');
+    }
+
     return config;
   },
   /* async rewrites() {

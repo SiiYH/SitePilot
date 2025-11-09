@@ -10,8 +10,6 @@ import { Download, X, ZoomIn, ZoomOut, Loader2, AlertCircle, ChevronLeft, Chevro
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Set up the worker source for pdfjs
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
 interface PDFPreviewModalProps {
   isOpen: boolean;

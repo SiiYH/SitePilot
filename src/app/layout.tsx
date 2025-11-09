@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { FirebaseClientProvider } from '@/firebase';
 
+// Worker setup moved to client-provider.tsx
 
 export const metadata: Metadata = {
   title: 'SitePilot',

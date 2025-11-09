@@ -3,6 +3,10 @@
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
+import { pdfjs } from 'react-pdf';
+
+// Set up the worker source for pdfjs once globally on the client
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
