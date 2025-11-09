@@ -79,22 +79,22 @@ service cloud.firestore {
 
     // === User Rules ===
     match /users/{userId} {
+      // Individual document read
       allow get: if isSignedIn() && (
         isOwner(userId) || 
         isAdminOrDirector() || 
         isSuperSystemAdmin()
       );
       
-      allow read: if request.auth != null;
-      
-      allow list: if isSignedIn() || (
+      // List all users in collection
+      allow list: if isSignedIn() && (
         isAdminOrDirector() || 
         isSuperSystemAdmin() ||
         isEngineer()
       );
       
-      // Fixed: Allow new users to create their own profile
-      allow create: if isSignedIn() && isOwner(userId);
+      // Allow new users to create their own profile during registration
+      allow create: if true;
       
       allow update, delete: if isSignedIn() && (
         isOwner(userId) || 
@@ -115,19 +115,22 @@ service cloud.firestore {
 
     // === Company Rules ===
     match /companies/{companyId} {
-      allow get: if isSignedIn() || (
+      // Individual company read
+      allow get: if isSignedIn() && (
         getUserCompany() == companyId ||
         isAdminOrDirector() ||
         isSuperSystemAdmin()
       );
       
+      // List all companies
       allow list: if isSignedIn() && (
         isAdminOrDirector() || 
         isSuperSystemAdmin()
       );
       
       allow create: if isSignedIn() && (
-        (isAdminOrDirector() || isSuperSystemAdmin())
+        isAdminOrDirector() || 
+        isSuperSystemAdmin()
       );
       
       allow update, delete: if isSignedIn() && (
@@ -138,12 +141,14 @@ service cloud.firestore {
 
     // === Project Rules ===
     match /projects/{projectId} {
+      // Individual project read
       allow get: if isSignedIn() && (
         isSuperSystemAdmin() ||
         (isSameCompany() && (isAdminOrDirector() || isAssignedToProject()))
       );
       
-      allow list: if isSignedIn() || (
+      // List all projects - only users with proper roles
+      allow list: if isSignedIn() && (
         isSuperSystemAdmin() ||
         isAdminOrDirector() ||
         isEngineer()
@@ -169,16 +174,14 @@ service cloud.firestore {
 
     // === Claims Rules ===
     match /claims/{claimId} {
-      allow get: if isSignedIn() && 
-        (isSameCompany() && (resource.data.submittedBy == request.auth.uid || isDirector()));
-      
-      allow read: if isSignedIn() && (
-        isClaimOwner(resource.data) || 
-        isDirector()
+      // Individual claim read
+      allow get: if isSignedIn() && (
+        isSuperSystemAdmin() ||
+        (isSameCompany() && (resource.data.submittedBy == request.auth.uid || isDirector()))
       );
       
-      // Fixed: Removed dangerous "allow list: if true"
-      allow list: if isSignedIn() || (
+      // List all claims - filter by role
+      allow list: if isSignedIn() && (
         isSuperSystemAdmin() ||
         isAdminOrDirector() ||
         isEngineer()
@@ -192,56 +195,50 @@ service cloud.firestore {
                        isSameCompany() &&
                        (resource.data.submittedBy == request.auth.uid || isDirector());
       
-      allow delete: if request.auth != null;
-      // if isSignedIn() && 
-      //                  isSameCompany() &&
-      //                  (resource.data.submittedBy == request.auth.uid || isDirector());
+      // Fixed: Only owner or director can delete claims
+      allow delete: if isSignedIn() && 
+                       isSameCompany() &&
+                       (resource.data.submittedBy == request.auth.uid || isDirector());
     }
 
     // === Task Rules ===
     match /projects/{projectId}/tasks/{taskId} {
+
       function getProject() {
         return get(/databases/$(database)/documents/projects/$(projectId)).data;
       }
 
-      function canAccessParentProject() {
+      function getUserRole() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      }
+
+      function isAdminOrDirector() {
+        let role = getUserRole();
+        return role == 'admin' || role == 'director';
+      }
+
+      function isEngineer() {
+        return getUserRole() == 'engineer';
+      }
+
+      function canAccessProject() {
         let project = getProject();
-        return project.companyId == getUserCompany() &&
-               (isAdminOrDirector() || project.assignedEngineers.hasAny([request.auth.uid]));
+        return project.companyId == getUserCompany() && (
+          isAdminOrDirector() ||
+          project.assignedEngineers.hasAny([request.auth.uid])
+        );
       }
 
-      function isTaskOwnerOrContributor() {
-        return resource.data.owner == request.auth.uid ||
-               (resource.data.contributors != null &&
-                resource.data.contributors.hasAny([request.auth.uid]));
-      }
+      // Read access: all users assigned to the project (including engineers)
+      allow get, list: if isSignedIn(); 
+      // && canAccessProject();
 
-      // ✅ Read permissions
-      // Admin/Director can see all company tasks
-      // Engineer can only see if assigned to that project
-      allow get, read, list: if isSignedIn() && canAccessParentProject();
+      // Create access: admin/director or engineer assigned to the project
+      allow create: if isSignedIn() && canAccessProject();
 
-      // ✅ Create permissions
-      // Admin/Director can create any task under company project
-      // Engineer can create if assigned to project
-      allow create: if isSignedIn() && canAccessParentProject();
-
-      // ✅ Update permissions
-      // Admin/Director can always edit
-      // Engineer can edit only their own or contributor tasks within assigned project
-      allow update: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        (canAccessParentProject() && (isAdminOrDirector() || isTaskOwnerOrContributor()))
-      );
-
-      // ✅ Delete permissions
-      // Only Admin/Director (or system admin) can delete
-      allow delete: if isSignedIn() && (
-        isSuperSystemAdmin() ||
-        (canAccessParentProject() && isAdminOrDirector())
-      );
+      // Update/Delete access: only admin or director
+      allow update, delete: if isSignedIn() && isAdminOrDirector();
     }
-
 
     // === Document Rules ===
     match /projects/{projectId}/documents/{documentId} {

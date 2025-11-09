@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs,getCountFromServer } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import { Company } from '@/types';
+import { Company, User } from '@/types';
 
 export default function JoinCompanyForm() {
   const router = useRouter();
@@ -63,28 +63,67 @@ export default function JoinCompanyForm() {
   }, [companyId, debouncedFetchCompany]);
 
   const handleJoin = async () => {
-    if (!user || !foundCompany) return;
+    if (!user || !foundCompany || !firestore) return;
 
     setIsLoading(true);
 
-    const userDocRef = doc(firestore, 'users', user.id);
-
     try {
-      const updateData = { 
-        companyId: foundCompany.id,
-        role: 'engineer' as const
-      };
+        // Fetch current active engineer count and license limits for the target company
+        const licenseRef = doc(firestore, 'licenses', foundCompany.licenseKey!);
+        const licenseSnap = await getDoc(licenseRef);
 
-      await updateDoc(userDocRef, updateData);
-      
-      setUser(prev => prev ? { ...prev, ...updateData } : null);
+        if (!licenseSnap.exists()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Company license not found.' });
+            setIsLoading(false);
+            return;
+        }
 
-      toast({
-        title: `Joined ${foundCompany.name}!`,
-        description: "You've been successfully added to the company as an Engineer.",
-      });
+        const licenseData = licenseSnap.data();
+        const maxEngineers = licenseData.maxEngineers;
 
-      router.push('/dashboard');
+        const usersQuery = query(
+            collection(firestore, 'users'),
+            where('companyId', '==', foundCompany.id),
+            where('role', '==', 'engineer'),
+            where('status', '==', 'Active')
+        );
+        const activeEngineersSnap = await getCountFromServer(usersQuery);
+        const activeEngineersCount = activeEngineersSnap.data().count;
+
+        const willExceedLimit = activeEngineersCount + 1 > maxEngineers;
+
+        const userDocRef = doc(firestore, 'users', user.id);
+        const updateData: Partial<User> = { 
+            companyId: foundCompany.id,
+            role: 'engineer',
+            status: willExceedLimit ? 'Inactive' : 'Active',
+            history: [
+                ...user.history,
+                {
+                    status: willExceedLimit ? 'Inactive' : 'Active',
+                    date: new Date().toISOString()
+                }
+            ]
+        };
+
+        await updateDoc(userDocRef, updateData);
+        
+        setUser(prev => prev ? { ...prev, ...updateData } : null);
+
+        if (willExceedLimit) {
+             toast({
+                variant: 'destructive',
+                title: `Joined ${foundCompany.name} as Inactive`,
+                description: "The company has reached its engineer limit. An admin must activate your account.",
+            });
+        } else {
+            toast({
+                title: `Joined ${foundCompany.name}!`,
+                description: "You've been successfully added to the company as an Engineer.",
+            });
+        }
+
+        router.push('/dashboard');
 
     } catch (error) {
       console.error('Error joining company:', error);
