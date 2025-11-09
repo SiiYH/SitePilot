@@ -395,7 +395,6 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
         </div>
       </div>
 
-      {/* PDF Preview Modal */}
       {pdfPreviewUrl && (
         <PDFPreviewModal
           isOpen={isPreviewOpen}

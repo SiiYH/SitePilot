@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, X, ZoomIn, ZoomOut, Loader2, AlertCircle } from 'lucide-react';
 
-// Conditionally set workerSrc only on the client
-if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-}
+// Set up the worker source for pdfjs
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
+
 
 interface PDFPreviewModalProps {
   isOpen: boolean;
@@ -32,9 +36,13 @@ export function PDFPreviewModal({
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2.0));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>PDF Preview - {fileName}</DialogTitle>
         </DialogHeader>
@@ -51,14 +59,30 @@ export function PDFPreviewModal({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-auto bg-gray-100 p-4 flex justify-center">
+        <div className="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 p-4 flex justify-center">
           <Document
             file={pdfUrl}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            loading={<p className="text-sm text-gray-500 text-center">Loading PDF...</p>}
+            onLoadSuccess={onDocumentLoadSuccess}
+            loading={
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            }
+            error={
+              <div className="flex flex-col items-center justify-center h-full text-destructive">
+                <AlertCircle className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Failed to load PDF</p>
+                <p className="text-xs">Please try downloading the file instead.</p>
+              </div>
+            }
           >
             {Array.from(new Array(numPages), (_, index) => (
-              <Page key={index + 1} pageNumber={index + 1} scale={zoom} />
+              <Page 
+                key={`page_${index + 1}`} 
+                pageNumber={index + 1} 
+                scale={zoom}
+                className="mb-4 shadow-lg"
+              />
             ))}
           </Document>
         </div>
