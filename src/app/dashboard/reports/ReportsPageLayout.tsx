@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -245,39 +246,26 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
           )}
           
           <div className='flex gap-2'>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="w-full sm:w-auto">
-                  <FileDown className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {isReportDetailsPage ? (
-                  <>
-                    <DropdownMenuItem onClick={() => handlePDFPreview(false)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Preview & Export PDF</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExcelExport}>
-                      <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      <span>Export to Excel</span>
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem onClick={() => handlePDFPreview(true)}>
-                      <Printer className="mr-2 h-4 w-4" />
-                      <span>Print All to PDF</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportAllToExcel}>
-                      <FileSpreadsheet className="mr-2 h-4 w-4" />
-                      <span>Export All to Excel</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isReportDetailsPage && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handlePDFPreview(false)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    <span>Preview & Export PDF</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExcelExport}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    <span>Export to Excel</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
         
