@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useReportContext } from '@/contexts/ReportContext';
@@ -69,6 +68,8 @@ export default function EngineerPerformanceReport() {
                             <TableRow>
                               <TableHead>Project Name</TableHead>
                               <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Perf. Bond</TableHead>
+                              <TableHead className="text-right">Gross Profit</TableHead>
                               <TableHead className="text-right">End Date</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -82,6 +83,12 @@ export default function EngineerPerformanceReport() {
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant="secondary">{project.status}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {project.performanceBondAmount ? `${project.currency || 'USD'} ${project.performanceBondAmount.toLocaleString()}` : '-'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {project.grossProfit ? `${project.currency || 'USD'} ${project.grossProfit.toLocaleString()}` : '-'}
                                 </TableCell>
                                 <TableCell className="text-right">{format(parseISO(project.endDate), 'MMM dd, yyyy')}</TableCell>
                               </TableRow>
