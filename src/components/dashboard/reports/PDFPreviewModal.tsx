@@ -3,7 +3,8 @@
 
 import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, X, ZoomIn, ZoomOut, Loader2, AlertCircle } from 'lucide-react';
