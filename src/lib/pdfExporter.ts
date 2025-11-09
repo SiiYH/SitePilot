@@ -1,15 +1,17 @@
 // File: lib/pdf-export-helper.ts
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, parseISO } from 'date-fns';
+import { format, isPast, parseISO } from 'date-fns';
+import { getProjectProgress } from './projects';
+import { Project, Task } from '@/types';
 
 interface PerformanceData {
-  id: string;
+  id: string; // ✅ Add this
   "engineer Name": string;
   "avatarUrl"?: string;
   "projects": any[];
-  "tasks": any[];
-  "claims": any[];
+  "tasks": (Task & {projectName?: string})[]; // ✅ Add projectName to task type
+  "claims": (Claim & {projectName?: string})[];
 }
 
 interface ExportOptions {
@@ -100,6 +102,18 @@ const addPageNumbers = (doc: jsPDF, companyName: string) => {
   }
 };
 
+const getProjectCurrentStatus = (project: Project, tasks: Task[]): 'Completed' | 'Due' | 'Ongoing' => {
+    const progress = getProjectProgress(project);
+    if (progress === 100) return 'Completed';
+
+    const isProjectOverdue = isPast(parseISO(project.endDate));
+    const hasOverdueTasks = tasks.some(t => t.projectId === project.id && t.status === 'Overdue');
+    
+    if (isProjectOverdue || hasOverdueTasks) return 'Due';
+    
+    return 'Ongoing';
+}
+
 export const exportEngineerPerformanceToPDF = (
   performanceData: PerformanceData[],
   options: ExportOptions = {}
@@ -173,16 +187,20 @@ export const exportEngineerPerformanceToPDF = (
 
       autoTable(doc, {
         startY: yPosition,
-        head: [['Project Name', 'Status', 'End Date', 'Perf. Bond', 'Gross Profit']],
-        body: engineer.projects.map(p => [
-          p.name,
-          p.status,
-          format(parseISO(p.endDate), 'MMM dd, yyyy'),
-          p.performanceBondAmount ? `${p.currency || currency} ${p.performanceBondAmount.toLocaleString()}` : '-',
-          p.grossProfit ? `${p.currency || currency} ${p.grossProfit.toLocaleString()}` : '-'
-        ]),
+        head: [['Project Name', 'Current Status', 'Status', 'End Date', 'Perf. Bond', 'Gross Profit']],
+        body: engineer.projects.map(p => {
+            const currentStatus = getProjectCurrentStatus(p, engineer.tasks);
+            return [
+                p.name,
+                currentStatus,
+                p.status,
+                format(parseISO(p.endDate), 'MMM dd, yyyy'),
+                p.performanceBondAmount ? `${p.currency || currency} ${p.performanceBondAmount.toLocaleString()}` : '-',
+                p.grossProfit ? `${p.currency || currency} ${p.grossProfit.toLocaleString()}` : '-'
+            ]
+        }),
         foot: [[
-          { content: 'Total', colSpan: 3, styles: { halign: 'left' } },
+          { content: 'Total', colSpan: 4, styles: { halign: 'left' } },
           { content: `${currency} ${totalPerformanceBond.toLocaleString()}`, styles: { halign: 'right' } },
           { content: `${currency} ${totalGrossProfit.toLocaleString()}`, styles: { halign: 'right' } }
         ]],
@@ -205,8 +223,9 @@ export const exportEngineerPerformanceToPDF = (
           0: { cellWidth: 'auto' },
           1: { cellWidth: 'auto' },
           2: { cellWidth: 'auto' },
-          3: { cellWidth: 'auto', halign: 'right' },
+          3: { cellWidth: 'auto' },
           4: { cellWidth: 'auto', halign: 'right' },
+          5: { cellWidth: 'auto', halign: 'right' },
         },
         margin: { left: margin, right: margin },
       });
@@ -906,3 +925,25 @@ export const exportTaskMilestoneToPDF = (
 
   return doc.output('blob');
 };
+
+// Types
+interface Claim {
+    id: string;
+    projectId: string;
+    companyId: string;
+    title: string;
+    type: string;
+    description?: string;
+    amount: number;
+    currency: string;
+    status: 'Pending' | 'Paid' | 'Overdue' | 'Rejected';
+    date: string;
+    submittedBy: string; // User ID
+    submittedAt: string;
+    receiptImageUrls?: string[];
+    receiptImageHint?: string;
+    remark?: string;
+    approvedBy?: string; // User ID of director who approved
+    approvedAt?: string; // ISO date string
+    eInvoiceNo?: string;
+}

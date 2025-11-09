@@ -5,7 +5,7 @@ import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
 import { User, Project, Claim, Task, ProjectStatus } from '@/types';
 import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { isWithinInterval, parseISO, isPast } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
 
 interface ReportDataContext {
@@ -91,6 +91,18 @@ interface ReportContextType {
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined);
+
+const getProjectCurrentStatus = (project: Project, tasks: Task[]): 'Completed' | 'Due' | 'Ongoing' => {
+    const progress = getProjectProgress(project);
+    if (progress === 100) return 'Completed';
+
+    const isProjectOverdue = isPast(parseISO(project.endDate));
+    const hasOverdueTasks = tasks.some(t => t.projectId === project.id && t.status === 'Overdue');
+    
+    if (isProjectOverdue || hasOverdueTasks) return 'Due';
+    
+    return 'Ongoing';
+}
 
 export function ReportProvider({ children, reportData: initialReportData }: { children: ReactNode; reportData: ReportDataContext }) {
   const [reportData, setReportData] = useState<ReportDataContext>(initialReportData);
@@ -416,13 +428,21 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
   
       // Projects
       ws_data.push(["Assigned Projects"]);
-      ws_data.push(["Project Name", "Status", "End Date"]);
+      ws_data.push(["Project Name", "Current Status", "Status", "End Date", "Perf. Bond", "Gross Profit"]);
       engineerData.projects.forEach(p => {
-        ws_data.push([p.name, p.status, p.endDate]);
+        const currentStatus = getProjectCurrentStatus(p, engineerData.tasks);
+        ws_data.push([
+            p.name, 
+            currentStatus,
+            p.status, 
+            p.endDate, 
+            p.performanceBondAmount || 0,
+            p.grossProfit || 0
+        ]);
       });
       ws_data.push([]);
   
-      // Tasks - ✅ Now includes projectName
+      // Tasks
       ws_data.push(["Assigned Tasks"]);
       ws_data.push(["Task Title", "Project", "Role", "Due Date", "Status"]);
       engineerData.tasks.forEach(t => {
@@ -439,7 +459,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
       });
   
       const ws = XLSX.utils.aoa_to_sheet(ws_data);
-      ws['!cols'] = [{wch:30}, {wch:25}, {wch:15}, {wch:12}, {wch:12}];
+      ws['!cols'] = [{wch:30}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
   
