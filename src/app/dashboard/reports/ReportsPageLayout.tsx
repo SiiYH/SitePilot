@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -166,7 +167,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      setIsPreviewOpen(false);
+      handleClosePreview(); // Use the close handler
       
       toast({
         title: "Success",
@@ -178,11 +179,14 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   // Close preview and cleanup
   const handleClosePreview = () => {
     setIsPreviewOpen(false);
+    // Add a delay before revoking the URL to prevent "Transport destroyed" error
     if (pdfPreviewUrl) {
-      URL.revokeObjectURL(pdfPreviewUrl);
-      setPdfPreviewUrl(null);
+        setTimeout(() => {
+            URL.revokeObjectURL(pdfPreviewUrl);
+            setPdfPreviewUrl(null);
+            setPdfBlob(null);
+        }, 500); // 500ms delay
     }
-    setPdfBlob(null);
   };
 
   // Browser print (alternative option)
