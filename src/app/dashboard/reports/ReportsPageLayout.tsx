@@ -345,7 +345,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
                       <Eye className="mr-2 h-4 w-4" />
                       <span>Preview & Export PDF</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePrint}>
+                    <DropdownMenuItem onClick={handlePDFPreview}>
                       <Printer className="mr-2 h-4 w-4" />
                       <span>Print</span>
                     </DropdownMenuItem>
