@@ -110,7 +110,7 @@ export interface Project {
   modifiedBy?: string;
 }
 
-export type ClaimType = 'Progress Claim' | 'Variation Order' | 'Final Claim' | 'Materials on Site' | 'Retention Release';
+export type ClaimType = 'Fuel' | 'Meal' | 'Progress Claim' | 'Variation Order' | 'Final Claim' | 'Materials on Site' | 'Retention Release';
 
 export interface Claim {
   id: string;
