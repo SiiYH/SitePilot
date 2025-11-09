@@ -718,6 +718,18 @@ export const exportProjectStatusToPDF = (
 
   // Projects Table
   if (projectsData.length > 0) {
+    // Calculate totals
+    const totalGrossProfit = projectsData.reduce((sum, p) => 
+      sum + (p["Gross Profit"] || 0), 0
+    );
+    const totalWorkItems = projectsData.reduce((sum, p) => 
+      sum + (parseInt(p["Work Items"]) || 0), 0
+    );
+    const averageMarginProfit = projectsData.reduce((sum, p) => 
+      sum + (p["Margin Profit (%)"] || 0), 0
+    ) / projectsData.length;
+    const currency = projectsData[0]?.Currency || 'USD';
+
     autoTable(doc, {
       startY: yPosition,
       head: [[
@@ -742,6 +754,14 @@ export const exportProjectStatusToPDF = (
         `${project.Currency} ${project["Gross Profit"].toLocaleString('en-MY')}`,
         `${project["Margin Profit (%)"].toFixed(1)}%`
       ]),
+      foot: [[
+        { content: `Total Projects: ${projectsData.length}`, colSpan: 3, styles: { halign: 'left' } },
+        { content: totalWorkItems.toString(), styles: { halign: 'center' } },
+        { content: '', colSpan: 2 },
+        '',
+        { content: `${currency} ${totalGrossProfit.toLocaleString('en-MY')}`, styles: { halign: 'right' } },
+        { content: `${averageMarginProfit.toFixed(1)}%`, styles: { halign: 'right' } }
+      ]],
       theme: 'striped',
       headStyles: {
         fillColor: [71, 85, 105],
@@ -752,16 +772,22 @@ export const exportProjectStatusToPDF = (
       bodyStyles: {
         fontSize: 7,
       },
+      footStyles: {
+        fillColor: [241, 245, 249],
+        textColor: [0, 0, 0],
+        fontSize: 8,
+        fontStyle: 'bold',
+      },
       columnStyles: {
-        0: { cellWidth: 45 },
-        1: { cellWidth: 18, halign: 'center' },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 20, halign: 'center' },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 },
-        6: { cellWidth: 40 },
-        7: { cellWidth: 30, halign: 'right' },
-        8: { cellWidth: 18, halign: 'right' },
+        0: { cellWidth: 'auto' },
+        1: { cellWidth: 'auto', halign: 'center' },
+        2: { cellWidth: 'auto' },
+        3: { cellWidth: 'auto', halign: 'center' },
+        4: { cellWidth: 'auto' },
+        5: { cellWidth: 'auto' },
+        6: { cellWidth: 'auto' },
+        7: { cellWidth: 'auto', halign: 'right' },
+        8: { cellWidth: 'auto', halign: 'right' },
       },
       margin: { left: margin, right: margin },
     });

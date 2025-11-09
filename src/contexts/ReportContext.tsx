@@ -28,7 +28,7 @@ interface PerformanceData {
   id: string; // ✅ Add this
   "engineer Name": string;
   "avatarUrl"?: string;
-  "projects": Project[];
+  "projects": any[];
   "tasks": (Task & {projectName?: string})[]; // ✅ Add projectName to task type
   "claims": (Claim & {projectName?: string})[];
 }
@@ -183,20 +183,27 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     if (!engineers.length) return [];
 
     return engineers.map(engineer => {
-      const assignedProjects = filteredProjects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const engineerClaims = filteredClaims.filter(c => c.submittedBy === engineer.id);
-
-      const completedSites = assignedProjects.filter(p => getProjectProgress(p) === 100).length;
-      const ongoingSites = assignedProjects.filter(p => getProjectProgress(p) < 100).length;
+      // Filter projects and claims specifically for this engineer
+      const assignedProjects = reportData.projects.filter(p => p.assignedEngineers.includes(engineer.id));
+      const engineerClaims = reportData.claims.filter(c => c.submittedBy === engineer.id);
       
-      const totalAmount = assignedProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
-      const claimAmount = engineerClaims.reduce((acc, c) => acc + c.amount, 0);
+      // Now apply the global filters on top of the engineer-specific data
+      const finalProjects = assignedProjects.filter(p => filteredProjects.some(fp => fp.id === p.id));
+      const finalClaims = engineerClaims.filter(c => filteredClaims.some(fc => fc.id === c.id));
+      const engineerTasks = reportData.tasks.filter(t => (t.owner === engineer.id || t.contributors?.includes(engineer.id)) && finalProjects.some(p => p.id === t.projectId));
 
-      const dueSites = assignedProjects.filter(p => {
+      const completedSites = finalProjects.filter(p => getProjectProgress(p) === 100).length;
+      const ongoingSites = finalProjects.filter(p => getProjectProgress(p) < 100).length;
+      
+      const totalAmount = finalProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
+      const claimAmount = finalClaims.reduce((acc, c) => acc + c.amount, 0);
+
+      const dueSites = finalProjects.filter(p => {
         try {
-          const isOverdue = new Date(p.endDate) < new Date() && getProjectProgress(p) < 100;
-          const hasOverdueTasks = (p.tasks || []).some(t => t.owner === engineer.id && t.status === 'Overdue');
-          return isOverdue || hasOverdueTasks;
+          const projectProgress = getProjectProgress(p);
+          const isProjectOverdue = new Date(p.endDate) < new Date() && projectProgress < 100;
+          const hasOverdueTasks = engineerTasks.some(t => t.projectId === p.id && t.status === 'Overdue');
+          return isProjectOverdue || hasOverdueTasks;
         } catch {
           return false;
         }
@@ -211,7 +218,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
         "Due Sites": dueSites,
       };
     });
-  }, [engineers, filteredProjects, filteredClaims]);
+  }, [engineers, filteredProjects, filteredClaims, reportData.projects, reportData.claims, reportData.tasks]);
 
   const performanceData: PerformanceData[] = useMemo(() => {
     if (!engineers.length) return [];
