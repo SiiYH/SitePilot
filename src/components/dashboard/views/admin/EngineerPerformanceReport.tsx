@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useReportContext } from '@/contexts/ReportContext';
@@ -6,8 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, isPast, parseISO } from 'date-fns';
 import Link from 'next/link';
+import { getProjectProgress } from '@/lib/projects';
+import { Project, Task } from '@/types';
 
 const getInitials = (name: string) => {
   if (!name) return '';
@@ -28,8 +31,28 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Rejected': 'destructive',
 };
 
+const projectStatusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' } = {
+  'Completed': 'default',
+  'Ongoing': 'secondary',
+  'Due': 'destructive',
+};
+
+
 export default function EngineerPerformanceReport() {
   const { performanceData } = useReportContext();
+
+  const getProjectCurrentStatus = (project: Project, tasks: Task[]): 'Completed' | 'Due' | 'Ongoing' => {
+      const progress = getProjectProgress(project);
+      if (progress === 100) return 'Completed';
+
+      const isProjectOverdue = isPast(parseISO(project.endDate));
+      const hasOverdueTasks = tasks.some(t => t.projectId === project.id && t.status === 'Overdue');
+      
+      if (isProjectOverdue || hasOverdueTasks) return 'Due';
+      
+      return 'Ongoing';
+  }
+
 
   return (
     <Card className="print-card">
@@ -67,6 +90,7 @@ export default function EngineerPerformanceReport() {
                           <TableHeader>
                             <TableRow>
                               <TableHead>Project Name</TableHead>
+                              <TableHead>Current Status</TableHead>
                               <TableHead>Status</TableHead>
                               <TableHead className="text-right">Perf. Bond</TableHead>
                               <TableHead className="text-right">Gross Profit</TableHead>
@@ -74,25 +98,31 @@ export default function EngineerPerformanceReport() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {engineerData.projects.map(project => (
-                              <TableRow key={project.id}>
-                                <TableCell className="font-medium">
-                                  <Link href={`/dashboard/projects/${project.id}`} className="hover:underline text-primary">
-                                    {project.name}
-                                  </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary">{project.status}</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {project.performanceBondAmount ? `${project.currency || 'USD'} ${project.performanceBondAmount.toLocaleString()}` : '-'}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {project.grossProfit ? `${project.currency || 'USD'} ${project.grossProfit.toLocaleString()}` : '-'}
-                                </TableCell>
-                                <TableCell className="text-right">{format(parseISO(project.endDate), 'MMM dd, yyyy')}</TableCell>
-                              </TableRow>
-                            ))}
+                            {engineerData.projects.map(project => {
+                              const currentStatus = getProjectCurrentStatus(project, engineerData.tasks);
+                              return (
+                                <TableRow key={project.id}>
+                                  <TableCell className="font-medium">
+                                    <Link href={`/dashboard/projects/${project.id}`} className="hover:underline text-primary">
+                                      {project.name}
+                                    </Link>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={projectStatusVariant[currentStatus]}>{currentStatus}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                      <Badge variant="secondary">{project.status}</Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {project.performanceBondAmount ? `${project.currency || 'USD'} ${project.performanceBondAmount.toLocaleString()}` : '-'}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {project.grossProfit ? `${project.currency || 'USD'} ${project.grossProfit.toLocaleString()}` : '-'}
+                                  </TableCell>
+                                  <TableCell className="text-right">{format(parseISO(project.endDate), 'MMM dd, yyyy')}</TableCell>
+                                </TableRow>
+                              )
+                            })}
                           </TableBody>
                         </Table>
                     ) : (
