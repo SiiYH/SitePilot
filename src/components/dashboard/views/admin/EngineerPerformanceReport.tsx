@@ -76,7 +76,7 @@ export default function EngineerPerformanceReport() {
                             {engineerData.projects.map(project => (
                               <TableRow key={project.id}>
                                 <TableCell className="font-medium">
-                                  <Link href={`/dashboard/projects/${project.slug}`} className="hover:underline text-primary">
+                                  <Link href={`/dashboard/projects/${project.id}`} className="hover:underline text-primary">
                                     {project.name}
                                   </Link>
                                 </TableCell>

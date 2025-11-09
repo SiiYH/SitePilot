@@ -1,4 +1,7 @@
+
 import type {NextConfig} from 'next';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -35,6 +38,19 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    config.plugins.push(
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: path.join(__dirname, 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'),
+            to: path.join(__dirname, 'public'),
+          },
+        ],
+      })
+    );
+    return config;
   },
   /* async rewrites() {
     return [

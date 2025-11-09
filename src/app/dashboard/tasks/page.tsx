@@ -93,7 +93,7 @@ export default function MyTasksPage() {
                 ...change.doc.data(),
                 projectId: project.id,
                 projectName: project.name,
-                projectSlug: project.slug,
+                // projectSlug: project.slug,
               } as Task);
             }
           });
