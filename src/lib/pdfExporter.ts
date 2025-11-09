@@ -99,6 +99,9 @@ const addPageNumbers = (doc: jsPDF, companyName: string) => {
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, 10, { align: 'right' });
+    
+    // Add company name at top left
+    doc.text(companyName, margin, 10);
   }
 };
 
@@ -925,6 +928,130 @@ export const exportTaskMilestoneToPDF = (
 
   return doc.output('blob');
 };
+
+type ReportType = 'project-status' | 'task-milestone' | 'engineer-summary' | 'detailed-claims' | 'engineer-performance';
+
+type Report = {
+  title: string;
+  data: any[];
+  type: ReportType;
+};
+
+export const exportAllToPDF = (reports: Report[], options: ExportOptions = {}): Blob => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const { companyName = 'SitePilot', userName = 'N/A', dateRange } = options;
+  const margin = 14;
+
+  reports.forEach((report, index) => {
+    if (index > 0) {
+      doc.addPage();
+    }
+    
+    let yPosition = addReportHeader(doc, {
+      companyName,
+      userName,
+      reportTitle: report.title,
+      dateRange,
+      isFirstPage: true,
+    });
+
+    // Generate table based on report type
+    switch (report.type) {
+      case 'project-status':
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Project Name', 'Progress', 'Status', 'Work Items', 'Engineers']],
+          body: report.data.map(d => [d['Project Name'], `${d.Progress}%`, d.Status, d['Work Items'], d['Assigned Engineers']]),
+          theme: 'striped',
+          headStyles: { fillColor: [71, 85, 105], fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+        });
+        break;
+      
+      case 'task-milestone':
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Work Item', 'Type', 'Project', 'Owner', 'Due Date', 'Status']],
+          body: report.data.map(d => [d['Work Item Title'], d.Type, d['Project Name'], d.Owner, format(parseISO(d['Due Date']), 'MMM dd, yyyy'), d.Status]),
+          theme: 'striped',
+          headStyles: { fillColor: [71, 85, 105], fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+        });
+        break;
+
+      case 'engineer-summary':
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Engineer', 'Completed', 'Total Amount', 'Claim', 'Ongoing', 'Due']],
+          body: report.data.map(d => [
+            d['engineer Name'],
+            d['Completed Sites'],
+            `RM ${d['Total Amount (RM)'].toLocaleString()}`,
+            `RM ${d['Claim (RM)'].toLocaleString()}`,
+            d['Ongoing Sites'],
+            d['Due Sites']
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [71, 85, 105], fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+        });
+        break;
+        
+      case 'detailed-claims':
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Engineer', 'Site', 'e-Invoice', 'Title', 'Amount', 'Date', 'Status']],
+          body: report.data.map(d => [
+            d['engineer Name'],
+            d['Site Name'],
+            d['e-Invoice No.'],
+            d['Claim Title'],
+            `${d.Currency} ${d.Amount.toLocaleString()}`,
+            format(parseISO(d.Date), 'MMM dd, yyyy'),
+            d.Status
+          ]),
+          theme: 'striped',
+          headStyles: { fillColor: [71, 85, 105], fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+        });
+        break;
+      
+      case 'engineer-performance':
+        report.data.forEach((engData, engIndex) => {
+          if (engIndex > 0) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.setFontSize(14).setFont('helvetica', 'bold').text(engData['engineer Name'], margin, yPosition);
+          yPosition += 8;
+
+          doc.setFontSize(11).setFont('helvetica', 'bold').text('Projects', margin, yPosition);
+          yPosition += 2;
+          autoTable(doc, {
+            startY: yPosition,
+            head: [['Project', 'Status', 'End Date']],
+            body: engData.projects.map((p: any) => [p.name, p.status, format(parseISO(p.endDate), 'MMM dd, yyyy')]),
+            theme: 'striped',
+            headStyles: { fillColor: [71, 85, 105], fontSize: 9 },
+            bodyStyles: { fontSize: 8 },
+            margin: { left: margin, right: margin },
+          });
+          yPosition = (doc as any).lastAutoTable.finalY + 10;
+        });
+        break;
+    }
+  });
+
+  addPageNumbers(doc, companyName);
+  
+  return doc.output('blob');
+};
+
 
 // Types
 interface Claim {

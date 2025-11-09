@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext, ReactNode, useMemo, useState } from 'react';
@@ -7,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO, isPast } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
+import { exportAllToPDF as exportAllToPDFHelper } from '@/lib/pdfExporter';
 
 interface ReportDataContext {
   users: User[];
@@ -80,6 +80,7 @@ interface ReportContextType {
   exportDetailedClaimsToExcel: () => XLSX.WorkBook;
   exportProjectStatusToExcel: () => XLSX.WorkBook;
   exportTaskMilestoneToExcel: () => XLSX.WorkBook;
+  exportAllToPDF: () => Blob;
   dateRange: DateRange | undefined;
   setDateRange: (dateRange: DateRange | undefined) => void;
   selectedEngineerId: string | undefined;
@@ -193,44 +194,46 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
 
   const summaryData: SummaryData[] = useMemo(() => {
     if (!engineers.length) return [];
-
+    
     return engineers.map(engineer => {
-      // Filter projects and claims specifically for this engineer
-      const assignedProjects = reportData.projects.filter(p => p.assignedEngineers.includes(engineer.id));
-      const engineerClaims = reportData.claims.filter(c => c.submittedBy === engineer.id);
-      
-      // Now apply the global filters on top of the engineer-specific data
-      const finalProjects = assignedProjects.filter(p => filteredProjects.some(fp => fp.id === p.id));
-      const finalClaims = engineerClaims.filter(c => filteredClaims.some(fc => fc.id === c.id));
-      const engineerTasks = reportData.tasks.filter(t => (t.owner === engineer.id || t.contributors?.includes(engineer.id)) && finalProjects.some(p => p.id === t.projectId));
+        const engineerProjects = reportData.projects.filter(p => p.assignedEngineers.includes(engineer.id));
+        const finalProjects = engineerProjects.filter(p => filteredProjects.some(fp => fp.id === p.id));
+        
+        const engineerClaims = reportData.claims.filter(c => c.submittedBy === engineer.id);
+        const finalClaims = engineerClaims.filter(c => filteredClaims.some(fc => fc.id === c.id));
+        
+        const engineerTasks = reportData.tasks.filter(t => (t.owner === engineer.id || t.contributors?.includes(engineer.id)) && finalProjects.some(p => p.id === t.projectId));
 
-      const completedSites = finalProjects.filter(p => getProjectProgress(p) === 100).length;
-      const ongoingSites = finalProjects.filter(p => getProjectProgress(p) < 100).length;
-      
-      const totalAmount = finalProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
-      const claimAmount = finalClaims.reduce((acc, c) => acc + c.amount, 0);
-
-      const dueSites = finalProjects.filter(p => {
-        try {
+        const completedSites = finalProjects.filter(p => getProjectProgress(p) === 100).length;
+        const ongoingSites = finalProjects.filter(p => getProjectProgress(p) < 100 && !isPast(parseISO(p.endDate))).length;
+        
+        const totalAmount = finalProjects.reduce((acc, p) => acc + (p.grossProfit || 0), 0);
+        const claimAmount = finalClaims.reduce((acc, c) => acc + c.amount, 0);
+        
+        const dueSites = finalProjects.filter(p => {
           const projectProgress = getProjectProgress(p);
-          const isProjectOverdue = new Date(p.endDate) < new Date() && projectProgress < 100;
-          const hasOverdueTasks = engineerTasks.some(t => t.projectId === p.id && t.status === 'Overdue');
-          return isProjectOverdue || hasOverdueTasks;
-        } catch {
-          return false;
-        }
-      }).length;
+          if (projectProgress === 100) return false;
+          
+          try {
+            const isProjectOverdue = new Date(p.endDate) < new Date();
+            const hasOverdueTasks = engineerTasks.some(t => t.projectId === p.id && t.status === 'Overdue');
+            return isProjectOverdue || hasOverdueTasks;
+          } catch {
+            return false;
+          }
+        }).length;
 
-      return {
-        "engineer Name": engineer.name,
-        "Completed Sites": completedSites,
-        "Total Amount (RM)": totalAmount,
-        "Claim (RM)": claimAmount,
-        "Ongoing Sites": ongoingSites,
-        "Due Sites": dueSites,
-      };
+        return {
+            "engineer Name": engineer.name,
+            "Completed Sites": completedSites,
+            "Total Amount (RM)": totalAmount,
+            "Claim (RM)": claimAmount,
+            "Ongoing Sites": ongoingSites,
+            "Due Sites": dueSites,
+        };
     });
-  }, [engineers, filteredProjects, filteredClaims, reportData.projects, reportData.claims, reportData.tasks]);
+  }, [engineers, filteredProjects, filteredClaims, reportData]);
+
 
   const performanceData: PerformanceData[] = useMemo(() => {
     if (!engineers.length) return [];
@@ -568,6 +571,22 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     XLSX.writeFile(workbook, `SitePilot_All_Reports_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  const exportAllToPDF = (): Blob => {
+    const reports = [
+      { title: 'Project Status Report', data: projectStatusData, type: 'project-status' as const },
+      { title: 'Task & Milestone Report', data: taskMilestoneData, type: 'task-milestone' as const },
+      { title: 'Engineer Summary Report', data: summaryData, type: 'engineer-summary' as const },
+      { title: 'Detailed Claims Report', data: detailedClaimsData, type: 'detailed-claims' as const },
+      { title: 'Engineer Performance Report', data: performanceData, type: 'engineer-performance' as const },
+    ];
+
+    return exportAllToPDFHelper(reports, {
+      companyName: 'SitePilot', // Replace with dynamic company name if available
+      userName: 'Admin', // Replace with dynamic user name if available
+      dateRange,
+    });
+  };
+
   const value = {
     reportData,
     setReportData,
@@ -582,6 +601,7 @@ export function ReportProvider({ children, reportData: initialReportData }: { ch
     exportDetailedClaimsToExcel,
     exportProjectStatusToExcel,
     exportTaskMilestoneToExcel,
+    exportAllToPDF,
     dateRange,
     setDateRange,
     selectedEngineerId,

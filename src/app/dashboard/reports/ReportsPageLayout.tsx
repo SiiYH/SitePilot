@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -34,9 +33,10 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [pdfFileName, setPdfFileName] = useState('report.pdf');
 
   // Generate PDF and show preview
-  const handlePDFPreview = async () => {
+  const handlePDFPreview = async (isAllReports = false) => {
     try {
       toast({
         title: "Generating PDF...",
@@ -45,91 +45,59 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
 
       let blob: Blob;
 
-      // Use proper PDF generation for engineer performance
-      if (pathname.includes('/engineer-performance')) {
+      if (isAllReports) {
+        blob = context.exportAllToPDF();
+        setPdfFileName('SitePilot_All_Reports.pdf');
+      } else if (pathname.includes('/engineer-performance')) {
         blob = exportEngineerPerformanceToPDF(context.performanceData, {
           companyName: company?.name,
           userName: user?.name,
           dateRange: context.dateRange,
         });
-      }else if (pathname.includes('/engineer-summary')) {
+        setPdfFileName('engineer_performance_report.pdf');
+      } else if (pathname.includes('/engineer-summary')) {
         blob = exportEngineerSummaryToPDF(context.summaryData, {
           companyName: company?.name,
           userName: user?.name,
           dateRange: context.dateRange,
         });
-      }else if (pathname.includes('/detailed-claims')) {
+        setPdfFileName('engineer_summary_report.pdf');
+      } else if (pathname.includes('/detailed-claims')) {
         blob = exportDetailedClaimsToPDF(context.detailedClaimsData, {
           companyName: company?.name,
           userName: user?.name,
           dateRange: context.dateRange,
         });
+        setPdfFileName('detailed_claims_report.pdf');
       } else if (pathname.includes('/project-status')) {
         blob = exportProjectStatusToPDF(context.projectStatusData, {
           companyName: company?.name,
           userName: user?.name,
           dateRange: context.dateRange,
         });
-      }
-      else if (pathname.includes('/task-milestone-report')) {
+        setPdfFileName('project_status_report.pdf');
+      } else if (pathname.includes('/task-milestone-report')) {
         blob = exportTaskMilestoneToPDF(context.taskMilestoneData, {
           companyName: company?.name,
           userName: user?.name,
           dateRange: context.dateRange,
         });
-      }
-      
-      else {
-        // For other reports, use html2canvas approach
+        setPdfFileName('task_milestone_report.pdf');
+      } else {
+        // Fallback for individual pages that might not have a specific exporter
         const { default: jsPDF } = await import('jspdf');
         const { default: html2canvas } = await import('html2canvas');
-
         const element = document.getElementById('report-content');
-        if (!element) {
-          toast({
-            title: "Error",
-            description: "Report content not found",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Brief delay to allow content to render
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Generate canvas from HTML
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-        });
-
+        if (!element) throw new Error("Report content not found");
+        const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-        });
-
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const imgWidth = 210;
+        const pageHeight = 297;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        // Add pages
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-        }
-
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         blob = pdf.output('blob');
+        setPdfFileName('report.pdf');
       }
 
       // Create preview URL
@@ -157,17 +125,17 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   // Download PDF from preview
   const handleDownloadPDF = () => {
     if (pdfBlob) {
-      const fileName = `${getReportFileName()}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileNameWithDate = `${pdfFileName.replace('.pdf', '')}_${new Date().toISOString().split('T')[0]}.pdf`;
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = fileName;
+      link.download = fileNameWithDate;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      handleClosePreview(); // Use the close handler
+      handleClosePreview();
       
       toast({
         title: "Success",
@@ -179,40 +147,15 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
   // Close preview and cleanup
   const handleClosePreview = () => {
     setIsPreviewOpen(false);
-    // Add a delay before revoking the URL to prevent "Transport destroyed" error
     if (pdfPreviewUrl) {
         setTimeout(() => {
             URL.revokeObjectURL(pdfPreviewUrl);
             setPdfPreviewUrl(null);
             setPdfBlob(null);
-        }, 500); // 500ms delay
-    }
-  };
-
-  // Browser print (alternative option)
-  const handlePrint = () => {
-    // For performance report, we need to open accordions first
-    if (pathname.includes('/engineer-performance')) {
-      const element = document.getElementById('report-content');
-      if (element) {
-        const accordionTriggers = element.querySelectorAll<HTMLElement>('[data-state="closed"][data-radix-collection-item]');
-        accordionTriggers.forEach(trigger => trigger.click());
-        
-        // Print after accordions are opened
-        setTimeout(() => {
-          window.print();
-          // Close accordions after print
-          setTimeout(() => {
-            accordionTriggers.forEach(trigger => trigger.click());
-          }, 500);
         }, 500);
-      }
-    } else {
-      window.print();
     }
   };
 
-  // Enhanced Excel export with formatting
   const handleExcelExport = async () => {
     try {
       const XLSX = await import('xlsx');
@@ -254,7 +197,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
     }
   };
 
-  const handleExportAll = async () => {
+  const handleExportAllToExcel = async () => {
     try {
       toast({
         title: "Exporting All Reports...",
@@ -277,41 +220,12 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
     }
   };
 
-  const getReportTitle = () => {
-    if (pathname.includes('/engineer-summary')) {
-      return "Engineer Summary Report";
-    }
-    if (pathname.includes('/engineer-performance')) {
-      return "Engineer Performance Report";
-    }
-    if (pathname.includes('/detailed-claims')) {
-      return "Detailed Claims Report";
-    }
-    if (pathname.includes('/project-status')) {
-      return "Project Status Report";
-    }
-    if (pathname.includes('/task-milestone-report')) {
-      return "Task & Milestone Report";
-    }
-    return "All Reports";
-  };
-
   const getReportFileName = () => {
-    if (pathname.includes('/engineer-summary')) {
-      return "engineer_summary_report";
-    }
-    if (pathname.includes('/engineer-performance')) {
-      return "engineer_performance_report";
-    }
-    if (pathname.includes('/detailed-claims')) {
-      return "detailed_claims_report";
-    }
-    if (pathname.includes('/project-status')) {
-      return "project_status_report";
-    }
-    if (pathname.includes('/task-milestone-report')) {
-      return "task_milestone_report";
-    }
+    if (pathname.includes('/engineer-summary')) return "engineer_summary_report";
+    if (pathname.includes('/engineer-performance')) return "engineer_performance_report";
+    if (pathname.includes('/detailed-claims')) return "detailed_claims_report";
+    if (pathname.includes('/project-status')) return "project_status_report";
+    if (pathname.includes('/task-milestone-report')) return "task_milestone_report";
     return "sitepilot_reports";
   };
 
@@ -341,13 +255,9 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
               <DropdownMenuContent>
                 {isReportDetailsPage ? (
                   <>
-                    <DropdownMenuItem onClick={handlePDFPreview}>
+                    <DropdownMenuItem onClick={() => handlePDFPreview(false)}>
                       <Eye className="mr-2 h-4 w-4" />
                       <span>Preview & Export PDF</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePDFPreview}>
-                      <Printer className="mr-2 h-4 w-4" />
-                      <span>Print</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleExcelExport}>
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -356,11 +266,11 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
                   </>
                 ) : (
                   <>
-                    <DropdownMenuItem onClick={handlePrint}>
+                    <DropdownMenuItem onClick={() => handlePDFPreview(true)}>
                       <Printer className="mr-2 h-4 w-4" />
-                      <span>Print All</span>
+                      <span>Print All to PDF</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportAll}>
+                    <DropdownMenuItem onClick={handleExportAllToExcel}>
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
                       <span>Export All to Excel</span>
                     </DropdownMenuItem>
@@ -371,31 +281,8 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
           </div>
         </div>
         
-        <div id="print-header" className="print-only hidden">
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="font-bold text-lg">{company?.name || 'SitePilot'}</p>
-              <h1 className="text-2xl font-bold">{getReportTitle()}</h1>
-            </div>
-            <div className='text-right text-sm text-muted-foreground'>
-              <p>Generated on: {new Date().toLocaleDateString()}</p>
-              <p>Generated by: {user?.name || 'N/A'}</p>
-            </div>
-          </div>
-          <div className="border-t mt-2 mb-6"></div>
-        </div>
-
         <div id="report-content">
           {children}
-        </div>
-
-        <div id="print-footer" className="print-only hidden">
-          <div className="border-t mt-6 pt-2 text-sm text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Report generated by SitePilot</span>
-              <div className="page-number"></div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -404,7 +291,7 @@ export default function ReportsPageLayout({ children }: { children: React.ReactN
           isOpen={isPreviewOpen}
           onClose={handleClosePreview}
           pdfUrl={pdfPreviewUrl}
-          fileName={`${getReportFileName()}.pdf`}
+          fileName={pdfFileName}
           onDownload={handleDownloadPDF}
         />
       )}
