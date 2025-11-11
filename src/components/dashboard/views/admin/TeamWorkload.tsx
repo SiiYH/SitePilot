@@ -194,19 +194,38 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
   const handleStatusChange = useCallback((userId: string, newStatus: boolean) => {
     const status: UserStatus = newStatus ? 'Active' : 'Inactive';
     const user = users.find(u => u.id === userId);
-    if(user) {
-        const now = new Date().toISOString();
-        const newHistoryEntry = { status, date: now };
-        const updatedHistory = [...(user.history || []), newHistoryEntry];
-        
-        onUserUpdated(userId, { status, history: updatedHistory });
 
-        toast({
-            title: "Status Updated",
-            description: `${user.name} has been set to ${status}.`
-        });
+    if (!user) return;
+
+    // If activating a user, check license limits first
+    if (status === 'Active' && user.status === 'Inactive') {
+        if (licenseUsage[user.role] >= licenseLimits[user.role]) {
+            toast({
+                variant: 'destructive',
+                title: 'Activation Failed',
+                description: `The license limit for the ${capitalize(user.role)} role has been reached.`,
+            });
+            // Revert the switch visually if the update is blocked
+            // This is a simple way to do it. A more robust solution might involve state management.
+            setTimeout(() => {
+                const switchEl = document.getElementById(`status-${userId}`) as HTMLButtonElement | null;
+                if(switchEl) switchEl.click();
+            }, 100);
+            return;
+        }
     }
-  }, [users, onUserUpdated, toast]);
+
+    const now = new Date().toISOString();
+    const newHistoryEntry = { status, date: now };
+    const updatedHistory = [...(user.history || []), newHistoryEntry];
+    
+    onUserUpdated(userId, { status, history: updatedHistory });
+
+    toast({
+        title: "Status Updated",
+        description: `${user.name} has been set to ${status}.`
+    });
+  }, [users, onUserUpdated, toast, licenseUsage, licenseLimits]);
   
   const handleViewModeChange = (mode: 'accordion' | 'table') => {
     setViewMode(mode);
@@ -743,6 +762,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               </Select>
                             </div>
                             <Switch
+                              id={`status-table-${user.id}`}
                               checked={user.status === 'Active'}
                               onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
                               disabled={user.id === currentUser?.id || user.role === 'system super admin'}
