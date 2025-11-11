@@ -10,6 +10,8 @@ import { LogOut, User as UserIcon, Globe } from 'lucide-react';
 import Logo from '../icons/Logo';
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -24,7 +26,7 @@ export default function Header() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const capitalize = (s: string) => (s && s.charAt(0).toUpperCase() + s.slice(1)) || "";
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 print-hidden">
@@ -34,7 +36,12 @@ export default function Header() {
         </div>
         <div className="hidden md:block min-w-0">
             <h1 className="text-lg font-semibold truncate">Welcome, {user.name.split(' ')[0]}!</h1>
-            <p className="text-sm text-muted-foreground truncate">You are logged in as a {capitalize(user.role)}.</p>
+            <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground truncate">You are logged in as a {capitalize(user.role)}.</p>
+                {user.status === 'Inactive' && (
+                  <Badge variant="destructive" className="text-xs">Inactive</Badge>
+                )}
+            </div>
         </div>
       </div>
       

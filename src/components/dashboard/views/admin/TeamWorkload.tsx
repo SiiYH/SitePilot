@@ -398,6 +398,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               {user.status === 'Active' && (
                                 <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 ring-3 ring-background shadow-lg animate-pulse" />
                               )}
+                              {user.status === 'Inactive' && (
+                                <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-destructive ring-3 ring-background shadow-lg" />
+                              )}
                             </div>
                             
                             <div className="flex-1 text-left min-w-0">
@@ -704,7 +707,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={cn("h-2 w-2 rounded-full", user.status === 'Active' ? 'bg-green-500' : 'bg-gray-400')} />
+                          <div className={cn("h-2 w-2 rounded-full", user.status === 'Active' ? 'bg-green-500' : 'bg-destructive')} />
                           <span>{user.status}</span>
                         </div>
                       </TableCell>
