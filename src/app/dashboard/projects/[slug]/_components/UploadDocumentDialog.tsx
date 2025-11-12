@@ -22,17 +22,36 @@ import { Project, Document as DocType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useStorage, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ref, uploadBytes } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 interface UploadDocumentDialogProps {
   project: Project;
   onDocumentUploaded: (newDocument: DocType) => void;
 }
 
+// File size limit: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_FILE_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/jpg',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+];
+
 const formSchema = z.object({
   name: z.string().min(3, 'Document name must be at least 3 characters.'),
   type: z.enum(['Blueprint', 'Contract', 'Permit', 'Report']),
-  file: z.instanceof(File, { message: "A file is required." }),
+  file: z
+    .instanceof(File, { message: "A file is required." })
+    .refine((file) => file.size <= MAX_FILE_SIZE, 'File size must be less than 10MB.')
+    .refine(
+      (file) => ACCEPTED_FILE_TYPES.includes(file.type),
+      'Only PDF, Word, Excel, and image files are accepted.'
+    ),
 });
 
 const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Report'];
@@ -40,6 +59,7 @@ const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Re
 export default function UploadDocumentDialog({ project, onDocumentUploaded }: UploadDocumentDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
   const firestore = useFirestore();
   const storage = useStorage();
@@ -57,56 +77,101 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    setUploadProgress(0);
 
     const file = values.file;
-    if (!file || !firestore) {
-        toast({ variant: 'destructive', title: 'No file selected or database not ready.' });
+    
+    // Validation checks
+    if (!file) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Error', 
+          description: 'No file selected.' 
+        });
+        setIsLoading(false);
+        return;
+    }
+
+    if (!firestore || !storage) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Error', 
+          description: 'Firebase not initialized. Please refresh the page.' 
+        });
         setIsLoading(false);
         return;
     }
 
     const documentId = `doc-${Date.now()}`;
-    const storageRef = ref(storage, `projects/${project.id}/documents/${documentId}-${file.name}`);
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storageRef = ref(storage, `projects/${project.id}/documents/${documentId}-${sanitizedFileName}`);
 
-    try {
-        const snapshot = await uploadBytes(storageRef, file);
-        
-        const newDocument: Omit<DocType, 'id'> = {
-            name: values.name,
-            path: snapshot.ref.fullPath, // Store the full path instead of the URL
-            type: values.type,
-            uploadedAt: new Date().toISOString(),
-        };
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-        const documentDocRef = doc(firestore, 'projects', project.id, 'documents', documentId);
-        
-        setDocumentNonBlocking(documentDocRef, newDocument);
-
-        // Optimistic update for the UI
-        onDocumentUploaded({ ...newDocument, id: documentId });
-        
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(Math.round(progress));
+      },
+      (error) => {
+        console.error("Upload error:", error);
         toast({
-            title: 'Document Uploaded',
-            description: `"${values.name}" has been added to the project.`,
+          variant: 'destructive',
+          title: 'Upload Failed',
+          description: error.message,
         });
-
-        setOpen(false);
-        form.reset();
-
-    } catch (error) {
-        console.error("Error uploading document:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Upload Failed',
-            description: 'Could not upload the document. Please check console for details.',
-        });
-    } finally {
         setIsLoading(false);
+        setUploadProgress(0);
+      },
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          const newDocument: Omit<DocType, 'id'> = {
+              name: values.name,
+              path: storageRef.fullPath,
+              url: downloadURL,
+              type: values.type,
+              uploadedAt: new Date().toISOString(),
+          };
+
+          const documentDocRef = doc(firestore, 'projects', project.id, 'documents', documentId);
+          await setDocumentNonBlocking(documentDocRef, newDocument);
+
+          onDocumentUploaded({ ...newDocument, id: documentId });
+          
+          toast({
+              title: 'Document Uploaded',
+              description: `"${values.name}" has been added to the project.`,
+          });
+
+        } catch (error) {
+           console.error("Error creating Firestore document:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Save Failed',
+                description: 'File uploaded, but failed to save document record.',
+            });
+        } finally {
+            setIsLoading(false);
+            setOpen(false);
+            form.reset();
+            setUploadProgress(0);
+        }
+      }
+    );
+  };
+
+  const handleDialogChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      form.reset();
+      setUploadProgress(0);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -116,7 +181,9 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Upload New Document</DialogTitle>
-          <DialogDescription>Select a file and provide details for the new document.</DialogDescription>
+          <DialogDescription>
+            Select a file and provide details for the new document. Max file size: 10MB.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -127,7 +194,11 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                 <FormItem>
                   <FormLabel>Document Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Q3 Financial Report" {...field} />
+                    <Input 
+                      placeholder="e.g., Q3 Financial Report" 
+                      disabled={isLoading}
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,7 +210,11 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Document Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isLoading}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a type" />
@@ -158,7 +233,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
             <FormField
               control={form.control}
               name="file"
-              render={({ field: { onChange, ...fieldProps } }) => (
+              render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>File</FormLabel>
                   <FormControl>
@@ -167,6 +242,8 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                             type="file"
                             ref={fileInputRef}
                             className="hidden"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                            disabled={isLoading}
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) onChange(file);
@@ -178,29 +255,50 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                                 type="button"
                                 variant="outline"
                                 className="w-full"
+                                disabled={isLoading}
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 <Upload className="mr-2 h-4 w-4" />
                                 Choose File
                             </Button>
                         ) : (
-                            <div className="flex items-center justify-between rounded-md border p-2">
-                                <div className="flex items-center gap-2 truncate">
-                                    <File className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm truncate">{selectedFile.name}</span>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between rounded-md border p-2">
+                                  <div className="flex items-center gap-2 truncate">
+                                      <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                      <span className="text-sm truncate">{selectedFile.name}</span>
+                                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                                        ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                                      </span>
+                                  </div>
+                                  <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive flex-shrink-0"
+                                      disabled={isLoading}
+                                      onClick={() => {
+                                          onChange(undefined);
+                                          if (fileInputRef.current) fileInputRef.current.value = "";
+                                      }}
+                                  >
+                                      <X className="h-4 w-4"/>
+                                  </Button>
+                              </div>
+                              {isLoading && uploadProgress > 0 && (
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Uploading...</span>
+                                    <span>{uploadProgress}%</span>
+                                  </div>
+                                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-primary transition-all duration-300"
+                                      style={{ width: `${uploadProgress}%` }}
+                                    />
+                                  </div>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-destructive"
-                                    onClick={() => {
-                                        onChange(undefined);
-                                        if (fileInputRef.current) fileInputRef.current.value = "";
-                                    }}
-                                >
-                                    <X className="h-4 w-4"/>
-                                </Button>
+                              )}
                             </div>
                         )}
                     </div>
@@ -210,12 +308,17 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               )}
             />
             <DialogFooter className="pt-4">
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => handleDialogChange(false)}
+                disabled={isLoading}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !selectedFile}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Upload Document
+                {isLoading ? 'Uploading...' : 'Upload Document'}
               </Button>
             </DialogFooter>
           </form>
