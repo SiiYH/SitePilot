@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -500,4 +499,3 @@ export default function CreateWorkItemDialog({ project, engineers, onWorkItemCre
     </Dialog>
   );
 }
-
