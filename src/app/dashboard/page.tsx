@@ -10,7 +10,7 @@ import DirectorDashboard from '@/components/dashboard/views/DirectorDashboard';
 import EngineerDashboard from '@/components/dashboard/views/EngineerDashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { mockAttendance } from '@/lib/data';
 
 export default function DashboardPage() {
@@ -48,41 +48,46 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    const fetchAllTasks = async () => {
-      try {
-        if (!projects || projects.length === 0 || !firestore) {
+    if (!firestore || !projects || projects.length === 0) {
+      setTasksLoading(false);
+      setAllTasks([]);
+      return;
+    }
+  
+    setTasksLoading(true);
+    const tasksMap = new Map<string, Task>();
+    const unsubscribers = projects.map((project) => {
+      const tasksQuery = query(collection(firestore, 'projects', project.id, 'tasks'));
+      return onSnapshot(
+        tasksQuery,
+        (snapshot) => {
+          snapshot.docChanges().forEach((change) => {
+            const taskId = `${project.id}_${change.doc.id}`;
+            if (change.type === 'removed') {
+              tasksMap.delete(taskId);
+            } else {
+              tasksMap.set(taskId, {
+                id: change.doc.id,
+                ...change.doc.data(),
+                projectId: project.id,
+                projectName: project.name,
+              } as Task);
+            }
+          });
+          const updatedTasks = Array.from(tasksMap.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setAllTasks(updatedTasks);
           setTasksLoading(false);
-          return;
+        },
+        (error) => {
+          console.error(`Error fetching tasks for project ${project.id}:`, error);
+          setTasksLoading(false);
         }
-        setTasksLoading(true);
-        console.log("Fetching tasks for", projects.length, "projects");
-        
-        const tasksPromises = projects.map(async (project) => {
-          try {
-            const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
-            const tasksSnap = await getDocs(tasksRef);
-            return tasksSnap.docs.map(doc => ({
-              ...(doc.data() as Task),
-              id: doc.id,
-              projectId: project.id,
-            }));
-          } catch (err) {
-            // console.error(`Failed to fetch tasks for project ${project.id}:`, err);
-            return []; // Return empty array for this project
-          }
-        });
+      );
+    });
   
-        const allTasksArrays = await Promise.all(tasksPromises);
-        setAllTasks(allTasksArrays.flat());
-      } catch (error) {
-        console.error("🔥 Task fetch error:", error);
-        setAllTasks([]); // Set empty array on error
-      } finally {
-        setTasksLoading(false);
-      }
-    };
-  
-    fetchAllTasks();
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, [projects, firestore]);
   
 
