@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +17,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, File, Upload, X } from 'lucide-react';
 import { Project, Document as DocType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useStorage, setDocumentNonBlocking } from '@/firebase';
@@ -32,7 +32,7 @@ interface UploadDocumentDialogProps {
 const formSchema = z.object({
   name: z.string().min(3, 'Document name must be at least 3 characters.'),
   type: z.enum(['Blueprint', 'Contract', 'Permit', 'Report']),
-  file: z.instanceof(File).refine(file => file.size > 0, 'A file is required.'),
+  file: z.instanceof(File, { message: "A file is required." }),
 });
 
 const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Report'];
@@ -43,6 +43,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
   const { toast } = useToast();
   const firestore = useFirestore();
   const storage = useStorage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -51,6 +52,8 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
       type: 'Report',
     },
   });
+
+  const selectedFile = form.watch('file');
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -155,20 +158,52 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
             <FormField
               control={form.control}
               name="file"
-              render={({ field: { onChange, value, ...rest } }) => (
+              render={({ field: { onChange, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>File</FormLabel>
                   <FormControl>
-                    <Input
-                      type="file"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                            onChange(file);
-                        }
-                      }}
-                      {...rest}
-                    />
+                    <div>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) onChange(file);
+                            }}
+                            {...fieldProps}
+                        />
+                        {!selectedFile ? (
+                             <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <Upload className="mr-2 h-4 w-4" />
+                                Choose File
+                            </Button>
+                        ) : (
+                            <div className="flex items-center justify-between rounded-md border p-2">
+                                <div className="flex items-center gap-2 truncate">
+                                    <File className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm truncate">{selectedFile.name}</span>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive"
+                                    onClick={() => {
+                                        onChange(undefined);
+                                        if (fileInputRef.current) fileInputRef.current.value = "";
+                                    }}
+                                >
+                                    <X className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

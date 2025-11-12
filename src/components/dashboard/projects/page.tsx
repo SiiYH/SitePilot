@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +6,7 @@ import { defaultProjectStatuses } from '@/lib/data';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search } from 'lucide-react';
+import { Loader2, Settings, List, LayoutGrid, Activity, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -112,32 +110,54 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="space-y-4">
+      {/* Compact Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 className="text-2xl font-bold tracking-tight">
+            <h2 className="text-xl font-bold tracking-tight">
               {user?.role === 'engineer' ? 'My Assigned Projects' : 'All Projects'}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
                 View, manage, and create new projects.
             </p>
         </div>
         <div className='flex items-center gap-2 flex-wrap'>
-             <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {user?.role !== 'engineer' && company && (
+              company.activated ? (
+                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
+              ) : (
+                <ActivateLicenseDialog featureName="create projects" />
+              )
+            )}
+            {canManageSettings && (
+                <Button variant="outline" size="sm" asChild>
+                    <Link href="/dashboard/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                    </Link>
+                </Button>
+            )}
+        </div>
+      </div>
+
+      {/* Compact Filters Bar */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     type="search"
                     placeholder="Search projects..."
-                    className="pl-9 w-full sm:w-64"
+                    className="pl-8 h-9"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-             <div className="w-full sm:w-48">
+            <div className="w-40">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                         <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Filter by status..." />
+                        <SelectValue placeholder="Status..." />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
@@ -149,57 +169,43 @@ export default function ProjectsPage() {
                     </SelectContent>
                 </Select>
             </div>
-            <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewModeChange('grid')}
-                    aria-label="Grid view"
-                    className={cn('h-8 w-8', viewMode === 'grid' && 'bg-background shadow-sm')}
-                >
-                    <LayoutGrid className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewModeChange('list')}
-                    aria-label="List view"
-                    className={cn('h-8 w-8', viewMode === 'list' && 'bg-background shadow-sm')}
-                >
-                    <List className="h-4 w-4" />
-                </Button>
-            </div>
-            {user?.role !== 'engineer' && company && (
-              company.activated ? (
-                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
-              ) : (
-                <ActivateLicenseDialog featureName="create projects" />
-              )
-            )}
-            {canManageSettings && (
-                <Button variant="outline" asChild>
-                    <Link href="/dashboard/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                    </Link>
-                </Button>
-            )}
+        </div>
+        <div className="flex items-center gap-1 rounded-lg bg-muted p-0.5">
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewModeChange('grid')}
+                aria-label="Grid view"
+                className={cn('h-8 w-8 p-0', viewMode === 'grid' && 'bg-background shadow-sm')}
+            >
+                <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewModeChange('list')}
+                aria-label="List view"
+                className={cn('h-8 w-8 p-0', viewMode === 'list' && 'bg-background shadow-sm')}
+            >
+                <List className="h-4 w-4" />
+            </Button>
         </div>
       </div>
 
+      {/* Compact Grid - More columns, reduced gap */}
       {filteredProjects.length > 0 ? (
         viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredProjects.map(project => (
                 <ProjectCard key={project.id} project={project} />
             ))}
             </div>
         ) : (
-            <ProjectList projects={filteredProjects} />
+            <ProjectList projects={filteredProjects} users={[]} />
         )
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-8 text-center">
+          <h3 className="text-base font-semibold text-muted-foreground">No Projects Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {searchQuery ? "No projects match your search." : (user?.role === 'engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
           </p>
