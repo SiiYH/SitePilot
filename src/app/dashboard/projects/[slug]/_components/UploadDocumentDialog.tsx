@@ -252,6 +252,44 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                File
+              </label>
+              <div 
+                className="relative flex items-center w-full rounded-md border border-input bg-background text-sm ring-offset-background cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  disabled={isLoading}
+                  onChange={handleFileChange}
+                />
+                <div className="flex items-center gap-2 pl-3 py-2 flex-1">
+                  <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground truncate">
+                    {selectedFile ? selectedFile.name : 'Click to choose a file...'}
+                  </span>
+                </div>
+                {selectedFile && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 mr-2 text-destructive flex-shrink-0"
+                    disabled={isLoading}
+                    onClick={(e) => { e.stopPropagation(); handleRemoveFile(); }}
+                  >
+                    <X className="h-4 w-4"/>
+                  </Button>
+                )}
+              </div>
+              {fileError && <p className="text-sm font-medium text-destructive">{fileError}</p>}
+            </div>
+
             <FormField
               control={form.control}
               name="name"
@@ -296,72 +334,20 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               )}
             />
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                File
-              </label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                disabled={isLoading}
-                onChange={handleFileChange}
-              />
-              {!selectedFile ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  disabled={isLoading}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Choose File
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="rounded-md border p-3">
-                    <div className="flex items-start gap-2">
-                      <File className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-sm break-words">{selectedFile.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive flex-shrink-0"
-                        disabled={isLoading}
-                        onClick={handleRemoveFile}
-                      >
-                        <X className="h-4 w-4"/>
-                      </Button>
-                    </div>
-                  </div>
-                  {isLoading && uploadProgress > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Uploading...</span>
-                        <span>{uploadProgress}%</span>
-                      </div>
-                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+            {isLoading && uploadProgress > 0 && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
                 </div>
-              )}
-              {fileError && (
-                <p className="text-sm font-medium text-destructive">{fileError}</p>
-              )}
-            </div>
+                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <DialogFooter className="pt-4">
               <Button 
