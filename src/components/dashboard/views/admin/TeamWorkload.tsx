@@ -502,7 +502,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                 id={`status-${user.id}`}
                                 checked={user.status === 'Active'}
                                 onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
-                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin' || (currentUser?.role === 'admin' && user.role === 'director')}
                               />
                               <Label 
                                 htmlFor={`status-${user.id}`}
@@ -765,7 +765,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               id={`status-table-${user.id}`}
                               checked={user.status === 'Active'}
                               onCheckedChange={(checked) => handleStatusChange(user.id, checked)}
-                              disabled={user.id === currentUser?.id || user.role === 'system super admin'}
+                              disabled={user.id === currentUser?.id || user.role === 'system super admin' || (currentUser?.role === 'admin' && user.role === 'director')}
                             />
                           </div>
                         )}
