@@ -188,11 +188,12 @@ export default function ClaimDetailsPage() {
   }
 
   const { claim, project, submittedBy, approvedBy } = claimData;
-  const canManageClaim = user.role === 'director';
+  const isDirector = user.role === 'director';
+  const isAdmin = user.role === 'admin';
   const canEditClaim = user.id === claim.submittedBy && claim.status !== 'Paid';
   
   const handleApprove = async () => {
-    if (!canManageClaim || !firestore) return;
+    if (!isDirector || !firestore) return;
     setIsSubmitting(true);
     try {
       const claimRef = doc(firestore, 'claims', claim.id);
@@ -220,7 +221,7 @@ export default function ClaimDetailsPage() {
   };
   
   const handleReject = async () => {
-    if (!canManageClaim || !firestore || !rejectionReason) {
+    if (!isDirector || !firestore || !rejectionReason) {
       toast({
         variant: 'destructive',
         title: 'Rejection Failed',
@@ -346,7 +347,7 @@ export default function ClaimDetailsPage() {
                             </InfoField>
                         )}
                     </div>
-                     {claim.status !== 'Paid' && claim.status !== 'Rejected' && canManageClaim && (
+                    {claim.status !== 'Paid' && claim.status !== 'Rejected' && isDirector && (
                       <Card className="bg-muted/40">
                           <CardHeader>
                               <CardTitle className="text-xl">Manage Claim</CardTitle>
@@ -411,6 +412,21 @@ export default function ClaimDetailsPage() {
                             </AlertDialog>
                           </CardContent>
                       </Card>
+                    )}
+                     {claim.status !== 'Paid' && claim.status !== 'Rejected' && isAdmin && (
+                        <Card className="bg-muted/40">
+                           <CardHeader>
+                               <CardTitle className="text-base flex items-center gap-2">
+                                   <Info className="h-4 w-4" />
+                                   Admin View
+                               </CardTitle>
+                           </CardHeader>
+                           <CardContent>
+                                <p className="text-sm text-muted-foreground">
+                                    Only users with the 'director' role can approve or reject claims.
+                                </p>
+                           </CardContent>
+                        </Card>
                     )}
                     {claim.status === 'Paid' && approvedBy && claim.approvedAt && (
                         <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground rounded-lg border bg-green-500/10 p-3 text-green-700 dark:text-green-300">
