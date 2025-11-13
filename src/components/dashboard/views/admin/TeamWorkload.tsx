@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -17,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog, Users2Icon, Eye } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog, Users2Icon, Eye, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -497,9 +496,8 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         
                         {canManageUsers && (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 px-3 sm:px-5 pb-4 md:justify-end md:py-5 md:pl-0 md:pr-5 md:ml-auto">
-                           <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
+                           <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
+                                <Eye className="h-4 w-4" />
                             </Button>
                             <div className="w-full sm:w-32">
                               <Select 
@@ -766,8 +764,8 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       <TableCell className="text-right">
                          {canManageUsers && (
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
-                                View
+                            <Button variant="ghost" size="icon" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
+                                <Edit className="h-4 w-4" />
                             </Button>
                             <div className="w-32">
                               <Select 

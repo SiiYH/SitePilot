@@ -3,7 +3,7 @@
 
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useDoc, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { User, Project } from '@/types';
 import { Loader2, ArrowLeft, Mail, Phone, Briefcase, User as UserIcon, CheckCircle, XCircle } from 'lucide-react';
