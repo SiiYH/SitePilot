@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useStorage, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { Textarea } from '@/components/ui/textarea';
 
 interface UploadDocumentDialogProps {
   project: Project;
@@ -297,9 +298,10 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                 <FormItem>
                   <FormLabel>Document Name</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Textarea 
                       placeholder="e.g., Q3 Financial Report" 
                       disabled={isLoading}
+                      rows={2}
                       {...field} 
                     />
                   </FormControl>
