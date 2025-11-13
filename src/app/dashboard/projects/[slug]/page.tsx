@@ -349,7 +349,7 @@ export default function ProjectDetailsPage() {
       </Dialog>
 
       <div className="space-y-2">
-        {currentStatus && <Badge>{currentStatus.name}</Badge>}
+        {currentStatus && <ProjectStatusBadge statusId={projectWithTasks.status} />}
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <h1 className="text-3xl font-bold tracking-tight">{projectWithTasks.name}</h1>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -426,7 +426,7 @@ export default function ProjectDetailsPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <DocumentsList documents={documents || []} user={user} />
+                <DocumentsList documents={documents || []} user={user} projectId={projectWithTasks.id} />
               )}
             </CardContent>
           </Card>

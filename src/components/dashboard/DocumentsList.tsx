@@ -3,22 +3,40 @@
 import { Document as DocType, User } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Download, FileText, EyeOff, Loader2 } from 'lucide-react';
+import { Download, FileText, EyeOff, Loader2, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useStorage } from '@/firebase';
-import { ref, getDownloadURL } from 'firebase/storage';
+import { useStorage, useFirestore } from '@/firebase';
+import { ref, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { doc, deleteDoc } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface DocumentsListProps {
   documents: DocType[];
   user: User;
+  projectId: string;
 }
 
-export default function DocumentsList({ documents, user }: DocumentsListProps) {
+export default function DocumentsList({ documents, user, projectId }: DocumentsListProps) {
   const storage = useStorage();
+  const firestore = useFirestore();
   const [loadingDoc, setLoadingDoc] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  const canManageDoc = (docType: DocType['type']) => {
+    return user.role === 'admin' || user.role === 'director';
+  }
 
   const canView = (docType: DocType['type']) => {
     // director can see everything
@@ -66,6 +84,44 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
       setLoadingDoc(null);
     }
   };
+  
+  const handleDelete = async (docToDelete: DocType) => {
+    if (!firestore || !storage || !docToDelete.path) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Cannot delete document. Services not available.",
+        });
+        return;
+    }
+
+    setLoadingDoc(docToDelete.id);
+
+    try {
+        // 1. Delete from Firebase Storage
+        const fileRef = ref(storage, docToDelete.path);
+        await deleteObject(fileRef);
+
+        // 2. Delete from Firestore
+        const docRef = doc(firestore, 'projects', projectId, 'documents', docToDelete.id);
+        await deleteDoc(docRef);
+        
+        toast({
+            title: "Document Deleted",
+            description: `"${docToDelete.originalFileName || docToDelete.name}" has been removed.`,
+        });
+
+    } catch (error) {
+        console.error("Error deleting document:", error);
+        toast({
+            variant: "destructive",
+            title: "Deletion Failed",
+            description: "Could not delete the document. It may have already been removed.",
+        });
+    } finally {
+        setLoadingDoc(null);
+    }
+  }
 
 
   if (!documents || documents.length === 0) {
@@ -98,19 +154,49 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
             <TableCell>{format(parseISO(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">
               {canView(doc.type) ? (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleDownload(doc)}
-                  disabled={loadingDoc === doc.id}
-                >
-                  {loadingDoc === doc.id ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  Download
-                </Button>
+                <div className="flex justify-end gap-2">
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDownload(doc)}
+                        disabled={loadingDoc === doc.id}
+                        className="h-8"
+                    >
+                        {loadingDoc === doc.id && !(loadingDoc === doc.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Download className="mr-2 h-4 w-4" />
+                        )}
+                        Download
+                    </Button>
+                    {canManageDoc(doc.type) && (
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                 <Button 
+                                    variant="destructive" 
+                                    size="icon" 
+                                    disabled={loadingDoc === doc.id}
+                                    className="h-8 w-8"
+                                >
+                                    {loadingDoc === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the document
+                                    <span className="font-bold"> "{doc.originalFileName || doc.name}"</span> from the server.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(doc)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
               ) : (
                 <div className="flex items-center justify-end gap-2 text-muted-foreground">
                     <EyeOff className="h-4 w-4" />
