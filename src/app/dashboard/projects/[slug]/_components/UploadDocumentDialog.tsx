@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -74,6 +75,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
     
     if (!file) {
       setSelectedFile(null);
+      form.setValue('name', '');
       return;
     }
 
@@ -92,13 +94,17 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-
+    
+    // Auto-fill the name field with the filename (without extension)
+    const fileNameWithoutExt = file.name.split('.').slice(0, -1).join('.') || file.name;
+    form.setValue('name', fileNameWithoutExt);
     setSelectedFile(file);
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFileError('');
+    form.setValue('name', '');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -113,11 +119,6 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
 
     setIsLoading(true);
     setUploadProgress(0);
-
-    // Debug logging
-    console.log('Firebase Storage instance:', storage);
-    console.log('Storage bucket:', storage?.app?.options?.storageBucket);
-    console.log('User authenticated:', firestore ? 'Yes' : 'No');
 
     if (!firestore || !storage) {
         toast({ 
@@ -143,29 +144,21 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
     const documentId = `doc-${Date.now()}`;
     const sanitizedFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const storagePath = `projects/${project.id}/documents/${documentId}-${sanitizedFileName}`;
-    console.log('Upload path:', storagePath);
     
     const storageRef = ref(storage, storagePath);
 
     try {
-        // Use uploadBytesResumable for better error handling and progress tracking
         const uploadTask = uploadBytesResumable(storageRef, selectedFile);
 
         await new Promise<string>((resolve, reject) => {
           uploadTask.on(
             'state_changed',
             (snapshot) => {
-              // Track upload progress
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(Math.round(progress));
             },
             (error) => {
-              // Handle specific Firebase Storage errors
               console.error("Upload error:", error);
-              console.error("Error code:", error.code);
-              console.error("Error message:", error.message);
-              console.error("Error details:", JSON.stringify(error, null, 2));
-              
               let errorMessage = 'Could not upload the document.';
               
               switch (error.code) {
@@ -176,10 +169,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                   errorMessage = 'Upload was canceled.';
                   break;
                 case 'storage/unknown':
-                  errorMessage = `An unknown error occurred. Please check:\n1. Firebase Storage rules are published\n2. Storage bucket is configured\n3. Internet connection is stable\n\nError: ${error.message}`;
-                  break;
-                case 'storage/retry-limit-exceeded':
-                  errorMessage = 'Upload timeout. Please check your internet connection and try again.';
+                  errorMessage = `An unknown error occurred. Please check your storage rules and configuration.`;
                   break;
                 default:
                   errorMessage = `Upload failed: ${error.message}`;
@@ -188,7 +178,6 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               reject(new Error(errorMessage));
             },
             async () => {
-              // Upload completed successfully, get download URL
               try {
                 const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                 resolve(downloadURL);
@@ -199,25 +188,23 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
             }
           );
         }).then(async (downloadURL) => {
-          // Create document record in Firestore
           const newDocument: Omit<DocType, 'id'> = {
               name: values.name,
+              originalFileName: selectedFile.name,
               path: storageRef.fullPath,
-              url: downloadURL, // Add the download URL if your type supports it
+              url: downloadURL,
               type: values.type,
               uploadedAt: new Date().toISOString(),
           };
 
           const documentDocRef = doc(firestore, 'projects', project.id, 'documents', documentId);
-          
           await setDocumentNonBlocking(documentDocRef, newDocument);
 
-          // Optimistic update for the UI
           onDocumentUploaded({ ...newDocument, id: documentId });
           
           toast({
               title: 'Document Uploaded',
-              description: `"${values.name}" has been added to the project.`,
+              description: `"${selectedFile.name}" has been added to the project.`,
           });
 
           setOpen(false);
@@ -309,7 +296,6 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               )}
             />
             
-            {/* File Upload Field */}
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 File

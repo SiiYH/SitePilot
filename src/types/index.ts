@@ -44,6 +44,7 @@ export interface Task {
 export interface Document {
   id: string;
   name: string;
+  originalFileName?: string;
   path: string;
   url: string; // Add url field
   type: 'Blueprint' | 'Contract' | 'Permit' | 'Report';

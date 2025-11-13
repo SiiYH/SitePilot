@@ -1,3 +1,4 @@
+
 'use client';
 import { Document as DocType, User } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,8 +32,8 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
     return true;
   };
 
-  const handleDownload = async (docPath: string) => {
-    if (!docPath) {
+  const handleDownload = async (doc: DocType) => {
+    if (!doc.path) {
       console.error("Download failed: Document path is missing.");
       toast({
         variant: "destructive",
@@ -41,11 +42,19 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
       });
       return;
     }
-    setLoadingDoc(docPath);
+    setLoadingDoc(doc.id);
     try {
-      const docRef = ref(storage, docPath);
+      const docRef = ref(storage, doc.path);
       const url = await getDownloadURL(docRef);
-      window.open(url, '_blank');
+      
+      const link = document.createElement('a');
+      link.href = url;
+      // Use original file name for download, or fall back to the display name
+      link.download = doc.originalFileName || `${doc.name}.pdf`; 
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
     } catch (error) {
       console.error("Error getting download URL:", error);
       toast({
@@ -83,7 +92,7 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
           <TableRow key={doc.id}>
             <TableCell className="font-medium flex items-center gap-2">
                 <FileText className="h-4 w-4 text-muted-foreground"/>
-                {canView(doc.type) ? doc.name : 'Restricted Document'}
+                {canView(doc.type) ? (doc.originalFileName || doc.name) : 'Restricted Document'}
             </TableCell>
             <TableCell>{doc.type}</TableCell>
             <TableCell>{format(parseISO(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
@@ -92,10 +101,10 @@ export default function DocumentsList({ documents, user }: DocumentsListProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => handleDownload(doc.path)}
-                  disabled={loadingDoc === doc.path}
+                  onClick={() => handleDownload(doc)}
+                  disabled={loadingDoc === doc.id}
                 >
-                  {loadingDoc === doc.path ? (
+                  {loadingDoc === doc.id ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Download className="mr-2 h-4 w-4" />
