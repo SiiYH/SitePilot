@@ -268,9 +268,9 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                   disabled={isLoading}
                   onChange={handleFileChange}
                 />
-                <div className="flex items-center gap-2 pl-3 py-2 flex-1">
+                <div className="flex items-center gap-2 pl-3 py-2 flex-1 min-w-0">
                   <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-muted-foreground truncate">
+                  <span className="text-muted-foreground break-words whitespace-normal leading-tight">
                     {selectedFile ? selectedFile.name : 'Click to choose a file...'}
                   </span>
                 </div>
