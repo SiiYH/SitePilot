@@ -17,10 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog, Users2Icon } from 'lucide-react';
+import { Users, Clock, History, UserPlus, FileClock, CheckCircle2, Loader2, AlertCircle, Circle, FolderKanban, List, Briefcase, UserCheck, UserCog, Users2Icon, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRouter } from 'next/navigation';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -82,6 +83,7 @@ const roleIcons: { [key in UserRole]: React.ElementType } = {
 export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWorkloadProps) {
   const { user: currentUser, licenseUsage, licenseLimits } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const canManageUsers = currentUser?.role === 'admin' || currentUser?.role === 'director';
   const [roleFilter, setRoleFilter] = useState<UserRole | 'All'>('All');
   const [viewMode, setViewMode] = useState<'accordion' | 'table'>('table');
@@ -196,6 +198,23 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     const user = users.find(u => u.id === userId);
 
     if (!user) return;
+    
+    const isEditingDirector = user.role === 'director';
+    const isCurrentUserAdmin = currentUser?.role === 'admin';
+
+    if (isCurrentUserAdmin && isEditingDirector) {
+      toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: "Administrators cannot change a Director's status.",
+      });
+      // Revert switch visually
+      const switchEl = document.getElementById(`status-${userId}`) as HTMLInputElement | null;
+      if (switchEl) {
+        setTimeout(() => switchEl.click(), 50);
+      }
+      return;
+    }
 
     // If activating a user, check license limits first
     if (status === 'Active' && user.status === 'Inactive') {
@@ -225,7 +244,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
         title: "Status Updated",
         description: `${user.name} has been set to ${status}.`
     });
-  }, [users, onUserUpdated, toast, licenseUsage, licenseLimits]);
+  }, [users, onUserUpdated, toast, licenseUsage, licenseLimits, currentUser?.role]);
   
   const handleViewModeChange = (mode: 'accordion' | 'table') => {
     setViewMode(mode);
@@ -478,13 +497,17 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                         
                         {canManageUsers && (
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 px-3 sm:px-5 pb-4 md:justify-end md:py-5 md:pl-0 md:pr-5 md:ml-auto">
-                            <div className="w-full sm:w-40">
+                           <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View
+                            </Button>
+                            <div className="w-full sm:w-32">
                               <Select 
                                 value={user.role} 
                                 onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
                                 disabled={user.id === currentUser?.id || user.role === 'system super admin' || (currentUser?.role === 'admin' && user.role === 'director')}
                               >
-                                <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
+                                <SelectTrigger className="h-9 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
                                   <SelectValue placeholder="Set role" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -497,7 +520,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               </Select>
                             </div>
                             
-                            <div className="flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg border bg-background/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all h-10">
+                            <div className="flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg border bg-background/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all h-9">
                               <Switch
                                 id={`status-${user.id}`}
                                 checked={user.status === 'Active'}
@@ -574,7 +597,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                   {assignedProjects.map(project => (
                                     <Link
                                       key={project.id}
-                                      href={`/dashboard/projects/${project.slug}`}
+                                      href={`/dashboard/projects/${project.id}`}
                                       className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium inline-flex items-center gap-1.5 border border-primary/20 hover:border-primary/40"
                                     >
                                       {project.name}
@@ -743,6 +766,9 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                       <TableCell className="text-right">
                          {canManageUsers && (
                           <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/team/${user.id}`)}>
+                                View
+                            </Button>
                             <div className="w-32">
                               <Select 
                                 value={user.role} 
