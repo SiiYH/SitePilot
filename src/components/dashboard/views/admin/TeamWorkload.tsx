@@ -482,7 +482,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <Select 
                                 value={user.role} 
                                 onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
-                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin' || (currentUser?.role === 'admin' && user.role === 'director')}
                               >
                                 <SelectTrigger className="h-10 text-sm border-primary/20 hover:border-primary/40 transition-colors shadow-sm w-full">
                                   <SelectValue placeholder="Set role" />
@@ -747,7 +747,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                               <Select 
                                 value={user.role} 
                                 onValueChange={(newRole: UserRole) => handleRoleChange(user.id, newRole)}
-                                disabled={user.id === currentUser?.id || user.role === 'system super admin'}
+                                disabled={user.id === currentUser?.id || user.role === 'system super admin' || (currentUser?.role === 'admin' && user.role === 'director')}
                               >
                                 <SelectTrigger className="h-8 text-xs">
                                   <SelectValue placeholder="Set role" />
