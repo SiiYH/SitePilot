@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useDoc, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { User, Project } from '@/types';
-import { Loader2, ArrowLeft, Mail, Phone, Briefcase, User as UserIcon, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Phone, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -43,18 +43,19 @@ export default function UserDetailsPage() {
   const params = useParams();
   const userId = params.id as string;
   const { user: currentUser, company } = useAuth();
+  const firestore = useFirestore(); // Call hook at top level
 
-  const userRef = useMemoFirebase(() => doc(useFirestore(), 'users', userId), [userId]);
+  const userRef = useMemoFirebase(() => doc(firestore, 'users', userId), [firestore, userId]);
   const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || user.role !== 'engineer') return null;
+    if (!user || user.role !== 'engineer' || !firestore) return null;
     return query(
-      collection(useFirestore(), 'projects'),
+      collection(firestore, 'projects'),
       where('companyId', '==', company?.id),
       where('assignedEngineers', 'array-contains', user.id)
     );
-  }, [user, company?.id]);
+  }, [user, company?.id, firestore]);
   const { data: assignedProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
   const isLoading = userLoading || projectsLoading;
