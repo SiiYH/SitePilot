@@ -52,7 +52,7 @@ export default function GenerateReportButton({ project }: GenerateReportButtonPr
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <Button onClick={handleGenerateReport} disabled={isLoading}>
+      <Button onClick={handleGenerateReport} disabled>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

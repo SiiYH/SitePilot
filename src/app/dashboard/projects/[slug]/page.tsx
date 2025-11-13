@@ -27,6 +27,7 @@ import { collection, query, where, getDocs, limit, doc, updateDoc, onSnapshot, o
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import UploadDocumentDialog from './_components/UploadDocumentDialog';
+import ProjectStatusBadge from '@/components/dashboard/ProjectStatusBadge';
 
 
 async function getProject(id: string, firestore: any): Promise<Project | undefined> {
