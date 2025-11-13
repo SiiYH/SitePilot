@@ -23,9 +23,10 @@ import { Claim, ClaimType, CreateClaimDialogProps } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Textarea } from '@/components/ui/textarea';
-import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, useStorage } from '@/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { collection, doc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
@@ -49,9 +50,11 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { company } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -90,6 +93,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         form.setValue('projectId', defaultProjectId);
       }
       setImagePreviews([]);
+      setImageFiles([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -107,7 +111,23 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     }
   }, [selectedProjectId, projects, form]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const uploadImagesToStorage = async (files: File[], claimId: string): Promise<string[]> => {
+    if (!storage) throw new Error("Storage not initialized");
+
+    const uploadPromises = files.map(async (file) => {
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      const storageRef = ref(storage, `claims/${claimId}/${timestamp}-${randomId}-${file.name}`);
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    });
+  
+    return Promise.all(uploadPromises);
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !company) {
       toast({
         variant: "destructive",
@@ -119,37 +139,51 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     setIsLoading(true);
 
     const claimId = `claim-${Date.now()}`;
-    const newClaimDocRef = doc(firestore, 'claims', claimId);
     const now = new Date().toISOString();
 
-    const newClaimData = {
-      id: claimId,
-      projectId: values.projectId,
-      companyId: company.id,
-      title: values.title,
-      type: values.type,
-      eInvoiceNo: values.eInvoiceNo,
-      description: values.description,
-      amount: parseFloat(values.amount.replace(/,/g, '')),
-      currency: values.currency,
-      status: 'Pending' as const,
-      date: now,
-      submittedBy: userId,
-      submittedAt: now,
-      receiptImageUrls: imagePreviews, // Note: For a real app, upload files to storage and save URLs.
-    };
+    try {
+      let receiptImageUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        receiptImageUrls = await uploadImagesToStorage(imageFiles, claimId);
+      }
 
-    setDocumentNonBlocking(newClaimDocRef, newClaimData);
+      const newClaimData = {
+        id: claimId,
+        projectId: values.projectId,
+        companyId: company.id,
+        title: values.title,
+        type: values.type,
+        eInvoiceNo: values.eInvoiceNo,
+        description: values.description,
+        amount: parseFloat(values.amount.replace(/,/g, '')),
+        currency: values.currency,
+        status: 'Pending' as const,
+        date: now,
+        submittedBy: userId,
+        submittedAt: now,
+        receiptImageUrls: receiptImageUrls,
+      };
 
-    setTimeout(() => {
-      onClaimCreated(newClaimData as Claim); // Optimistic update
-      setIsLoading(false);
+      const newClaimDocRef = doc(firestore, 'claims', claimId);
+      setDocumentNonBlocking(newClaimDocRef, newClaimData);
+
+      onClaimCreated(newClaimData as Claim); 
       setOpen(false);
       toast({
         title: 'Claim Created',
         description: `Your claim "${newClaimData.title}" has been submitted.`,
       });
-    }, 1000);
+
+    } catch (error) {
+      console.error("Error creating claim:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Claim Creation Failed',
+        description: 'An error occurred while uploading images or saving the claim.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +200,8 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         });
       }
 
+      setImageFiles(prev => [...prev, ...filesToProcess]);
+
       filesToProcess.forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -178,6 +214,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
 
   const removeImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
   }
 
   return (
@@ -196,13 +233,13 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-              <FormField
+            <FormField
                 control={form.control}
                 name="projectId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a project" />
