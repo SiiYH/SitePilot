@@ -45,13 +45,6 @@ const ACCEPTED_FILE_TYPES = [
 const formSchema = z.object({
   name: z.string().min(3, 'Document name must be at least 3 characters.'),
   type: z.enum(['Blueprint', 'Contract', 'Permit', 'Report']),
-  file: z
-    .instanceof(File, { message: "A file is required." })
-    .refine((file) => file.size <= MAX_FILE_SIZE, 'File size must be less than 10MB.')
-    .refine(
-      (file) => ACCEPTED_FILE_TYPES.includes(file.type),
-      'Only PDF, Word, Excel, and image files are accepted.'
-    ),
 });
 
 const documentTypes: DocType['type'][] = ['Blueprint', 'Contract', 'Permit', 'Report'];
@@ -60,6 +53,8 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string>('');
   const { toast } = useToast();
   const firestore = useFirestore();
   const storage = useStorage();
@@ -73,24 +68,56 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
     },
   });
 
-  const selectedFile = form.watch('file');
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFileError('');
+    
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError('File size must be less than 10MB.');
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Validate file type
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      setFileError('Only PDF, Word, Excel, and image files are accepted.');
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFileError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Validate file is selected
+    if (!selectedFile) {
+      setFileError('Please select a file to upload.');
+      return;
+    }
+
     setIsLoading(true);
     setUploadProgress(0);
 
-    const file = values.file;
-    
-    // Validation checks
-    if (!file) {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Error', 
-          description: 'No file selected.' 
-        });
-        setIsLoading(false);
-        return;
-    }
+    // Debug logging
+    console.log('Firebase Storage instance:', storage);
+    console.log('Storage bucket:', storage?.app?.options?.storageBucket);
+    console.log('User authenticated:', firestore ? 'Yes' : 'No');
 
     if (!firestore || !storage) {
         toast({ 
@@ -102,42 +129,90 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
         return;
     }
 
-    const documentId = `doc-${Date.now()}`;
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const storageRef = ref(storage, `projects/${project.id}/documents/${documentId}-${sanitizedFileName}`);
-
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(Math.round(progress));
-      },
-      (error) => {
-        console.error("Upload error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Upload Failed',
-          description: error.message,
+    if (!storage.app.options.storageBucket) {
+        console.error('Storage bucket not configured!');
+        toast({ 
+          variant: 'destructive', 
+          title: 'Configuration Error', 
+          description: 'Storage bucket is not configured. Please check your Firebase settings.' 
         });
         setIsLoading(false);
-        setUploadProgress(0);
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        return;
+    }
+
+    const documentId = `doc-${Date.now()}`;
+    const sanitizedFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storagePath = `projects/${project.id}/documents/${documentId}-${sanitizedFileName}`;
+    console.log('Upload path:', storagePath);
+    
+    const storageRef = ref(storage, storagePath);
+
+    try {
+        // Use uploadBytesResumable for better error handling and progress tracking
+        const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+        await new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              // Track upload progress
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(Math.round(progress));
+            },
+            (error) => {
+              // Handle specific Firebase Storage errors
+              console.error("Upload error:", error);
+              console.error("Error code:", error.code);
+              console.error("Error message:", error.message);
+              console.error("Error details:", JSON.stringify(error, null, 2));
+              
+              let errorMessage = 'Could not upload the document.';
+              
+              switch (error.code) {
+                case 'storage/unauthorized':
+                  errorMessage = 'You do not have permission to upload files. Please check your Firebase Storage rules.';
+                  break;
+                case 'storage/canceled':
+                  errorMessage = 'Upload was canceled.';
+                  break;
+                case 'storage/unknown':
+                  errorMessage = `An unknown error occurred. Please check:\n1. Firebase Storage rules are published\n2. Storage bucket is configured\n3. Internet connection is stable\n\nError: ${error.message}`;
+                  break;
+                case 'storage/retry-limit-exceeded':
+                  errorMessage = 'Upload timeout. Please check your internet connection and try again.';
+                  break;
+                default:
+                  errorMessage = `Upload failed: ${error.message}`;
+              }
+              
+              reject(new Error(errorMessage));
+            },
+            async () => {
+              // Upload completed successfully, get download URL
+              try {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadURL);
+              } catch (urlError) {
+                console.error("Error getting download URL:", urlError);
+                reject(new Error('Upload succeeded but could not get file URL.'));
+              }
+            }
+          );
+        }).then(async (downloadURL) => {
+          // Create document record in Firestore
           const newDocument: Omit<DocType, 'id'> = {
               name: values.name,
               path: storageRef.fullPath,
-              url: downloadURL,
+              url: downloadURL, // Add the download URL if your type supports it
               type: values.type,
               uploadedAt: new Date().toISOString(),
           };
 
           const documentDocRef = doc(firestore, 'projects', project.id, 'documents', documentId);
+          
           await setDocumentNonBlocking(documentDocRef, newDocument);
 
+          // Optimistic update for the UI
           onDocumentUploaded({ ...newDocument, id: documentId });
           
           toast({
@@ -145,27 +220,30 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
               description: `"${values.name}" has been added to the project.`,
           });
 
-        } catch (error) {
-           console.error("Error creating Firestore document:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Save Failed',
-                description: 'File uploaded, but failed to save document record.',
-            });
-        } finally {
-            setIsLoading(false);
-            setOpen(false);
-            form.reset();
-            setUploadProgress(0);
-        }
-      }
-    );
+          setOpen(false);
+          form.reset();
+          handleRemoveFile();
+          setUploadProgress(0);
+        });
+
+    } catch (error: any) {
+        console.error("Error uploading document:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: error.message || 'Could not upload the document. Please try again.',
+        });
+    } finally {
+        setIsLoading(false);
+        setUploadProgress(0);
+    }
   };
 
   const handleDialogChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
       form.reset();
+      handleRemoveFile();
       setUploadProgress(0);
     }
   };
@@ -230,83 +308,75 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field: { onChange, value, ...fieldProps } }) => (
-                <FormItem>
-                  <FormLabel>File</FormLabel>
-                  <FormControl>
-                    <div>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                            disabled={isLoading}
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) onChange(file);
-                            }}
-                            {...fieldProps}
-                        />
-                        {!selectedFile ? (
-                             <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full"
-                                disabled={isLoading}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <Upload className="mr-2 h-4 w-4" />
-                                Choose File
-                            </Button>
-                        ) : (
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between rounded-md border p-2">
-                                  <div className="flex items-center gap-2 truncate">
-                                      <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                      <span className="text-sm truncate">{selectedFile.name}</span>
-                                      <span className="text-xs text-muted-foreground flex-shrink-0">
-                                        ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                                      </span>
-                                  </div>
-                                  <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-destructive flex-shrink-0"
-                                      disabled={isLoading}
-                                      onClick={() => {
-                                          onChange(undefined);
-                                          if (fileInputRef.current) fileInputRef.current.value = "";
-                                      }}
-                                  >
-                                      <X className="h-4 w-4"/>
-                                  </Button>
-                              </div>
-                              {isLoading && uploadProgress > 0 && (
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>Uploading...</span>
-                                    <span>{uploadProgress}%</span>
-                                  </div>
-                                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-primary transition-all duration-300"
-                                      style={{ width: `${uploadProgress}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                        )}
+            
+            {/* File Upload Field */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                File
+              </label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                disabled={isLoading}
+                onChange={handleFileChange}
+              />
+              {!selectedFile ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Choose File
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="rounded-md border p-3">
+                    <div className="flex items-start gap-2">
+                      <File className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <p className="text-sm break-words">{selectedFile.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive flex-shrink-0"
+                        disabled={isLoading}
+                        onClick={handleRemoveFile}
+                      >
+                        <X className="h-4 w-4"/>
+                      </Button>
                     </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                  </div>
+                  {isLoading && uploadProgress > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Uploading...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
-            />
+              {fileError && (
+                <p className="text-sm font-medium text-destructive">{fileError}</p>
+              )}
+            </div>
+
             <DialogFooter className="pt-4">
               <Button 
                 type="button" 
