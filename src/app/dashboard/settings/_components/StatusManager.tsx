@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Badge } from '@/components/ui/badge';
 
 // Types
 interface ProjectStatus {
@@ -96,8 +97,8 @@ export default function StatusManager() {
   };
 
   const onStatusSubmit = (values: StatusFormValues) => {
-    const duplicateExists = statuses.some(s => 
-      s.name.toLowerCase() === values.name.toLowerCase() && 
+    const duplicateExists = statuses.some(s =>
+      s.name.toLowerCase() === values.name.toLowerCase() &&
       s.id !== editingStatus?.id
     );
 
@@ -130,7 +131,7 @@ export default function StatusManager() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedStatuses));
     handleCancelStatusEdit();
   };
-  
+
   const handleDeleteStatus = (statusId: string) => {
     const statusToDelete = statuses.find(s => s.id === statusId);
     if (!statusToDelete) return;
@@ -143,13 +144,13 @@ export default function StatusManager() {
       });
       return;
     }
-    
+
     const updatedStatuses = statuses.filter(s => s.id !== statusId);
     setStatuses(updatedStatuses);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedStatuses));
-    toast({ 
-      title: 'Status Deleted', 
-      description: `"${statusToDelete.name}" has been successfully removed.` 
+    toast({
+      title: 'Status Deleted',
+      description: `"${statusToDelete.name}" has been successfully removed.`
     });
   };
 
@@ -171,7 +172,7 @@ export default function StatusManager() {
           <div>
             <CardTitle>Project Status Management</CardTitle>
             <CardDescription>
-              Customize statuses for your workspace projects.
+              Customize statuses for your workspace projects. Statuses are organized into workflow categories.
             </CardDescription>
           </div>
           <AlertDialog>
@@ -202,95 +203,116 @@ export default function StatusManager() {
             <h3 className="text-sm font-medium">Current Statuses</h3>
             <span className="text-xs text-muted-foreground">{statuses.length} status{statuses.length !== 1 ? 'es' : ''}</span>
           </div>
-          <ul className="space-y-2">
-            {statuses.map(status => (
-              <li key={status.id} className="flex items-center gap-2 rounded-md border bg-background p-2 flex-wrap hover:bg-muted/30 transition-colors">
-                <GripVertical className="h-5 w-5 text-muted-foreground hidden sm:block" />
-                {editingStatus?.id === status.id ? (
-                  <Form {...statusForm}>
-                    <form onSubmit={statusForm.handleSubmit(onStatusSubmit)} className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <FormField
-                        control={statusForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormControl><Input {...field} autoFocus /></FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={statusForm.control}
-                        name="category"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="w-full sm:w-40">
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {statusCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex justify-end gap-1">
-                        <Button type="submit" size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50">
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button type="button" size="icon" variant="ghost" onClick={handleCancelStatusEdit} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                ) : (
-                  <>
-                    <div className="flex-1 min-w-0">
-                      <span className="font-medium">{status.name}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">({status.category})</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditStatusClick(status)} title="Edit status">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            disabled={statuses.length === 1}
-                            title={statuses.length === 1 ? "Cannot delete last status" : "Delete status"}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Status?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete the "{status.name}" status. Projects using this status may need to be updated. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteStatus(status.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+
+          <div className="space-y-6">
+            {statusCategories.map(category => {
+              const categoryStatuses = statuses.filter(s => s.category === category);
+
+              return (
+                <div key={category} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">{category}</h4>
+                    <Badge variant="outline" className="font-normal text-xs">
+                      {categoryStatuses.length}
+                    </Badge>
+                  </div>
+
+                  {categoryStatuses.length > 0 ? (
+                    <ul className="space-y-2 pl-4 border-l-2 border-muted">
+                      {categoryStatuses.map(status => (
+                        <li key={status.id} className="flex items-center gap-2 rounded-md border bg-background p-2 flex-wrap hover:bg-muted/30 transition-colors">
+                          <GripVertical className="h-5 w-5 text-muted-foreground hidden sm:block" />
+                          {editingStatus?.id === status.id ? (
+                            <Form {...statusForm}>
+                              <form onSubmit={statusForm.handleSubmit(onStatusSubmit)} className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <FormField
+                                  control={statusForm.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                      <FormControl><Input {...field} autoFocus /></FormControl>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={statusForm.control}
+                                  name="category"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger className="w-full sm:w-40">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {statusCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage className="text-xs" />
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="flex justify-end gap-1">
+                                  <Button type="submit" size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50">
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button type="button" size="icon" variant="ghost" onClick={handleCancelStatusEdit} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          ) : (
+                            <>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium">{status.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditStatusClick(status)} title="Edit status">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      disabled={statuses.length === 1}
+                                      title={statuses.length === 1 ? "Cannot delete last status" : "Delete status"}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Status?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete the "{status.name}" status. Projects using this status may need to be updated. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteStatus(status.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-muted-foreground pl-4 py-2">No statuses in this category</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {!editingStatus && (

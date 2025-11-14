@@ -83,7 +83,7 @@ export default function SettingsTab({ project, onProjectUpdate, user }: Settings
                 <SelectItem value="task-driven">Task-Driven</SelectItem>
                 <SelectItem value="milestone-driven">Milestone-Driven</SelectItem>
                 <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="task-milestone-driven">Task + Milestone</SelectItem>
+                <SelectItem value="mixed-mode">Mixed Mode</SelectItem>
               </SelectContent>
             </Select>
             <Dialog>
@@ -171,3 +171,4 @@ export default function SettingsTab({ project, onProjectUpdate, user }: Settings
     </Card>
   );
 }
+
