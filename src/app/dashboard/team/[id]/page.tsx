@@ -49,16 +49,19 @@ export default function UserDetailsPage() {
   const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || user.role !== 'engineer' || !firestore) return null;
+    // The query construction is now conditional, but the hook call below is not.
+    if (!user || user.role !== 'engineer' || !company?.id) return null;
+    
     return query(
       collection(firestore, 'projects'),
-      where('companyId', '==', company?.id),
+      where('companyId', '==', company.id),
       where('assignedEngineers', 'array-contains', user.id)
     );
-  }, [user, company?.id, firestore]);
+  }, [firestore, user, company?.id]);
+
   const { data: assignedProjects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
-  const isLoading = userLoading || projectsLoading;
+  const isLoading = userLoading || (user?.role === 'engineer' && projectsLoading);
 
   if (isLoading) {
     return (
