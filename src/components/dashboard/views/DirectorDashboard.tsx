@@ -1,20 +1,21 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProjectCard from '@/components/dashboard/ProjectCard';
-import CreateProjectDialog from './admin/CreateProjectDialog';
 import { Project, User, Claim, AttendanceRecord, ProjectStatus } from '@/types';
-import ProgressOverview from './admin/ProgressOverview';
-import ClaimsOverview from './admin/ClaimsOverview';
-import AttendanceSummary from './admin/AttendanceSummary';
-import AdminAlerts from './admin/AdminAlerts';
 import { useAuth } from '@/hooks/use-auth';
 import { defaultProjectStatuses } from '@/lib/data';
 import { ShieldAlert, Lock } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import ActivateLicenseDialog from './admin/ActivateLicenseDialog';
+import AdminAlerts from './admin/AdminAlerts';
+import AttendanceSummary from './admin/AttendanceSummary';
+import ClaimsOverview from './admin/ClaimsOverview';
+import CreateProjectDialog from './admin/CreateProjectDialog';
+import ProgressOverview from './admin/ProgressOverview';
 
 interface DirectorDashboardProps {
   projects: Project[];
@@ -71,8 +72,8 @@ export default function DirectorDashboard({
 
   // Locked Feature Overlay Component
   const LockedOverlay = ({ message = "Activate your license to access this feature" }: { message?: string }) => (
-    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/95 backdrop-blur-sm border-2 border-destructive/20">
-      <div className="text-center p-6">
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/95 backdrop-blur-sm p-4">
+      <div className="text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mx-auto mb-4">
           <Lock className="h-8 w-8 text-destructive" />
         </div>
