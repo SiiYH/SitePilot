@@ -96,7 +96,7 @@ export default function DirectorDashboard({
             <ClaimsOverview claims={claims} projects={projects} />
         </div>
         <div className="md:col-span-1">
-            <AttendanceSummary attendance={attendance} users={users} />
+            <AttendanceSummary />
         </div>
       </div>
 
@@ -134,3 +134,4 @@ export default function DirectorDashboard({
     </div>
   );
 }
+
