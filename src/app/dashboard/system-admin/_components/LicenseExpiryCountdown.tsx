@@ -2,10 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { formatDistanceToNowStrict, parseISO, differenceInDays, isValid } from 'date-fns';
+import { formatDistanceToNowStrict, parseISO, differenceInDays, isValid, format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Clock } from 'lucide-react';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
 
 interface LicenseExpiryCountdownProps {
   expiresAt: string | null; // ISO string or null
@@ -14,6 +16,7 @@ interface LicenseExpiryCountdownProps {
 export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCountdownProps) {
   const [timeLeft, setTimeLeft] = useState('');
   const [expiryStatus, setExpiryStatus] = useState<'safe' | 'soon' | 'imminent' | 'expired'>('safe');
+  const [fullDate, setFullDate] = useState('');
 
   useEffect(() => {
     if (!expiresAt) {
@@ -22,11 +25,12 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
 
     const expiryDate = parseISO(expiresAt);
     if (!isValid(expiryDate)) {
-      // Don't render anything if the date is invalid.
       setTimeLeft('');
       return;
     }
     
+    setFullDate(format(expiryDate, 'PPP'));
+
     const updateCountdown = () => {
       const now = new Date();
       if (expiryDate < now) {
@@ -49,7 +53,6 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
     };
 
     updateCountdown();
-    // Update every minute to keep it relatively fresh
     const interval = setInterval(updateCountdown, 60000); 
 
     return () => clearInterval(interval);
@@ -67,9 +70,19 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
   }
 
   return (
-    <Badge className={cn('flex items-center gap-1.5', statusStyles[expiryStatus])}>
-      <Clock className="h-3 w-3" />
-      <span className="font-medium">{timeLeft}</span>
-    </Badge>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+           <Badge className={cn('flex items-center gap-1.5', statusStyles[expiryStatus])}>
+            <Clock className="h-3 w-3" />
+            <span className="font-medium">{timeLeft}</span>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Expires on {fullDate}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
+
