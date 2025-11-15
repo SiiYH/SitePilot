@@ -18,6 +18,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 import { format, parseISO } from 'date-fns';
 import LicenseExpiryCountdown from '@/app/dashboard/system-admin/_components/LicenseExpiryCountdown';
+import ChangeLicenseDialog from './_components/ChangeLicenseDialog';
 
 
 const customerTypeLabels: { [key: string]: string } = {
@@ -93,7 +94,7 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
     );
 }
 
-const LicenseDetailsCard = ({ license }: { license: License }) => {
+const LicenseDetailsCard = ({ license, onLicenseChanged }: { license: License, onLicenseChanged: (newLicenseKey: string) => void }) => {
     const { toast } = useToast();
     const [hasCopied, setHasCopied] = useState(false);
 
@@ -111,21 +112,22 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
 
     return (
         <Card className="overflow-hidden">
-    {/* Header with gradient background */}
     <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 border-b">
-        <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 ring-2 ring-primary/30">
-                <KeyRound className="h-6 w-6 text-primary" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+             <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 ring-2 ring-primary/30">
+                    <KeyRound className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                    <CardTitle className="text-xl">Active License Details</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-0.5">Your current license information</p>
+                </div>
             </div>
-            <div>
-                <CardTitle className="text-xl">Active License Details</CardTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">Your current license information</p>
-            </div>
+            <ChangeLicenseDialog onLicenseChanged={onLicenseChanged} />
         </div>
     </div>
 
     <CardContent className="p-6 space-y-6">
-        {/* Purchaser Info */}
         <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">Licensed To</label>
             <div className="flex items-center gap-3 rounded-lg border bg-card p-4">
@@ -135,8 +137,6 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
                 <p className="font-semibold text-lg">{license.purchaser}</p>
             </div>
         </div>
-
-        {/* License Key */}
         <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">License Key</label>
             <div className="relative rounded-lg border-2 border-dashed bg-muted/30 p-4">
@@ -174,9 +174,7 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
             </div>
         </div>
 
-        {/* Activation & Expiry Info */}
         <div className="grid md:grid-cols-2 gap-4">
-            {/* Activated Date */}
             <div className="rounded-lg border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
@@ -187,7 +185,6 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
                 </p>
             </div>
 
-            {/* Expiry Date */}
             <div className="rounded-lg border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />
@@ -211,7 +208,6 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
             </div>
         </div>
 
-        {/* Additional info message */}
         <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 p-4">
             <div className="flex gap-3">
                 <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
@@ -349,6 +345,20 @@ export default function CompanyPage() {
     }
   };
 
+  const handleLicenseChanged = (newLicenseKey: string) => {
+    if (!company || !firestore) return;
+
+    const companyDocRef = doc(firestore, 'companies', company.id);
+    const companyUpdateData = {
+        licenseKey: newLicenseKey,
+        activated: true, // Ensure company is active with new key
+    };
+    updateDocumentNonBlocking(companyDocRef, companyUpdateData);
+
+    const updatedCompanyData = { ...company, ...companyUpdateData };
+    setCompany(updatedCompanyData); // This will trigger re-fetch of license in useDoc
+  };
+
 
   if (loading || licenseLoading) {
     return (
@@ -438,7 +448,6 @@ export default function CompanyPage() {
                                 {eInvData.eInvEnabled && (
                                     <div className="space-y-4 pt-2">
                                         <InfoField label="E-Invoicing Version" value={eInvData.eInvVersion === '1.1' ? 'Version 1.1' : 'Version 1.0'} />
-                                        {/* Business Identifiers */}
                                         <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                             <InfoField label="Customer Type" value={getCustomerTypeLabel(eInvData.customerType)} />
                                             <InfoField label="TIN" value={eInvData.tin} />
@@ -447,7 +456,6 @@ export default function CompanyPage() {
                                         
                                         <Separator className="my-4" />
 
-                                        {/* Contact & Address */}
                                         <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                             <InfoField label="E-Invoicing Email" value={eInvData.email} />
                                             <InfoField label="E-Invoicing Contact" value={eInvData.contactNumber} />
@@ -459,8 +467,6 @@ export default function CompanyPage() {
                                         </div>
 
                                         <Separator className="my-4" />
-
-                                        {/* Financial Details */}
                                         <div className="grid grid-cols-1 gap-y-4 gap-x-4 md:grid-cols-2">
                                             <InfoField label="Bank Account Number" value={eInvData.bankAccount} />
                                         </div>
@@ -514,10 +520,11 @@ export default function CompanyPage() {
         </div>
       </div>
       {companyData?.activated && license && (
-        <div className="mt-6">
-          <LicenseDetailsCard license={license} />
+        <div className="mt-6 lg:col-span-3">
+          <LicenseDetailsCard license={license} onLicenseChanged={handleLicenseChanged} />
         </div>
       )}
     </div>
   );
 }
+
