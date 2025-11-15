@@ -13,12 +13,20 @@ import {
 } from '@/components/ui/dialog';
 import { PlusCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ActivateLicenseDialogProps {
   featureName?: string;
 }
 
 export default function ActivateLicenseDialog({ featureName = 'add new users' }: ActivateLicenseDialogProps) {
+  const { isLicenseExpired } = useAuth();
+
+  const title = isLicenseExpired ? "License Expired" : "Activate Your Company License";
+  const description = isLicenseExpired
+    ? `To ${featureName}, your company's license must be active. Please go to your company settings to enter a new license key.`
+    : `To ${featureName}, your company's license must be activated first. Please go to your company settings to enter your license key.`;
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -31,10 +39,10 @@ export default function ActivateLicenseDialog({ featureName = 'add new users' }:
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" />
-            <span>Activate Your Company License</span>
+            <span>{title}</span>
           </DialogTitle>
           <DialogDescription>
-            To {featureName}, your company's license must be activated first. Please go to your company settings to enter your license key.
+            {description}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

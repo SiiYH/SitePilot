@@ -24,6 +24,7 @@ interface AuthContextType {
   createUser: (data: CreateUserData) => Promise<User | null>;
   licenseUsage: Record<UserRole, number>;
   licenseLimits: Record<UserRole, number>;
+  isLicenseExpired: boolean;
   company: any; // Consider creating a Company type
   setCompany: Dispatch<SetStateAction<any>>;
 }
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [company, setCompany] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [licenseLimits, setLicenseLimits] = useState<Record<UserRole, number>>(defaultLimits);
+  const [isLicenseExpired, setIsLicenseExpired] = useState(false);
   const router = useRouter();
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
@@ -78,19 +80,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 engineer: activeLicense.maxEngineers,
                                 '': Infinity,
                             });
+                             // Check for expiry
+                            const isExpired = activeLicense.expiresAt !== null && new Date(activeLicense.expiresAt) < new Date();
+                            setIsLicenseExpired(isExpired);
                         } else {
                             setLicenseLimits(defaultLimits);
+                            setIsLicenseExpired(false);
                         }
                     } catch (e) {
                         console.error('Error fetching license:', e);
                         setLicenseLimits(defaultLimits);
+                        setIsLicenseExpired(false);
                     }
                 } else {
                     setLicenseLimits(defaultLimits);
+                     setIsLicenseExpired(!companyData.activated);
                 }
             } else {
                 setCompany(null);
                 setLicenseLimits(defaultLimits);
+                setIsLicenseExpired(false);
             }
         });
     };
@@ -156,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCompany(null);
         setAllUsers([]);
         setLicenseLimits(defaultLimits);
+        setIsLicenseExpired(false);
       }
       setLoading(false);
     });
@@ -267,6 +277,7 @@ const handleSignUp = async (data: SignUpData): Promise<User | null> => {
     createUser: handleCreateUser,
     licenseUsage,
     licenseLimits,
+    isLicenseExpired,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,6 +1,4 @@
 
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -43,7 +41,7 @@ export default function DirectorDashboard({
   setStatusFilter
 }: DirectorDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company } = useAuth();
+  const { company, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   
   useEffect(() => {
@@ -71,18 +69,25 @@ export default function DirectorDashboard({
 
   return (
     <div className="space-y-6">
-      {!company?.activated && (
+      {!company?.activated || isLicenseExpired ? (
          <Alert variant="destructive">
           <ShieldAlert className="h-4 w-4" />
-          <AlertTitle>License Not Active</AlertTitle>
+          <AlertTitle>
+            {isLicenseExpired ? "License Expired" : "License Not Active"}
+          </AlertTitle>
           <AlertDescription className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
-            <span>Your company's license is inactive. Some features may be disabled.</span>
+            <span>
+              {isLicenseExpired
+                ? "Your company's license has expired. Some features are disabled."
+                : "Your company's license is inactive. Some features may be disabled."
+              }
+            </span>
              <Button asChild variant="link" className="p-0 h-auto text-destructive-foreground">
               <Link href="/dashboard/company">Activate License</Link>
             </Button>
           </AlertDescription>
         </Alert>
-      )}
+      ) : null}
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
@@ -103,11 +108,11 @@ export default function DirectorDashboard({
           </div>
           <div className='flex items-center gap-2 flex-wrap'>
             {company && (
-                company.activated ? (
-                    <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
-                ) : (
-                    <ActivateLicenseDialog featureName="create projects" />
-                )
+              !company.activated || isLicenseExpired ? (
+                <ActivateLicenseDialog featureName="create projects" />
+              ) : (
+                <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+              )
             )}
           </div>
         </div>
@@ -129,5 +134,3 @@ export default function DirectorDashboard({
     </div>
   );
 }
-
-    

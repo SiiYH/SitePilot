@@ -22,7 +22,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 type ViewMode = 'grid' | 'list';
 
 export default function ProjectsPage() {
-  const { user, company } = useAuth();
+  const { user, company, isLicenseExpired } = useAuth();
   const firestore = useFirestore();
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -186,10 +186,10 @@ export default function ProjectsPage() {
           </div>
           <div className="flex items-center gap-2">
             {user?.role !== 'engineer' && company && (
-              company.activated ? (
-                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
-              ) : (
+              !company.activated || isLicenseExpired ? (
                 <ActivateLicenseDialog featureName="create projects" />
+              ) : (
+                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
               )
             )}
             {canManageSettings && (
