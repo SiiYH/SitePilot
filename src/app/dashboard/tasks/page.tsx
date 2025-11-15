@@ -12,11 +12,12 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 type ViewMode = 'grid' | 'list';
 
 export default function MyTasksPage() {
-  const { user, company, loading: authLoading } = useAuth();
+  const { user, company, loading: authLoading, isLicenseValid, isLicenseExpired } = useAuth();
   const firestore = useFirestore();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
@@ -24,7 +25,8 @@ export default function MyTasksPage() {
   const [allTasksData, setAllTasksData] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const isMobile = useIsMobile();
-  
+  const isLicenseActive = isLicenseValid;
+
   // Load saved view mode preference
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-tasks-view') as ViewMode;
@@ -262,6 +264,15 @@ export default function MyTasksPage() {
             </span>
           </CardTitle>
         </CardHeader>
+        <div className="relative">
+      {!isLicenseActive && (
+        <LockedOverlay 
+          user={user}
+          isLicenseExpired={isLicenseExpired}
+          message="Activate your license to access [feature name]"
+        />
+      )}
+      <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
         <CardContent>
           <TasksTable 
             tasks={filteredTasks} 
@@ -270,6 +281,8 @@ export default function MyTasksPage() {
             viewMode={currentViewMode} 
           />
         </CardContent>
+        </div>
+        </div>
       </Card>
     </div>
   );

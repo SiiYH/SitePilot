@@ -139,6 +139,7 @@ export default function ClaimsPage() {
           projects={availableProjects}
           onClaimCreated={handleClaimCreated}
           userId={user.id}
+          disabled={!isLicenseActive}
         /> :''}
       </div>
 

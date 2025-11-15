@@ -94,7 +94,7 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
     );
 }
 
-const LicenseDetailsCard = ({ license, onLicenseChanged }: { license: License, onLicenseChanged: (newLicenseKey: string) => void }) => {
+const LicenseDetailsCard = ({ license, onLicenseChanged, canEdit }: { license: License, onLicenseChanged: (newLicenseKey: string) => void, canEdit: boolean }) => {
     const { toast } = useToast();
     const [hasCopied, setHasCopied] = useState(false);
 
@@ -123,7 +123,7 @@ const LicenseDetailsCard = ({ license, onLicenseChanged }: { license: License, o
                     <p className="text-sm text-muted-foreground mt-0.5">Your current license information</p>
                 </div>
             </div>
-            <ChangeLicenseDialog onLicenseChanged={onLicenseChanged} />
+            {canEdit && <ChangeLicenseDialog onLicenseChanged={onLicenseChanged} />}
         </div>
     </div>
 
@@ -521,7 +521,7 @@ export default function CompanyPage() {
       </div>
       {companyData?.activated && license && (
         <div className="mt-6 lg:col-span-3">
-          <LicenseDetailsCard license={license} onLicenseChanged={handleLicenseChanged} />
+          <LicenseDetailsCard license={license} onLicenseChanged={handleLicenseChanged} canEdit={canEdit} />
         </div>
       )}
     </div>

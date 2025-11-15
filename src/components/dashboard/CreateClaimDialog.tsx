@@ -44,7 +44,7 @@ const formSchema = z.object({
   receiptImages: z.any().optional(),
 });
 
-export default function CreateClaimDialog({ projects, onClaimCreated, userId, defaultProjectId }: CreateClaimDialogProps) {
+export default function CreateClaimDialog({ projects, onClaimCreated, userId, defaultProjectId, disabled }: CreateClaimDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -192,7 +192,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button disabled = {disabled}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create Claim
         </Button>
