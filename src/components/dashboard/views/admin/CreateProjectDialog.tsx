@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/use-auth';
+import { defaultProjectStatuses } from '@/lib/data';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { DateInput } from '@/components/ui/date-input';
@@ -595,6 +596,7 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     </Dialog>
   );
 }
+
 
 
 
