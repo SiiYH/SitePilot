@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -21,7 +22,7 @@ import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLi
 type ViewMode = 'grid' | 'list';
 
 export default function ProjectsPage() {
-  const { user, company } = useAuth();
+  const { user, company, isLicenseExpired } = useAuth();
   const firestore = useFirestore();
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -123,10 +124,10 @@ export default function ProjectsPage() {
         </div>
         <div className='flex items-center gap-2 flex-wrap'>
             {user?.role !== 'engineer' && company && (
-              company.activated ? (
-                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
-              ) : (
+              !company.activated || isLicenseExpired ? (
                 <ActivateLicenseDialog featureName="create projects" />
+              ) : (
+                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
               )
             )}
             {canManageSettings && (
@@ -201,7 +202,7 @@ export default function ProjectsPage() {
             ))}
             </div>
         ) : (
-            <ProjectList projects={filteredProjects} users={[]} />
+            <ProjectList projects={filteredProjects} />
         )
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-8 text-center">

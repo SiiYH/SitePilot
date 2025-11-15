@@ -14,7 +14,7 @@ import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking
 import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
 
 export default function TeamPage() {
-  const { user, company, loading: authLoading } = useAuth();
+  const { user, company, isLicenseExpired, loading: authLoading } = useAuth();
   const firestore = useFirestore();
   // const [projects, setProjects] = useState<Project[]>(mockProjects);
   const projectsQuery = useMemoFirebase(() => {
@@ -72,11 +72,11 @@ export default function TeamPage() {
             </p>
         </div>
         {canManageUsers && company && (
-            company.activated ? (
-                <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
-            ) : (
+            !company.activated || isLicenseExpired ? (
                 <ActivateLicenseDialog featureName="add new users" />
-            )
+              ) : (
+                <CreateUserDialog onUserCreated={handleUserCreated} companyId={company.id} />
+              )
         )}
       </div>
       {/* <TeamWorkload users={teamUsers || []} projects={projects} onUserUpdated={handleUserUpdated} /> */}

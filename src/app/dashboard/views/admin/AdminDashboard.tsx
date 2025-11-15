@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,8 +14,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultProjectStatuses } from '@/lib/data';
-import { Search, Activity } from 'lucide-react';
+import { Search, Activity, ShieldAlert } from 'lucide-react';
 import ActivateLicenseDialog from './ActivateLicenseDialog';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface AdminDashboardProps {
   projects: Project[];
@@ -38,7 +42,7 @@ export default function AdminDashboard({
   setStatusFilter
 }: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company } = useAuth();
+  const { company, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
   useEffect(() => {
@@ -66,6 +70,25 @@ export default function AdminDashboard({
 
   return (
     <div className="space-y-6">
+       {!company?.activated || isLicenseExpired ? (
+         <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>
+            {isLicenseExpired ? "License Expired" : "License Not Active"}
+          </AlertTitle>
+          <AlertDescription className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
+            <span>
+              {isLicenseExpired
+                ? "Your company's license has expired. Some features are disabled."
+                : "Your company's license is inactive. Some features may be disabled."
+              }
+            </span>
+             <Button asChild variant="link" className="p-0 h-auto text-destructive-foreground">
+              <Link href="/dashboard/company">Activate License</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
       <ProgressOverview projects={projects} />
       
@@ -85,10 +108,10 @@ export default function AdminDashboard({
             <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
           {company && (
-            company.activated ? (
-                <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
-            ) : (
+            !company.activated || isLicenseExpired ? (
                 <ActivateLicenseDialog featureName="create projects" />
+            ) : (
+                <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
             )
         )}
         </div>
@@ -110,5 +133,3 @@ export default function AdminDashboard({
     </div>
   );
 }
-
-    
