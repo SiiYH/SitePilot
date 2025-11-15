@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check } from 'lucide-react';
+import { Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -12,10 +12,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, FirestoreError } from 'firebase/firestore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
+import { format, parseISO } from 'date-fns';
+import LicenseExpiryCountdown from '@/app/dashboard/system-admin/_components/LicenseExpiryCountdown';
 
 
 const customerTypeLabels: { [key: string]: string } = {
@@ -34,13 +36,15 @@ const identifierLabels: { [key: string]: string } = {
   'government': 'Government Entity Identifier',
 };
 
-const InfoField = ({ label, value }: { label: string; value?: string | null }) => {
+const InfoField = ({ label, value, children }: { label: string; value?: string | React.ReactNode; children?: React.ReactNode }) => {
     return (
         <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
             {value ? (
-                <p className="text-sm break-words">{value}</p>
-            ) : (
+                <div className="text-sm break-words font-medium">{value}</div>
+            ) : children ? (
+                <div className="text-sm">{children}</div>
+            ): (
                 <p className="text-sm text-muted-foreground/70 italic">Not provided</p>
             )}
         </div>
@@ -89,6 +93,70 @@ const LicenseActivationCard = ({ companyData, canEdit, onActivate }: { companyDa
     );
 }
 
+const LicenseDetailsCard = ({ license }: { license: License }) => {
+    const { toast } = useToast();
+    const [hasCopied, setHasCopied] = useState(false);
+
+    const maskKey = (key: string) => {
+        if (key.length < 20) return key;
+        return `${key.substring(0, 10)}...${key.substring(key.length - 10)}`;
+    };
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(license.id);
+        setHasCopied(true);
+        toast({ title: "Full license key copied!" });
+        setTimeout(() => setHasCopied(false), 2000);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-primary" />
+                    <CardTitle>Active License Details</CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <InfoField label="Purchaser" value={license.purchaser} />
+                <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">License Key</p>
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
+                        <p className="flex-1 select-all break-all font-mono text-sm">
+                            {maskKey(license.id)}
+                        </p>
+                        <Button 
+                            type="button" 
+                            size="icon" 
+                            onClick={copyToClipboard}
+                            variant={hasCopied ? "default" : "outline"}
+                        >
+                            {hasCopied ? (
+                                <Check className="h-4 w-4" />
+                            ) : (
+                                <Copy className="h-4 w-4" />
+                            )}
+                            <span className="sr-only">{hasCopied ? 'Copied' : 'Copy Full Key'}</span>
+                        </Button>
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <InfoField label="Activated On">
+                        {license.activatedAt ? format(parseISO(license.activatedAt), 'PPP') : 'N/A'}
+                    </InfoField>
+                    <InfoField label="Expires">
+                       {license.expiresAt === null ? (
+                            <Badge variant="secondary">Unlimited</Badge>
+                        ) : (
+                            <LicenseExpiryCountdown expiresAt={license.expiresAt} />
+                        )}
+                    </InfoField>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 const CompanyIdCard = ({ companyId }: { companyId: string }) => {
     const { toast } = useToast();
     const [hasCopied, setHasCopied] = useState(false);
@@ -104,8 +172,8 @@ const CompanyIdCard = ({ companyId }: { companyId: string }) => {
         <Card>
             <CardHeader>
                 <div className="flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-primary" />
-                    <CardTitle>Company ID</CardTitle>
+                    <User className="h-5 w-5 text-primary" />
+                    <CardTitle>Invite Team Members</CardTitle>
                 </div>
                 <CardDescription>Share this ID with new users to have them join your company.</CardDescription>
             </CardHeader>
@@ -138,6 +206,12 @@ export default function CompanyPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const canEdit = user?.role === 'admin' || user?.role === 'director';
+
+  const licenseRef = useMemoFirebase(
+    () => (firestore && company?.licenseKey ? doc(firestore, 'licenses', company.licenseKey) : null),
+    [firestore, company?.licenseKey]
+  );
+  const { data: license, isLoading: licenseLoading } = useDoc<License>(licenseRef);
 
   const handleActivate = async (key: string) => {
     if (!company || !firestore) return;
@@ -205,7 +279,7 @@ export default function CompanyPage() {
   };
 
 
-  if (loading) {
+  if (loading || licenseLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -360,11 +434,16 @@ export default function CompanyPage() {
          <div className="lg:col-span-1 space-y-6">
             {companyData && (
                 <>
-                    <LicenseActivationCard 
-                        companyData={companyData} 
-                        canEdit={canEdit}
-                        onActivate={handleActivate}
-                    />
+                    {!companyData.activated ? (
+                        <LicenseActivationCard 
+                            companyData={companyData} 
+                            canEdit={canEdit}
+                            onActivate={handleActivate}
+                        />
+                    ) : license ? (
+                        <LicenseDetailsCard license={license} />
+                    ) : null}
+
                     {canEdit && <CompanyIdCard companyId={companyData.id} />}
                 </>
             )}
@@ -373,5 +452,3 @@ export default function CompanyPage() {
     </div>
   );
 }
-
-    
