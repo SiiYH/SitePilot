@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { mockAttendance } from '@/lib/data';
+import { firestore } from '@/firebase/config';
 
 export default function DashboardPage() {
   const { user, company, loading: authLoading } = useAuth();
@@ -47,7 +48,7 @@ export default function DashboardPage() {
   const allTasks = useMemo(() => {
     if (!projects) return [];
     return projects.flatMap(p => 
-      (p.tasks || []).map(t => ({...t, projectName: p.name, projectSlug: p.slug, projectId: p.id}))
+      (p.tasks || []).map(t => ({...t, projectName: p.name, projectId: p.id}))
     );
   }, [projects]);
 

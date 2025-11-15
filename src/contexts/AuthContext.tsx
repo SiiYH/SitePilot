@@ -25,6 +25,7 @@ interface AuthContextType {
   licenseUsage: Record<UserRole, number>;
   licenseLimits: Record<UserRole, number>;
   isLicenseExpired: boolean;
+  isLicenseValid: boolean;
   company: any; // Consider creating a Company type
   setCompany: Dispatch<SetStateAction<any>>;
 }
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [licenseLimits, setLicenseLimits] = useState<Record<UserRole, number>>(defaultLimits);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
+  const [isLicenseValid, setIsLicenseValid] = useState(false);
   const router = useRouter();
   const auth = useFirebaseAuth();
   const firestore = useFirestore();
@@ -102,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setIsLicenseExpired(false);
             }
         });
+        setIsLicenseValid (company?.activated === true && !isLicenseExpired);
     };
   
     const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
@@ -278,6 +281,7 @@ const handleSignUp = async (data: SignUpData): Promise<User | null> => {
     licenseUsage,
     licenseLimits,
     isLicenseExpired,
+    isLicenseValid
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

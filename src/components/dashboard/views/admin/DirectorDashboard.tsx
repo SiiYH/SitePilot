@@ -4,12 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProjectCard from '@/components/dashboard/ProjectCard';
-import CreateProjectDialog from './admin/CreateProjectDialog';
 import { Project, User, Claim, AttendanceRecord, ProjectStatus } from '@/types';
-import ProgressOverview from './admin/ProgressOverview';
-import ClaimsOverview from './admin/ClaimsOverview';
-import AttendanceSummary from './admin/AttendanceSummary';
-import AdminAlerts from './admin/AdminAlerts';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +12,12 @@ import { defaultProjectStatuses } from '@/lib/data';
 import { Search, Activity, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import ActivateLicenseDialog from './admin/ActivateLicenseDialog';
+import ActivateLicenseDialog from './ActivateLicenseDialog';
+import AdminAlerts from './AdminAlerts';
+import AttendanceSummary from './AttendanceSummary';
+import ClaimsOverview from './ClaimsOverview';
+import CreateProjectDialog from './CreateProjectDialog';
+import ProgressOverview from './ProgressOverview';
 
 interface DirectorDashboardProps {
   projects: Project[];
