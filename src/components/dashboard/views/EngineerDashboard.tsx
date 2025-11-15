@@ -28,7 +28,7 @@ export default function EngineerDashboard({ projects, tasks, user, users }: Engi
                             <LockedOverlay
                                 user={user}
                                 isLicenseExpired={isLicenseExpired}
-                                message="Activate your license to access [feature name]"
+                                message="Activate your license to access Tasks."
                             />
                         )}
                         <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>

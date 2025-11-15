@@ -74,7 +74,7 @@ export default function AdminDashboard({
           <LockedOverlay
             user={user}
             isLicenseExpired={isLicenseExpired}
-            message="Activate your license to access [feature name]"
+            message="Activate your license to access Progress Overview."
           />
         )}
         <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>

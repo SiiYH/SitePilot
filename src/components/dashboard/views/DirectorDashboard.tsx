@@ -29,10 +29,10 @@ interface DirectorDashboardProps {
   setStatusFilter: (status: string) => void;
 }
 
-export default function DirectorDashboard({ 
-  projects: initialProjects, 
-  claims, 
-  attendance, 
+export default function DirectorDashboard({
+  projects: initialProjects,
+  claims,
+  attendance,
   users,
   searchQuery,
   setSearchQuery,
@@ -42,14 +42,14 @@ export default function DirectorDashboard({
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const { user, company, isLicenseValid, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
-  
+
   // Use the combined check from useAuth
   const isLicenseActive = isLicenseValid;
-  
+
   useEffect(() => {
     setProjects(initialProjects);
   }, [initialProjects]);
-  
+
   useEffect(() => {
     const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
     if (storedStatuses) {
@@ -63,7 +63,7 @@ export default function DirectorDashboard({
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
 
-  const unassignedTasks = isLicenseActive 
+  const unassignedTasks = isLicenseActive
     ? projects.flatMap(p => (p.tasks || []).filter(t => !t.owner))
     : [];
 
@@ -82,7 +82,7 @@ export default function DirectorDashboard({
           </AlertTitle>
           <AlertDescription className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
             <span>
-              {isLicenseExpired 
+              {isLicenseExpired
                 ? "Your company's license has expired. Renew to restore access to all features."
                 : "Your company's license is inactive. Features are disabled until activation."
               }
@@ -103,31 +103,55 @@ export default function DirectorDashboard({
 
       {/* Progress Overview - Locked if inactive */}
       <div className="relative">
-        {!isLicenseActive && <LockedOverlay />}
-        <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
-          <ProgressOverview projects={isLicenseActive ? projects : []} />
+        <div className="relative">
+          {!isLicenseActive && (
+            <LockedOverlay
+              user={user}
+              isLicenseExpired={isLicenseExpired}
+              message="Activate your license to access Progress Overview."
+            />
+          )}
+          <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+            <ProgressOverview projects={isLicenseActive ? projects : []} />
+          </div>
         </div>
       </div>
-      
+
       {/* Claims & Attendance Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Claims Overview */}
         <div className="md:col-span-2 relative">
-          {!isLicenseActive && <LockedOverlay />}
-          <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
-            <ClaimsOverview 
-              claims={isLicenseActive ? claims : []} 
-              projects={isLicenseActive ? projects : []} 
-            />
+          <div className="relative">
+            {!isLicenseActive && (
+              <LockedOverlay
+                user={user}
+                isLicenseExpired={isLicenseExpired}
+                message="Activate your license to access Claims Overview."
+              />
+            )}
+            <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+              <ClaimsOverview
+                claims={isLicenseActive ? claims : []}
+                projects={isLicenseActive ? projects : []}
+              />
+            </div>
           </div>
         </div>
 
         {/* Attendance Summary */}
         <div className="md:col-span-1 relative">
-          {!isLicenseActive && <LockedOverlay />}
-          <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
-            <AttendanceSummary
-            />
+          <div className="relative">
+            {!isLicenseActive && (
+              <LockedOverlay
+                user={user}
+                isLicenseExpired={isLicenseExpired}
+                message="Activate your license to access Attendance Summary."
+              />
+            )}
+            <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+              <AttendanceSummary
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -144,10 +168,10 @@ export default function DirectorDashboard({
           <div className='flex items-center gap-2 flex-wrap'>
             {company && (
               isLicenseActive ? (
-                <CreateProjectDialog 
-                  users={users} 
-                  onProjectCreated={handleProjectCreated} 
-                  companyId={company.id} 
+                <CreateProjectDialog
+                  users={users}
+                  onProjectCreated={handleProjectCreated}
+                  companyId={company.id}
                 />
               ) : (
                 <ActivateLicenseDialog featureName="create projects" />
@@ -157,36 +181,33 @@ export default function DirectorDashboard({
         </div>
 
         {/* Projects Display */}
-        {!isLicenseActive ? (
-          // Locked state for projects
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-destructive/30 bg-destructive/5 p-12 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 mb-4">
-              <Lock className="h-10 w-10 text-destructive" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Projects Locked</h3>
-            <p className="text-sm text-muted-foreground mb-4 max-w-md">
-              Activate your license to view and manage all your projects.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard/company">Activate License Now</Link>
-            </Button>
+        <div className="relative">
+          {!isLicenseActive && (
+            <LockedOverlay
+              user={user}
+              isLicenseExpired={isLicenseExpired}
+              message="Activate your license to access Latest Projects."
+            />
+          )}
+          <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+            {latestProjects.length > 0 ? (
+              // Show projects if active
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {latestProjects.map(project => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              // Empty state if active but no projects
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+                <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Get started by creating a new project.
+                </p>
+              </div>
+            )}
           </div>
-        ) : latestProjects.length > 0 ? (
-          // Show projects if active
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {latestProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        ) : (
-          // Empty state if active but no projects
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
-            <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Get started by creating a new project.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

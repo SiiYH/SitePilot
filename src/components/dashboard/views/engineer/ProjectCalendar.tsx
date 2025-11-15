@@ -92,7 +92,7 @@ export default function ProjectCalendar({ projects }: ProjectCalendarProps) {
           <LockedOverlay
             user={user}
             isLicenseExpired={isLicenseExpired}
-            message="Activate your license to access [feature name]"
+            message="Activate your license to access Project Calender."
           />
         )}
         <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
