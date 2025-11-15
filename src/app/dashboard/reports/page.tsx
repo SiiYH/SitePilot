@@ -47,6 +47,9 @@ const reports = [
 
 export default function ReportsPage() {
 
+  const { user, isLicenseValid, isLicenseExpired } = useAuth();
+  const isLicenseActive = isLicenseValid;
+
   return (
     <ReportsPageLayout>
       <div className="space-y-6">

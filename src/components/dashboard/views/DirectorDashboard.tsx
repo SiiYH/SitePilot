@@ -16,6 +16,7 @@ import AttendanceSummary from './admin/AttendanceSummary';
 import ClaimsOverview from './admin/ClaimsOverview';
 import CreateProjectDialog from './admin/CreateProjectDialog';
 import ProgressOverview from './admin/ProgressOverview';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 interface DirectorDashboardProps {
   projects: Project[];
@@ -39,7 +40,7 @@ export default function DirectorDashboard({
   setStatusFilter
 }: DirectorDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company, isLicenseValid, isLicenseExpired } = useAuth();
+  const { user, company, isLicenseValid, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   
   // Use the combined check from useAuth
@@ -69,22 +70,6 @@ export default function DirectorDashboard({
   const latestProjects = isLicenseActive && projects.length > 0
     ? [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3)
     : [];
-
-  // Locked Feature Overlay Component
-  const LockedOverlay = ({ message = "Activate your license to access this feature" }: { message?: string }) => (
-    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/95 backdrop-blur-sm p-4">
-      <div className="text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 mx-auto mb-4">
-          <Lock className="h-8 w-8 text-destructive" />
-        </div>
-        <p className="font-semibold text-lg mb-2">Feature Locked</p>
-        <p className="text-sm text-muted-foreground mb-4 max-w-xs">{message}</p>
-        <Button asChild size="sm">
-          <Link href="/dashboard/company">Activate License</Link>
-        </Button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">

@@ -40,12 +40,11 @@ const InfoField = ({ icon, label, value, children }: { icon: React.ElementType; 
 
 export default function UserDetailsPage() {
   const router = useRouter();
-  const params = useParams();
-  const userId = params.id as string;
+  const { id: userId } = useParams(); // Immediately destructure the id
   const { user: currentUser, company } = useAuth();
   const firestore = useFirestore(); // Call hook at top level
 
-  const userRef = useMemoFirebase(() => doc(firestore, 'users', userId), [firestore, userId]);
+  const userRef = useMemoFirebase(() => doc(firestore, 'users', userId as string), [firestore, userId]);
   const { data: user, isLoading: userLoading } = useDoc<User>(userRef);
 
   const projectsQuery = useMemoFirebase(() => {

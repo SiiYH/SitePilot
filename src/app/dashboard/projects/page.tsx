@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search } from 'lucide-react';
+import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -17,12 +16,13 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Input } from '@/components/ui/input';
 import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import LockedOverlay from '@/components/dashboard/LockedOverlay';
 
 
 type ViewMode = 'grid' | 'list';
 
 export default function ProjectsPage() {
-  const { user, company, isLicenseExpired } = useAuth();
+  const { user, company, isLicenseExpired, isLicenseValid } = useAuth();
   const firestore = useFirestore();
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -31,7 +31,65 @@ export default function ProjectsPage() {
   const isMobile = useIsMobile();
   
   const projectStatuses = useMemo(() => company?.projectStatuses || [], [company]);
+  
+  // Check if license is active
+  const isLicenseActive = isLicenseValid;
 
+  // Locked Feature Overlay Component
+  const LockedOverlay = ({ message = "Activate your license to access this feature" }: { message?: string }) => {
+    const canManageLicense = user?.role === 'admin' || user?.role === 'director';
+    const isExpired = isLicenseExpired;
+    
+    return (
+      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-background/98 via-background/95 to-background/98 backdrop-blur-md p-4 border border-destructive/20 shadow-xl overflow-hidden">
+        <div className="text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-500 max-w-md">
+          <div className="relative mx-auto mb-6 w-20 h-20 flex items-center justify-center">
+            <div className="absolute inset-[-10px] animate-pulse rounded-full bg-destructive/20 blur-xl" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-destructive/20 via-destructive/10 to-destructive/5 shadow-lg ring-2 ring-destructive/30 ring-offset-2 ring-offset-background">
+              <Lock className="h-10 w-10 text-destructive drop-shadow-sm" />
+            </div>
+          </div>
+          
+          <p className="font-bold text-xl mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            {isExpired ? 'License Expired' : 'Feature Locked'}
+          </p>
+          
+          {canManageLicense ? (
+            <>
+              <p className="text-sm text-muted-foreground/80 mb-6 leading-relaxed px-4">
+                {isExpired 
+                  ? "Your company's license has expired. Renew to restore access to all features."
+                  : message
+                }
+              </p>
+              <Button asChild size="sm" className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <Link href="/dashboard/company">
+                  {isExpired ? 'Renew License' : 'Activate License'}
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground/80 mb-4 leading-relaxed px-4">
+                {isExpired 
+                  ? "Your company's license has expired. This feature is unavailable until the license is renewed."
+                  : "This feature is locked. Your company's license needs to be activated to access this feature."
+                }
+              </p>
+              <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-muted-foreground/20">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Please contact your <span className="font-semibold text-foreground">Admin</span> or <span className="font-semibold text-foreground">Director</span> to {isExpired ? 'renew' : 'activate'} the company license.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" disabled className="cursor-not-allowed">
+                License Management Restricted
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-project-view') as ViewMode;
@@ -146,10 +204,11 @@ export default function ProjectsPage() {
               className="pl-9 w-full sm:w-64"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={!isLicenseActive}
             />
           </div>
           <div className="w-full sm:w-48">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter} disabled={!isLicenseActive}>
               <SelectTrigger>
                 <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
                 <SelectValue placeholder="Filter by status..." />
@@ -171,6 +230,7 @@ export default function ProjectsPage() {
               onClick={() => handleViewModeChange('grid')}
               aria-label="Grid view"
               className={cn('h-8 w-8', currentViewMode === 'grid' && 'bg-background shadow-sm')}
+              disabled={!isLicenseActive}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -180,6 +240,7 @@ export default function ProjectsPage() {
               onClick={() => handleViewModeChange('list')}
               aria-label="List view"
               className={cn('h-8 w-8', currentViewMode === 'list' && 'bg-background shadow-sm')}
+              disabled={!isLicenseActive}
             >
               <List className="h-4 w-4" />
             </Button>
@@ -205,24 +266,32 @@ export default function ProjectsPage() {
       </div>
 
 
-      {filteredProjects.length > 0 ? (
-        currentViewMode === 'grid' ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        ) : (
-          <ProjectList projects={filteredProjects} users={companyUsers || []} />
-        )
-      ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {searchQuery ? "No projects match your search." : (user?.role === 'engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
-          </p>
+      {/* Projects Display with Lock Overlay */}
+      <div className="relative">
+        {!isLicenseActive && (
+          <LockedOverlay message="Activate your license to view and manage all your projects" />
+        )}
+        <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+          {filteredProjects.length > 0 ? (
+            currentViewMode === 'grid' ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredProjects.map(project => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              <ProjectList projects={filteredProjects} users={companyUsers || []} />
+            )
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+              <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {searchQuery ? "No projects match your search." : (user?.role === 'engineer' ? "You have no projects matching the filter." : "Get started by creating your first project.")}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

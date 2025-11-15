@@ -37,8 +37,9 @@ export default function AdminDashboard({
   setStatusFilter
 }: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company } = useAuth();
+  const { user, isLicenseValid, isLicenseExpired, company } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  const isLicenseActive = isLicenseValid;
 
   useEffect(() => {
     setProjects(initialProjects);

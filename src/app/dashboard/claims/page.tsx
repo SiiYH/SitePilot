@@ -8,11 +8,13 @@ import CreateClaimDialog from '@/components/dashboard/CreateClaimDialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, QueryConstraint } from 'firebase/firestore';
 import { DebugAuth } from '@/components/debug-auth';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 export default function ClaimsPage() {
-  const { user, company, loading: authLoading } = useAuth();
+  const { user, company, loading: authLoading, isLicenseValid, isLicenseExpired } = useAuth();
   const firestore = useFirestore();
-
+  const isLicenseActive = isLicenseValid;
+  
   // Query for projects in the user's company
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
@@ -131,17 +133,31 @@ export default function ClaimsPage() {
           </p>
         </div>
         {/* All users can create claims, but engineers only for their assigned projects */}
+        {isEngineer
+              ? 
         <CreateClaimDialog
           projects={availableProjects}
           onClaimCreated={handleClaimCreated}
           userId={user.id}
-        />
+        /> :''}
       </div>
+
+      <div className="relative">
+      {!isLicenseActive && (
+        <LockedOverlay 
+          user={user}
+          isLicenseExpired={isLicenseExpired}
+          message="Activate your license to access [feature name]"
+        />
+      )}
+      <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
 
       <ClaimsOverview 
         claims={claims || []} 
         projects={allProjects || []} 
       />
+    </div>
+    </div>
     </div>
   );
   // return (

@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { defaultProjectStatuses } from '@/lib/data';
 import { Search, Activity } from 'lucide-react';
 import ActivateLicenseDialog from './ActivateLicenseDialog';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 interface AdminDashboardProps {
   projects: Project[];
@@ -39,8 +40,9 @@ export default function AdminDashboard({
   setStatusFilter
 }: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company } = useAuth();
+  const { company, user, isLicenseValid, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  const isLicenseActive = isLicenseValid;
 
   useEffect(() => {
     setProjects(initialProjects);
@@ -67,15 +69,25 @@ export default function AdminDashboard({
 
   return (
     <div className="space-y-6">
-      <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
-      <ProgressOverview projects={projects} />
-      
+      <div className="relative">
+        {!isLicenseActive && (
+          <LockedOverlay
+            user={user}
+            isLicenseExpired={isLicenseExpired}
+            message="Activate your license to access [feature name]"
+          />
+        )}
+        <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+          <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+
+          <ProgressOverview projects={projects} />
+        </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
-            <ClaimsOverview claims={claims} projects={projects} users={users} />
+          <ClaimsOverview claims={claims} projects={projects} users={users} />
         </div>
         <div className="md:col-span-1">
-            <AttendanceSummary attendance={attendance} users={users} />
+          <AttendanceSummary />
         </div>
       </div>
 
@@ -109,5 +121,7 @@ export default function AdminDashboard({
         )}
       </div>
     </div>
+    </div>
+
   );
 }

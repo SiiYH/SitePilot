@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { mockProjects } from '@/lib/data';
-import { Project, User, UserStatus, UserStatusChange } from '@/types';
+import { Project, User, UserStatus, } from '@/types';
 import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
@@ -11,15 +11,18 @@ import { Loader2 } from 'lucide-react';
 import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, arrayUnion } from 'firebase/firestore';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 export default function TeamPage() {
-  const { user, company, isLicenseExpired, loading: authLoading } = useAuth();
+  const { user, company, isLicenseExpired, loading: authLoading,isLicenseValid } = useAuth();
   const firestore = useFirestore();
   // const [projects, setProjects] = useState<Project[]>(mockProjects);
   const projectsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
     return query(collection(firestore, 'projects'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
+
+  const isLicenseActive = isLicenseValid;
   
   const { data: projects = [], isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
@@ -62,6 +65,10 @@ export default function TeamPage() {
   const canManageUsers = user.role === 'admin' || user.role === 'director';
 
   return (
+
+   
+
+      
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -78,6 +85,15 @@ export default function TeamPage() {
               )
         )}
       </div>
+      <div className="relative">
+      {!isLicenseActive && (
+        <LockedOverlay 
+          user={user}
+          isLicenseExpired={isLicenseExpired}
+          message="Activate your license to access [feature name]"
+        />
+      )}
+      <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
       {/* <TeamWorkload users={teamUsers || []} projects={projects} onUserUpdated={handleUserUpdated} /> */}
       <TeamWorkload
   users={teamUsers || []}
@@ -85,5 +101,7 @@ export default function TeamPage() {
   onUserUpdated={handleUserUpdated}
 />
     </div>
+    </div>
+      </div>
   );
 }
