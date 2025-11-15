@@ -11,6 +11,8 @@ import EngineerPerformanceReport from '@/components/dashboard/views/admin/Engine
 import DetailedClaimsReport from '@/components/dashboard/views/admin/DetailedClaimsReport';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
 import TaskMilestoneReport from '@/components/dashboard/views/admin/TaskMilestoneReport';
+import { useAuth } from '@/hooks/use-auth';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 const reports = [
   {
@@ -51,6 +53,7 @@ export default function ReportsPage() {
   const isLicenseActive = isLicenseValid;
 
   return (
+
     <ReportsPageLayout>
       <div className="space-y-6">
         <div className="print-hidden flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
@@ -61,7 +64,17 @@ export default function ReportsPage() {
               </p>
             </div>
         </div>
+        <div className="relative">
+      {!isLicenseActive && (
+        <LockedOverlay 
+          user={user}
+          isLicenseExpired={isLicenseExpired}
+          message="Activate your license to access [feature name]"
+        />
+      )}
+      <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 print-hidden">
+        
           {reports.map((report) => (
             <Link href={report.href} key={report.href}>
               <Card className="flex h-full flex-col justify-between transition-all hover:shadow-lg">
@@ -79,6 +92,7 @@ export default function ReportsPage() {
             </Link>
           ))}
         </div>
+        
 
         {/* Hidden content for printing all reports */}
         <div className="print-only-container hidden space-y-8">
@@ -103,6 +117,8 @@ export default function ReportsPage() {
                 <DetailedClaimsReport />
             </div>
         </div>
+      </div>
+      </div>
       </div>
     </ReportsPageLayout>
   );
