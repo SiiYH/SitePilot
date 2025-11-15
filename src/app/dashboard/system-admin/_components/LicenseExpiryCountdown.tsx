@@ -29,12 +29,13 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
       return;
     }
     
-    setFullDate(format(expiryDate, 'PPP'));
+    const formattedDate = format(expiryDate, 'PPP');
+    setFullDate(formattedDate);
 
     const updateCountdown = () => {
       const now = new Date();
       if (expiryDate < now) {
-        setTimeLeft('Expired');
+        setTimeLeft(`Expired on ${formattedDate}`);
         setExpiryStatus('expired');
         return;
       }
@@ -68,6 +69,15 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
   if (!timeLeft) {
     return null;
   }
+  
+  if (expiryStatus === 'expired') {
+    return (
+       <Badge className={cn('flex items-center gap-1.5', statusStyles[expiryStatus])}>
+        <Clock className="h-3 w-3" />
+        <span className="font-medium">{timeLeft}</span>
+      </Badge>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -85,4 +95,5 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
     </TooltipProvider>
   );
 }
+
 
