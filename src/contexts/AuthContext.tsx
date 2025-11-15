@@ -4,7 +4,7 @@
 import { createContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as AuthUser } from 'firebase/auth';
-import { doc, getDoc, FirestoreError, collection, query, getDocs, where, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, FirestoreError, collection, query, getDocs, where, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { Company, User, UserRole, CreateUserData } from '@/types';
 import { login, UserCredentials, SignUpData, signUp } from '@/lib/auth';
 import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -50,14 +50,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    let unsubscribeUsers: (() => void) | null = null;
+    let unsubscribeCompany: Unsubscribe | null = null;
+    let unsubscribeUsers: Unsubscribe | null = null;
+
+    const handleCompanyUpdate = async (companyId: string) => {
+        const companyDocRef = doc(firestore, 'companies', companyId);
+        
+        // Clean up previous company listener
+        if (unsubscribeCompany) unsubscribeCompany();
+
+        unsubscribeCompany = onSnapshot(companyDocRef, async (companyDoc) => {
+            if (companyDoc.exists()) {
+                const companyData = { id: companyDoc.id, ...companyDoc.data() } as Company;
+                setCompany(companyData);
+
+                // When company data changes, re-evaluate license limits
+                if (companyData.activated && companyData.licenseKey) {
+                    try {
+                        const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
+                        const licenseDoc = await getDoc(licenseDocRef);
+                        if (licenseDoc.exists()) {
+                            const activeLicense = licenseDoc.data() as License;
+                            setLicenseLimits({
+                                'system super admin': Infinity,
+                                admin: activeLicense.maxAdmins,
+                                director: activeLicense.maxDirectors,
+                                engineer: activeLicense.maxEngineers,
+                                '': Infinity,
+                            });
+                        } else {
+                            setLicenseLimits(defaultLimits);
+                        }
+                    } catch (e) {
+                        console.error('Error fetching license:', e);
+                        setLicenseLimits(defaultLimits);
+                    }
+                } else {
+                    setLicenseLimits(defaultLimits);
+                }
+            } else {
+                setCompany(null);
+                setLicenseLimits(defaultLimits);
+            }
+        });
+    };
   
     const unsubscribeAuth = auth.onAuthStateChanged(async (firebaseUser: AuthUser | null) => {
-      // Unsubscribe from previous user listeners if any
-      if (unsubscribeUsers) {
-        unsubscribeUsers();
-        unsubscribeUsers = null;
-      }
+      // Unsubscribe from previous user and company listeners
+      if (unsubscribeUsers) unsubscribeUsers();
+      if (unsubscribeCompany) unsubscribeCompany();
       
       if (firebaseUser) {
         const userDocRef = doc(firestore, 'users', firebaseUser.uid);
@@ -67,70 +108,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const userData = { id: userDoc.id, ...userDoc.data() } as User;
               setUser(userData);
   
-              // ✅ ADD THIS: Redirect logic based on companyId
               if (!userData.companyId && userData.role !== 'system super admin') {
-                // User has no company, redirect to welcome page
                 router.push('/welcome');
               }
   
               if (userData.companyId) {
-                const companyDocRef = doc(firestore, 'companies', userData.companyId);
-                const companyDoc = await getDoc(companyDocRef);
-                if (companyDoc.exists()) {
-                  const companyData = { id: companyDoc.id, ...companyDoc.data() } as Company;
-                  setCompany(companyData);
-                  
-                  // Setup real-time listener for company users
-                  const usersQuery = query(collection(firestore, 'users'), where('companyId', '==', userData.companyId));
-                  unsubscribeUsers = onSnapshot(usersQuery, 
-                    (snapshot) => {
-                      const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-                      setAllUsers(usersList);
-                    },
-                    (serverError) => {
-                      console.error("Error fetching company users:", serverError);
-                      const permissionError = new FirestorePermissionError({
+                // Set up real-time listener for the company
+                handleCompanyUpdate(userData.companyId);
+                
+                // Set up real-time listener for company users
+                const usersQuery = query(collection(firestore, 'users'), where('companyId', '==', userData.companyId));
+                unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+                    const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+                    setAllUsers(usersList);
+                }, (error) => {
+                    console.error("Error fetching company users:", error);
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
                         path: collection(firestore, 'users').path,
                         operation: 'list',
-                      });
-                      errorEmitter.emit('permission-error', permissionError);
-                    }
-                  );
-  
-                  // Load license limits
-                  if (companyData.activated && companyData.licenseKey) {
-                    try {
-                      const licenseDocRef = doc(firestore, 'licenses', companyData.licenseKey);
-                      const licenseDoc = await getDoc(licenseDocRef);
-                  
-                      if (licenseDoc.exists()) {
-                        const activeLicense = licenseDoc.data() as License;
-                  
-                        setLicenseLimits({
-                          'system super admin': Infinity,
-                          admin: activeLicense.maxAdmins,
-                          director: activeLicense.maxDirectors,
-                          engineer: activeLicense.maxEngineers,
-                          '' : Infinity,
-                        });
-                      } else {
-                        console.warn('License not found, using default limits');
-                        setLicenseLimits(defaultLimits);
-                      }
-                    } catch (e) {
-                      console.error('Error fetching license:', e);
-                      setLicenseLimits(defaultLimits);
-                    }
-                  } else {
-                    setLicenseLimits(defaultLimits);
-                  }
-                  
-                } else {
-                  setCompany(null);
-                }
-              } else if (userData.role === 'system super admin') {
-                  setCompany(null);
-                  setLicenseLimits(defaultLimits);
+                    }));
+                });
+
               } else {
                 setCompany(null);
                 setLicenseLimits(defaultLimits);
@@ -142,11 +140,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         } catch (e: any) {
              if (e instanceof FirestoreError && e.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
                   path: userDocRef.path,
                   operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
+                }));
             } else {
                 console.error("Error fetching user document:", e);
             }
@@ -165,11 +162,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     return () => {
         unsubscribeAuth();
-        if (unsubscribeUsers) {
-          unsubscribeUsers();
-        }
+        if (unsubscribeUsers) unsubscribeUsers();
+        if (unsubscribeCompany) unsubscribeCompany();
     };
-  }, [auth, firestore, router]); // ADD router to dependencies
+  }, [auth, firestore, router]);
   
   const licenseUsage = {
     'system super admin': allUsers.filter(u => u.role === 'system super admin' && u.status === 'Active').length,
@@ -196,7 +192,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // REMOVE the router.push from handleSignUp
 const handleSignUp = async (data: SignUpData): Promise<User | null> => {
   setLoading(true);
   if (licenseUsage[data.role] >= licenseLimits[data.role]) {
@@ -205,8 +200,6 @@ const handleSignUp = async (data: SignUpData): Promise<User | null> => {
   }
   const companyId = company?.id;
   const newUser = await signUp({ ...data, companyId });
-  // REMOVE: router.push('/welcome');
-  // The redirect will happen automatically in the useEffect when auth state changes
   setLoading(false);
   return newUser;
 }
@@ -246,8 +239,6 @@ const handleSignUp = async (data: SignUpData): Promise<User | null> => {
         await setDoc(userDocRef, newUser);
 
         await deleteApp(tempApp);
-        
-        // No need to manually update `allUsers` state here, the onSnapshot listener will handle it.
         
         setLoading(false);
         return { id: firebaseUser.uid, ...newUser };
