@@ -5,9 +5,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check, Calendar, User } from 'lucide-react';
+import {Building2, Clock, Info, Infinity, Loader2, Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
@@ -111,50 +110,121 @@ const LicenseDetailsCard = ({ license }: { license: License }) => {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-primary" />
-                    <CardTitle>Active License Details</CardTitle>
+        <Card className="overflow-hidden">
+    {/* Header with gradient background */}
+    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6 border-b">
+        <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20 ring-2 ring-primary/30">
+                <KeyRound className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+                <CardTitle className="text-xl">Active License Details</CardTitle>
+                <p className="text-sm text-muted-foreground mt-0.5">Your current license information</p>
+            </div>
+        </div>
+    </div>
+
+    <CardContent className="p-6 space-y-6">
+        {/* Purchaser Info */}
+        <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Licensed To</label>
+            <div className="flex items-center gap-3 rounded-lg border bg-card p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Building2 className="h-5 w-5 text-primary" />
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <InfoField label="Purchaser" value={license.purchaser} />
-                <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">License Key</p>
-                    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
-                        <p className="flex-1 select-all break-all font-mono text-sm">
+                <p className="font-semibold text-lg">{license.purchaser}</p>
+            </div>
+        </div>
+
+        {/* License Key */}
+        <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">License Key</label>
+            <div className="relative rounded-lg border-2 border-dashed bg-muted/30 p-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                        <p className="font-mono text-sm break-all leading-relaxed select-all">
                             {maskKey(license.id)}
                         </p>
-                        <Button 
-                            type="button" 
-                            size="icon" 
-                            onClick={copyToClipboard}
-                            variant={hasCopied ? "default" : "outline"}
-                        >
-                            {hasCopied ? (
-                                <Check className="h-4 w-4" />
-                            ) : (
-                                <Copy className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">{hasCopied ? 'Copied' : 'Copy Full Key'}</span>
-                        </Button>
                     </div>
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <InfoField label="Activated On">
-                        {license.activatedAt ? format(parseISO(license.activatedAt), 'PPP') : 'N/A'}
-                    </InfoField>
-                    <InfoField label="Expires">
-                       {license.expiresAt === null ? (
-                            <Badge variant="secondary">Unlimited</Badge>
+                    <Button 
+                        type="button" 
+                        size="sm"
+                        onClick={copyToClipboard}
+                        variant={hasCopied ? "default" : "outline"}
+                        className="shrink-0 gap-2"
+                    >
+                        {hasCopied ? (
+                            <>
+                                <Check className="h-4 w-4" />
+                                Copied
+                            </>
                         ) : (
-                            <LicenseExpiryCountdown expiresAt={license.expiresAt} />
+                            <>
+                                <Copy className="h-4 w-4" />
+                                Copy
+                            </>
                         )}
-                    </InfoField>
+                    </Button>
                 </div>
-            </CardContent>
-        </Card>
+                {hasCopied && (
+                    <p className="text-xs text-green-600 mt-2 font-medium">
+                        ✓ License key copied to clipboard
+                    </p>
+                )}
+            </div>
+        </div>
+
+        {/* Activation & Expiry Info */}
+        <div className="grid md:grid-cols-2 gap-4">
+            {/* Activated Date */}
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm font-medium">Activated On</span>
+                </div>
+                <p className="text-lg font-semibold">
+                    {license.activatedAt ? format(parseISO(license.activatedAt), 'PPP') : 'Not Activated'}
+                </p>
+            </div>
+
+            {/* Expiry Date */}
+            <div className="rounded-lg border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">Expires</span>
+                </div>
+                <div>
+                    {license.expiresAt === null ? (
+                        <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+                            <Infinity className="h-3.5 w-3.5" />
+                            Unlimited
+                        </Badge>
+                    ) : (
+                        <div className="space-y-1">
+                            <p className="text-lg font-semibold">
+                                {format(parseISO(license.expiresAt), 'PPP')}
+                            </p>
+                            <LicenseExpiryCountdown expiresAt={license.expiresAt} />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* Additional info message */}
+        <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 p-4">
+            <div className="flex gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900 dark:text-blue-100">
+                    <p className="font-medium mb-1">Keep your license key safe</p>
+                    <p className="text-blue-700 dark:text-blue-300">
+                        This key is required to activate and use the software. Store it securely and do not share it with unauthorized users.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </CardContent>
+</Card>
     );
 };
 
@@ -433,24 +503,21 @@ export default function CompanyPage() {
             </Card>
         </div>
          <div className="lg:col-span-1 space-y-6">
-            {companyData && (
-                <>
-                    {!companyData.activated ? (
-                        <LicenseActivationCard 
-                            companyData={companyData} 
-                            canEdit={canEdit}
-                            onActivate={handleActivate}
-                        />
-                    ) : license ? (
-                        <LicenseDetailsCard license={license} />
-                    ) : null}
-
-                    {canEdit && <CompanyIdCard companyId={companyData.id} />}
-                </>
+            {companyData && !companyData.activated && (
+              <LicenseActivationCard 
+                  companyData={companyData} 
+                  canEdit={canEdit}
+                  onActivate={handleActivate}
+              />
             )}
+            {canEdit && companyData && <CompanyIdCard companyId={companyData.id} />}
         </div>
       </div>
+      {companyData?.activated && license && (
+        <div className="mt-6">
+          <LicenseDetailsCard license={license} />
+        </div>
+      )}
     </div>
   );
 }
-

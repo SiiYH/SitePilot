@@ -35,7 +35,7 @@ export default function LicenseExpiryCountdown({ expiresAt }: LicenseExpiryCount
     const updateCountdown = () => {
       const now = new Date();
       if (expiryDate < now) {
-        setTimeLeft(`Expired on ${formattedDate}`);
+        setTimeLeft(`Expired`);
         setExpiryStatus('expired');
         return;
       }
