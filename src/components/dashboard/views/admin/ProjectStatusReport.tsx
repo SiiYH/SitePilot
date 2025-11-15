@@ -11,23 +11,15 @@ import { useAuth } from '@/hooks/use-auth';
 import { Progress } from '@/components/ui/progress';
 import { getProjectProgress } from '@/lib/projects';
 import { ProjectStatus, ProjectStatusCategory } from '@/types';
-import { useEffect, useState } from 'react';
-import { defaultProjectStatuses } from '@/lib/data';
+import { useEffect, useState, useMemo } from 'react';
 
 export default function ProjectStatusReport() {
   const { projectStatusData, reportData } = useReportContext();
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const canViewFinancials = user?.role === 'admin' || user?.role === 'director';
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  
+  const projectStatuses: ProjectStatus[] = useMemo(() => company?.projectStatuses || [], [company]);
 
-  useEffect(() => {
-    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-    if (storedStatuses) {
-      setProjectStatuses(JSON.parse(storedStatuses));
-    } else {
-      setProjectStatuses(defaultProjectStatuses);
-    }
-  }, []);
 
   const statusVariant: { [key in ProjectStatusCategory]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
       'Completed': 'default',

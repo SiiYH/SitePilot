@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 import { Calendar as CalendarIcon, X, Activity, FolderKanban, User } from 'lucide-react';
@@ -16,28 +16,22 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ProjectStatusReport from '@/components/dashboard/views/admin/ProjectStatusReport';
 import { ProjectStatus } from '@/types';
-import { defaultProjectStatuses } from '@/lib/data';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ProjectStatusPage() {
   const { setDateRange, setSelectedProjectStatus, setSelectedProjectId, reportData, setSelectedEngineerId } = useReportContext();
   const { toast } = useToast();
+  const { company } = useAuth();
   const [date, setDate] = useState<DateRange | undefined>();
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [selectedEngineer, setSelectedEngineer] = useState<string>('all');
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  
+  const projectStatuses: ProjectStatus[] = useMemo(() => company?.projectStatuses || [], [company]);
+
 
   const projects = reportData.projects;
   const engineers = reportData.users.filter(u => u.role === 'engineer');
-
-  useEffect(() => {
-    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-    if (storedStatuses) {
-      setProjectStatuses(JSON.parse(storedStatuses));
-    } else {
-      setProjectStatuses(defaultProjectStatuses);
-    }
-  }, []);
 
   useEffect(() => {
     setDateRange(date);

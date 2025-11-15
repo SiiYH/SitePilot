@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ProjectStatus, ProjectStatusCategory } from '@/types';
-import { defaultProjectStatuses } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { CheckCircle, XCircle, PauseCircle, PlayCircle, Circle } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ProjectStatusBadgeProps {
   statusId: string;
@@ -41,20 +41,8 @@ const categoryConfig: { [key in ProjectStatusCategory]: { variant: 'default' | '
 };
 
 export default function ProjectStatusBadge({ statusId }: ProjectStatusBadgeProps) {
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
-
-  useEffect(() => {
-    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-    if (storedStatuses) {
-      try {
-        setProjectStatuses(JSON.parse(storedStatuses));
-      } catch (e) {
-        setProjectStatuses(defaultProjectStatuses);
-      }
-    } else {
-      setProjectStatuses(defaultProjectStatuses);
-    }
-  }, []);
+  const { company } = useAuth();
+  const projectStatuses: ProjectStatus[] = company?.projectStatuses || [];
 
   const status = projectStatuses.find(s => s.id === statusId);
 

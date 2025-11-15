@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Calendar, Users, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface ProjectListProps {
@@ -47,8 +48,11 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
 
 export default function ProjectList({ projects, users }: ProjectListProps) {
   const router = useRouter();
+  const { company } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  
+  const projectStatuses = useMemo(() => company?.projectStatuses || [], [company]);
 
   const handleRowClick = (projectId: string) => {
     router.push(`/dashboard/projects/${projectId}`);

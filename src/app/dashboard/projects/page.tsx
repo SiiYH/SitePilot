@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { defaultProjectStatuses } from '@/lib/data';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
@@ -28,18 +27,13 @@ export default function ProjectsPage() {
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  
+  const projectStatuses = useMemo(() => company?.projectStatuses || [], [company]);
+
 
   useEffect(() => {
-    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-    if (storedStatuses) {
-      setProjectStatuses(JSON.parse(storedStatuses));
-    } else {
-      setProjectStatuses(defaultProjectStatuses);
-    }
-
     const savedViewMode = localStorage.getItem('sitepilot-project-view') as ViewMode;
     if (savedViewMode) {
       setViewMode(savedViewMode);

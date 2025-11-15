@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Check, ChevronsUpDown, PlusCircle, Loader2 } from 'lucide-react';
+import { Check, ChevronsUpDown, PlusCircle, Loader2, Info } from 'lucide-react';
 import { User, Project, ProgressTrackingMode, ProjectStatus } from '@/types';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useToast } from '@/hooks/use-toast';
@@ -26,12 +27,12 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/use-auth';
-import { defaultProjectStatuses } from '@/lib/data';
 import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface CreateProjectDialogProps {
   users: User[];
@@ -53,10 +54,10 @@ const formSchema = z.object({
   jobLocation: z.string().optional(),
   distance: z.coerce.number().optional(),
   performanceBondNo: z.string().optional(),
-  performanceBondAmount: z.coerce.number().optional(),
+  performanceBondAmount: z.any().optional(),
   grossProfit: z.coerce.number().optional(),
   marginProfit: z.coerce.number().optional(),
-  insuranceAmount: z.coerce.number().optional(),
+  insuranceAmount: z.any().optional(),
   currency: z.string().optional(),
 });
 
@@ -76,27 +77,18 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const firestore = useFirestore();
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
-  useEffect(() => {
-    if (open) {
-      const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-      if (storedStatuses) {
-        setProjectStatuses(JSON.parse(storedStatuses));
-      } else {
-        setProjectStatuses(defaultProjectStatuses);
-      }
-    }
-  }, [open]);
+  const projectStatuses: ProjectStatus[] = useMemo(() => company?.projectStatuses || [], [company]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      status: 'not-started',
+      status: projectStatuses.find(s => s.category === 'Not Started')?.id || 'not-started',
       assignedEngineers: [],
       progressTrackingMode: 'task-driven',
       progress: 0,
@@ -136,6 +128,8 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
 
     const newProject: Project = {
       ...values,
+      performanceBondAmount: values.performanceBondAmount ? parseFloat(String(values.performanceBondAmount).replace(/,/g, '')) : undefined,
+      insuranceAmount: values.insuranceAmount ? parseFloat(String(values.insuranceAmount).replace(/,/g, '')) : undefined,
       id: projectId,
       jobNo: jobNo,
       companyId: companyId,
@@ -174,6 +168,33 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
         description: `${newProject.name} has been successfully created.`,
       });
     }, 1000);
+  };
+  
+    const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+        let input = e.target.value;
+        let cleaned = input.replace(/[^0-9.]/g, '');
+        const parts = cleaned.split('.');
+        if (parts.length > 2) {
+        cleaned = parts[0] + '.' + parts.slice(1).join('');
+        }
+        const [integerPart, decimalPart] = cleaned.split('.');
+        let formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        if (decimalPart !== undefined) {
+        formatted += '.' + decimalPart.slice(0, 2);
+        }
+        field.onChange(formatted);
+    };
+
+    const handleNumericInputBlur = (e: React.FocusEvent<HTMLInputElement>, field: any) => {
+        const value = e.target.value.replace(/,/g, '');
+        if (value && !isNaN(parseFloat(value))) {
+        const num = parseFloat(value);
+        const formatted = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+        field.onChange(formatted);
+        }
   };
 
   return (
@@ -309,28 +330,50 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
                         )}
                         />
                         <FormField
-                        control={form.control}
-                        name="performanceBondAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Performance Bond Amt.</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                            control={form.control}
+                            name="performanceBondAmount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Performance Bond Amt.</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="text"
+                                            placeholder="e.g., 500,000.00"
+                                            {...field}
+                                            onChange={(e) => handleNumericInputChange(e, field)}
+                                            onBlur={(e) => handleNumericInputBlur(e, field)}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <FormField
-                        control={form.control}
-                        name="grossProfit"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Gross Profit</FormLabel>
-                            <FormControl><Input type="number" placeholder="e.g., 2000000" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                            control={form.control}
+                            name="grossProfit"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center gap-2">
+                                        <FormLabel>Gross Profit</FormLabel>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Gross Profit is auto-calculated based on other financial inputs.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                    <FormControl>
+                                        <Input type="number" placeholder="Auto-calculated" {...field} disabled />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                         <FormField
                         control={form.control}
@@ -351,7 +394,15 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Insurance Amt.</FormLabel>
-                                <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                                <FormControl>
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g., 100,000.00"
+                                        {...field}
+                                        onChange={(e) => handleNumericInputChange(e, field)}
+                                        onBlur={(e) => handleNumericInputBlur(e, field)}
+                                    />
+                                </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
@@ -545,4 +596,5 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
   );
 }
 
-    
+
+

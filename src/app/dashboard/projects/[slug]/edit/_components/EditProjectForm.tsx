@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +17,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockProjects, defaultProjectStatuses } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
@@ -56,12 +55,14 @@ const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
 
 export default function EditProjectForm({ project, users }: EditProjectFormProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const canEditFinancials = user?.role === 'admin' || user?.role === 'director';
-  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
   const firestore = useFirestore();
+
+  const projectStatuses: ProjectStatus[] = useMemo(() => company?.projectStatuses || [], [company]);
+
 
   const getSafeDate = (dateValue: string | Date): Date => {
     if (dateValue instanceof Date) {
@@ -69,15 +70,6 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
     }
     return parseISO(dateValue);
   };
-
-  useEffect(() => {
-    const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
-    if (storedStatuses) {
-      setProjectStatuses(JSON.parse(storedStatuses));
-    } else {
-      setProjectStatuses(defaultProjectStatuses);
-    }
-  }, []);
 
   const formatAmountForDisplay = (amount: number | undefined) => {
     if (amount === undefined || isNaN(amount)) return '';
