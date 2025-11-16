@@ -95,7 +95,6 @@ export default function MyTasksPage() {
                 ...change.doc.data(),
                 projectId: project.id,
                 projectName: project.name,
-                // projectSlug: project.slug,
               } as Task);
             }
           });
@@ -177,10 +176,8 @@ export default function MyTasksPage() {
     );
   }
 
-  const pageTitle = user.role === 'engineer' ? 'My Tasks' : 'All Work Items';
-  const pageDescription = user.role === 'engineer' 
-    ? 'All tasks and work items assigned to you. Click a work item to view details.'
-    : 'A comprehensive list of all work items across all projects in the company.';
+  const pageTitle = 'Work Items';
+  const pageDescription = 'A comprehensive list of all work items across all projects in the company.';
 
   const currentViewMode = isMobile ? 'grid' : viewMode;
 

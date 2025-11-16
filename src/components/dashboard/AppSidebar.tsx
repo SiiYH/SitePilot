@@ -3,7 +3,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck, Briefcase, Key } from 'lucide-react';
+import { LayoutDashboard, ListTodo, FolderKanban, Settings, User, Building, Users, DollarSign, BarChart, ShieldCheck, Briefcase, Key, Info } from 'lucide-react';
 import Link from 'next/link';
 
 import Logo from '@/components/icons/Logo';
@@ -14,7 +14,7 @@ import type { UserRole } from '@/types';
 const mainMenuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, tooltip: 'Dashboard', roles: ['admin', 'director', 'engineer'] },
   { href: '/dashboard/projects', label: 'Projects', icon: FolderKanban, tooltip: 'Projects', roles: ['admin', 'director', 'engineer'] },
-  { href: '/dashboard/tasks', label: 'My Tasks', icon: ListTodo, tooltip: 'My Tasks', roles: ['engineer'], activePaths: ['/dashboard/work-items'] },
+  { href: '/dashboard/tasks', label: 'Work Items', icon: ListTodo, tooltip: 'Work Items', roles: ['admin', 'director', 'engineer'], activePaths: ['/dashboard/work-items'] },
   { href: '/dashboard/team', label: 'Team', icon: Users, tooltip: 'Team', roles: ['admin', 'director'] },
   { href: '/dashboard/claims', label: 'Claims', icon: DollarSign, tooltip: 'Claims', roles: ['admin', 'director', 'engineer'] },
   { href: '/dashboard/reports', label: 'Reports', icon: BarChart, tooltip: 'Reports', roles: ['admin', 'director'] },
@@ -27,6 +27,7 @@ const settingsMenuItems = [
   { href: '/dashboard/profile', label: 'My Profile', icon: User, tooltip: 'My Profile', roles: ['admin', 'director', 'engineer', 'system super admin'] },
   { href: '/dashboard/company', label: 'Company', icon: Building, tooltip: 'Company Settings', roles: ['admin', 'director', 'engineer'] },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, tooltip: 'Settings', roles: ['admin', 'director'] },
+  { href: '/dashboard/information', label: 'Information', icon: Info, tooltip: 'App Information', roles: ['admin', 'director', 'engineer', 'system super admin'] },
 ]
 
 export default function AppSidebar() {
