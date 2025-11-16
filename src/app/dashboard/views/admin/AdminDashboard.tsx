@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,11 +13,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { defaultProjectStatuses } from '@/lib/data';
-import { Search, Activity, ShieldAlert } from 'lucide-react';
+import { Search, Activity } from 'lucide-react';
 import ActivateLicenseDialog from './ActivateLicenseDialog';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 
 interface AdminDashboardProps {
   projects: Project[];
@@ -42,8 +39,9 @@ export default function AdminDashboard({
   setStatusFilter
 }: AdminDashboardProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const { company, isLicenseExpired } = useAuth();
+  const { company, user, isLicenseValid, isLicenseExpired } = useAuth();
   const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
+  const isLicenseActive = isLicenseValid;
 
   useEffect(() => {
     setProjects(initialProjects);
@@ -70,34 +68,27 @@ export default function AdminDashboard({
 
   return (
     <div className="space-y-6">
-       {!company?.activated || isLicenseExpired ? (
-         <Alert variant="destructive">
-          <ShieldAlert className="h-4 w-4" />
-          <AlertTitle>
-            {isLicenseExpired ? "License Expired" : "License Not Active"}
-          </AlertTitle>
-          <AlertDescription className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
-            <span>
-              {isLicenseExpired
-                ? "Your company's license has expired. Some features are disabled."
-                : "Your company's license is inactive. Some features may be disabled."
-              }
-            </span>
-             <Button asChild variant="link" className="p-0 h-auto text-destructive-foreground">
-              <Link href="/dashboard/company">Activate License</Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : null}
-      <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
-      <ProgressOverview projects={projects} />
-      
+      <div className="relative">
+        {!isLicenseActive && (
+          <LockedOverlay
+            user={user}
+            isLicenseExpired={isLicenseExpired}
+            message="Activate your license to access Admin Dashboard."
+          />
+        )}
+        <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+          <div className="mb-6">
+            <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+          </div>
+
+          <ProgressOverview projects={projects} />
+        </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
-            <ClaimsOverview claims={claims} projects={projects} />
+          <ClaimsOverview claims={claims} projects={projects} />
         </div>
         <div className="md:col-span-1">
-            <AttendanceSummary />
+          <AttendanceSummary />
         </div>
       </div>
 
@@ -108,10 +99,10 @@ export default function AdminDashboard({
             <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
           </div>
           {company && (
-            !company.activated || isLicenseExpired ? (
-                <ActivateLicenseDialog featureName="create projects" />
-            ) : (
+            company.activated ? (
                 <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+            ) : (
+                <ActivateLicenseDialog featureName="create projects" />
             )
         )}
         </div>
@@ -131,5 +122,7 @@ export default function AdminDashboard({
         )}
       </div>
     </div>
+    </div>
+
   );
 }
