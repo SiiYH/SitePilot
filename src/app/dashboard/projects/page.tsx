@@ -21,6 +21,7 @@ import LockedOverlay from '@/components/dashboard/LockedOverlay';
 import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, isWithinInterval, parseISO } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
 
 
 type ViewMode = 'grid' | 'list';
@@ -357,3 +358,5 @@ export default function ProjectsPage() {
     </div>
   );
 }
+
+    
