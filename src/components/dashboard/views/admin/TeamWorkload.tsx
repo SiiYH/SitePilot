@@ -133,7 +133,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
       if (user.role === 'engineer') {
         map[user.id] = projects.flatMap(p => 
           (p.tasks || [])
-            .filter(t => t.owner === user.id)
+            .filter(t => t.owner === user.id || t.contributors?.includes(user.id))
             .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
         );
       }
