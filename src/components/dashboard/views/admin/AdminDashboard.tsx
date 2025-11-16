@@ -74,7 +74,7 @@ export default function AdminDashboard({
           <LockedOverlay
             user={user}
             isLicenseExpired={isLicenseExpired}
-            message="Activate your license to access Progress Overview."
+            message="Activate your license to access Admin Dashboard."
           />
         )}
         <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
@@ -84,7 +84,7 @@ export default function AdminDashboard({
         </div>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
-          <ClaimsOverview claims={claims} projects={projects} users={users} />
+          <ClaimsOverview claims={claims} projects={projects} />
         </div>
         <div className="md:col-span-1">
           <AttendanceSummary />
