@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useEffect, type ReactNode } from 'react';
@@ -17,7 +18,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     // Dynamically import pdfjs and set worker source only on the client
     import('react-pdf').then(({ pdfjs }) => {
-      pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+      pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
     });
   }, []);
 
@@ -32,3 +33,5 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     </FirebaseProvider>
   );
 }
+
+    

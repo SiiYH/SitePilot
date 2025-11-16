@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -25,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { collection, doc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
 const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
@@ -48,6 +50,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -86,6 +89,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       });
       
       setImagePreviews([]);
+      setNewImageFiles([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -102,10 +106,23 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       form.setValue('currency', 'MYR');
     }
   }, [selectedProjectId, projects, form]);
+  
+  const uploadImagesToStorage = async (files: File[], claimId: string): Promise<string[]> => {
+    const storage = getStorage();
+    const uploadPromises = files.map(async (file) => {
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      const storageRef = ref(storage, `claims/${claimId}/${timestamp}-${randomId}`);
+      
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    });
+  
+    return Promise.all(uploadPromises);
+  };
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log('Form values on submit:', values); // Check what projectId is
-    
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !company) {
       toast({
         variant: "destructive",
@@ -117,37 +134,52 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     setIsLoading(true);
 
     const claimId = `claim-${Date.now()}`;
-    const newClaimDocRef = doc(firestore, 'claims', claimId);
-    const now = new Date().toISOString();
+    
+    try {
+        let uploadedImageUrls: string[] = [];
+        if (newImageFiles.length > 0) {
+            uploadedImageUrls = await uploadImagesToStorage(newImageFiles, claimId);
+        }
 
-    const newClaimData = {
-      id: claimId,
-      projectId: values.projectId,
-      companyId: company.id,
-      title: values.title,
-      type: values.type,
-      eInvoiceNo: values.eInvoiceNo,
-      description: values.description,
-      amount: parseFloat(values.amount.replace(/,/g, '')),
-      currency: values.currency,
-      status: 'Pending' as const,
-      date: now,
-      submittedBy: userId,
-      submittedAt: now,
-      receiptImageUrls: imagePreviews,
-    };
+        const newClaimDocRef = doc(firestore, 'claims', claimId);
+        const now = new Date().toISOString();
 
-    setDocumentNonBlocking(newClaimDocRef, newClaimData);
+        const newClaimData = {
+            id: claimId,
+            projectId: values.projectId,
+            companyId: company.id,
+            title: values.title,
+            type: values.type,
+            eInvoiceNo: values.eInvoiceNo,
+            description: values.description,
+            amount: parseFloat(values.amount.replace(/,/g, '')),
+            currency: values.currency,
+            status: 'Pending' as const,
+            date: now,
+            submittedBy: userId,
+            submittedAt: now,
+            receiptImageUrls: uploadedImageUrls,
+        };
 
-    setTimeout(() => {
-      onClaimCreated(newClaimData as Claim);
-      setIsLoading(false);
-      setOpen(false);
-      toast({
-        title: 'Claim Created',
-        description: `Your claim "${newClaimData.title}" has been submitted.`,
-      });
-    }, 1000);
+        await setDocumentNonBlocking(newClaimDocRef, newClaimData);
+
+        onClaimCreated(newClaimData as Claim);
+        setOpen(false);
+        toast({
+            title: 'Claim Created',
+            description: `Your claim "${newClaimData.title}" has been submitted.`,
+        });
+
+    } catch (error) {
+        console.error("Error creating claim:", error);
+        toast({
+            variant: "destructive",
+            title: "Claim Creation Failed",
+            description: "An error occurred while creating the claim. Please try again.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleSubmitWithScroll = form.handleSubmit(
@@ -175,6 +207,8 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
         });
       }
 
+      setNewImageFiles(prev => [...prev, ...filesToProcess]);
+
       filesToProcess.forEach(file => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -186,7 +220,10 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
   };
 
   const removeImage = (index: number) => {
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    const newFiles = newImageFiles.filter((_, i) => i !== index);
+    setImagePreviews(newPreviews);
+    setNewImageFiles(newFiles);
   }
 
   return (
@@ -434,3 +471,5 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     </Dialog>
   );
 }
+
+    

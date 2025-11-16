@@ -60,7 +60,6 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const router = useRouter();
-  // Add this state to track new files
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -78,10 +77,8 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
 
   const selectedProjectId = form.watch('projectId');
 
-  // Only auto-set currency when project changes AND it's different from current
   useEffect(() => {
     if (selectedProjectId && selectedProjectId !== claim.projectId) {
-      // Only update currency if the project actually changed
       const projectCurrency = projects.find(p => p.id === selectedProjectId)?.currency;
       if (projectCurrency) {
         form.setValue('currency', projectCurrency);
@@ -98,17 +95,13 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   
     try {
       const claimDocRef = doc(firestore, 'claims', claim.id);
-  
-      // Separate existing URLs from new uploads
       const existingUrls = imagePreviews.filter(preview => preview.startsWith('http'));
       
-      // Upload new images to Firebase Storage
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
         newImageUrls = await uploadImagesToStorage(newImageFiles);
       }
   
-      // Combine existing and new image URLs
       const allImageUrls = [...existingUrls, ...newImageUrls];
   
       const updatedClaimData: any = {
@@ -117,7 +110,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
         type: values.type,
         amount: parseFloat(values.amount.replace(/,/g, '')),
         currency: values.currency,
-        receiptImageUrls: allImageUrls, // Store only URLs, not base64
+        receiptImageUrls: allImageUrls,
         status: 'Pending' as const,
         submittedAt: new Date().toISOString(),
       };
@@ -163,7 +156,6 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
         });
       }
   
-      // Store the actual File objects
       setNewImageFiles(prev => [...prev, ...filesToProcess]);
   
       filesToProcess.forEach(file => {
@@ -177,8 +169,18 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   };
 
   const removeImage = (index: number) => {
+    const urlToRemove = imagePreviews[index];
+    if (urlToRemove.startsWith('http')) {
+        // This is a previously uploaded file, needs deletion from storage.
+        // For simplicity, we can just remove it from the view. Deleting from storage
+        // can be complex to handle securely on the client.
+    }
+    
+    // For newly added files (base64), we can just remove them.
+    const fileIndex = imagePreviews.slice(0, index).filter(p => !p.startsWith('http')).length;
+    setNewImageFiles(prev => prev.filter((_, i) => i !== fileIndex));
+
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
-    setNewImageFiles(prev => prev.filter((_, i) => i !== index));
   };
   
   const uploadImagesToStorage = async (files: File[]): Promise<string[]> => {
@@ -433,3 +435,5 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
     </Card>
   );
 }
+
+    

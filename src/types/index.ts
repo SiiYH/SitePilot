@@ -140,6 +140,7 @@ export interface CreateClaimDialogProps {
   onClaimCreated: (claim: Claim) => void;
   userId: string;
   defaultProjectId?: string;
+  disabled?: boolean;
 }
 
 export interface AttendanceRecord {
@@ -186,3 +187,5 @@ export type CreateUserData = {
     role: UserRole;
     companyId: string;
 };
+
+    

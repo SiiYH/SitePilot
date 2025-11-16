@@ -5,13 +5,13 @@ import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 
 export const firebaseConfig = {
-  "projectId": "studio-3087748224-d33c9",
-  "appId": "1:420177324229:web:a1cf332a3e2ddb6a9328ac",
-  "apiKey": "AIzaSyDQae-ruGO-KbZ8P9k1rdy0CLriJUqVFvU",
-  "authDomain": "studio-3087748224-d33c9.firebaseapp.com",
-  "storageBucket": "studio-3087748224-d33c9.firebasestorage.app",
-  "measurementId": "",
-  "messagingSenderId": "420177324229"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
