@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Project, User, ProjectStatus } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock } from 'lucide-react';
+import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock, Calendar as CalendarIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -17,6 +18,9 @@ import { Input } from '@/components/ui/input';
 import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import LockedOverlay from '@/components/dashboard/LockedOverlay';
+import { DateRange } from 'react-day-picker';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format, isWithinInterval, parseISO } from 'date-fns';
 
 
 type ViewMode = 'grid' | 'list';
@@ -28,6 +32,7 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [date, setDate] = useState<DateRange | undefined>();
   const isMobile = useIsMobile();
   
   const projectStatuses = useMemo(() => company?.projectStatuses || [], [company]);
@@ -160,6 +165,20 @@ export default function ProjectsPage() {
     if (statusFilter !== 'all') {
       userProjects = userProjects.filter(p => p.status === statusFilter);
     }
+    
+    if (date?.from && date?.to) {
+        userProjects = userProjects.filter(p => {
+          try {
+            const projectStart = parseISO(p.startDate);
+            const projectEnd = parseISO(p.endDate);
+            const range = { start: date.from!, end: date.to! };
+            // Check if project interval overlaps with the selected range
+            return (projectStart <= range.end && projectEnd >= range.start);
+          } catch {
+            return false;
+          }
+        });
+    }
 
     if (searchQuery) {
       const lowercasedQuery = searchQuery.toLowerCase();
@@ -171,7 +190,7 @@ export default function ProjectsPage() {
     }
 
     return userProjects;
-  }, [projects, user?.role, user?.id, statusFilter, searchQuery]);
+  }, [projects, user?.role, user?.id, statusFilter, searchQuery, date]);
   
   const currentViewMode = isMobile ? 'grid' : viewMode;
 
@@ -196,18 +215,40 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex w-full items-center justify-end gap-2 flex-wrap">
-          <div className="relative w-full sm:w-auto">
+          
+          <div className="flex items-center gap-2">
+            {user?.role !== 'engineer' && company && (
+              !company.activated || isLicenseExpired ? (
+                <ActivateLicenseDialog featureName="create projects" />
+              ) : (
+                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
+              )
+            )}
+            {canManageSettings && (
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:w-auto flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search projects..."
-              className="pl-9 w-full sm:w-64"
+              className="pl-9 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={!isLicenseActive}
             />
-          </div>
-          <div className="w-full sm:w-48">
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="w-full sm:w-48">
             <Select value={statusFilter} onValueChange={setStatusFilter} disabled={!isLicenseActive}>
               <SelectTrigger>
                 <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -222,6 +263,44 @@ export default function ProjectsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+           <div className="w-full sm:w-auto">
+              <Popover>
+                  <PopoverTrigger asChild>
+                  <Button
+                      id="date"
+                      variant={'outline'}
+                      className={cn(
+                      'w-full sm:w-[240px] justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                      )}
+                      disabled={!isLicenseActive}
+                  >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date?.from ? (
+                      date.to ? (
+                          <>
+                          {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                          </>
+                      ) : (
+                          format(date.from, 'LLL dd, y')
+                      )
+                      ) : (
+                      <span>Pick a date range</span>
+                      )}
+                  </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={date?.from}
+                      selected={date}
+                      onSelect={setDate}
+                      numberOfMonths={2}
+                  />
+                  </PopoverContent>
+              </Popover>
           </div>
           <div className="hidden items-center gap-1 rounded-lg bg-muted p-1 sm:flex">
             <Button
@@ -244,23 +323,6 @@ export default function ProjectsPage() {
             >
               <List className="h-4 w-4" />
             </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            {user?.role !== 'engineer' && company && (
-              !company.activated || isLicenseExpired ? (
-                <ActivateLicenseDialog featureName="create projects" />
-              ) : (
-                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
-              )
-            )}
-            {canManageSettings && (
-              <Button variant="outline" asChild>
-                <Link href="/dashboard/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </Button>
-            )}
           </div>
         </div>
       </div>
