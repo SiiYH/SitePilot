@@ -1,9 +1,10 @@
 
 import { Project, User, Task } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import TasksTable from '../TasksTable';
-import AttendanceCard from './engineer/AttendanceCard';
-import ProjectCalendar from './engineer/ProjectCalendar';
+import TasksTable from '@/components/dashboard/TasksTable';
+import AttendanceCard from '@/components/dashboard/views/engineer/AttendanceCard';
+import ProjectCalendar from '@/components/dashboard/views/engineer/ProjectCalendar';
+
 
 interface EngineerDashboardProps {
     projects: Project[];

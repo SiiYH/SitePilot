@@ -29,10 +29,10 @@ interface AdminDashboardProps {
   setStatusFilter: (status: string) => void;
 }
 
-export default function AdminDashboard({ 
-  projects: initialProjects, 
-  claims, 
-  attendance, 
+export default function AdminDashboard({
+  projects: initialProjects,
+  claims,
+  attendance,
   users,
   searchQuery,
   setSearchQuery,
@@ -56,7 +56,7 @@ export default function AdminDashboard({
       setProjectStatuses(defaultProjectStatuses);
     }
   }, []);
-  
+
   const handleProjectCreated = (newProject: Project) => {
     setProjects(prevProjects => [newProject, ...prevProjects]);
   };
@@ -68,60 +68,61 @@ export default function AdminDashboard({
     : [];
 
   return (
-    <div className="space-y-6">
-      <div className="relative">
-        {!isLicenseActive && (
-          <LockedOverlay
-            user={user}
-            isLicenseExpired={isLicenseExpired}
-            message="Activate your license to access Admin Dashboard."
-          />
-        )}
-        <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+
+    <div className="relative">
+      {!isLicenseActive && (
+        <LockedOverlay
+          user={user}
+          isLicenseExpired={isLicenseExpired}
+          message="Activate your license to access Admin Dashboard."
+        />
+      )}
+      <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
+        <div className="space-y-6">
           <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
 
           <ProgressOverview projects={projects} />
-        </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <ClaimsOverview claims={claims} projects={projects} />
-        </div>
-        <div className="md:col-span-1">
-          <AttendanceSummary />
-        </div>
-      </div>
 
-      <div>
-        <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <ClaimsOverview claims={claims} projects={projects} />
+            </div>
+            <div className="md:col-span-1">
+              <AttendanceSummary />
+            </div>
+          </div>
+
           <div>
-            <h3 className="text-xl font-semibold">Latest Projects</h3>
-            <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
-          </div>
-          {company && (
-            company.activated ? (
-                <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+            <div className="mb-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <h3 className="text-xl font-semibold">Latest Projects</h3>
+                <p className="text-sm text-muted-foreground">The most recently created projects in your workspace.</p>
+              </div>
+              {company && (
+                company.activated ? (
+                  <CreateProjectDialog users={users} onProjectCreated={handleProjectCreated} companyId={company.id} />
+                ) : (
+                  <ActivateLicenseDialog featureName="create projects" />
+                )
+              )}
+            </div>
+            {latestProjects.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {latestProjects.map(project => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
             ) : (
-                <ActivateLicenseDialog featureName="create projects" />
-            )
-        )}
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
+                <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Get started by creating a new project.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-        {latestProjects.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {latestProjects.map(project => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
-            <h3 className="text-lg font-semibold text-muted-foreground">No Projects Found</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Get started by creating a new project.
-            </p>
-          </div>
-        )}
       </div>
     </div>
-    </div>
-
   );
 }
