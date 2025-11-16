@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
-const claimTypes: ClaimType[] = ['Fuel', 'Meal', 'Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
+const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
@@ -61,6 +61,7 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   const firestore = useFirestore();
   const router = useRouter();
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -95,13 +96,28 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
   
     try {
       const claimDocRef = doc(firestore, 'claims', claim.id);
-      const existingUrls = imagePreviews.filter(preview => preview.startsWith('http'));
       
+      // Delete images marked for deletion from storage
+      if (deletedImageUrls.length > 0) {
+        const storage = getStorage();
+        const deletePromises = deletedImageUrls.map(url => {
+            const imageRef = ref(storage, url);
+            return deleteObject(imageRef).catch(err => {
+                // Log error but don't block the process if deletion fails (e.g., file already gone)
+                console.warn(`Failed to delete image ${url}:`, err);
+            });
+        });
+        await Promise.all(deletePromises);
+      }
+
+      // Upload new images
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
         newImageUrls = await uploadImagesToStorage(newImageFiles);
       }
   
+      // Consolidate final list of image URLs
+      const existingUrls = imagePreviews.filter(preview => preview.startsWith('http'));
       const allImageUrls = [...existingUrls, ...newImageUrls];
   
       const updatedClaimData: any = {
@@ -170,16 +186,17 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
 
   const removeImage = (index: number) => {
     const urlToRemove = imagePreviews[index];
-    if (urlToRemove.startsWith('http')) {
-        // This is a previously uploaded file, needs deletion from storage.
-        // For simplicity, we can just remove it from the view. Deleting from storage
-        // can be complex to handle securely on the client.
-    }
     
-    // For newly added files (base64), we can just remove them.
-    const fileIndex = imagePreviews.slice(0, index).filter(p => !p.startsWith('http')).length;
-    setNewImageFiles(prev => prev.filter((_, i) => i !== fileIndex));
+    // If it's a URL from storage, mark it for deletion on submit
+    if (urlToRemove.startsWith('http')) {
+        setDeletedImageUrls(prev => [...prev, urlToRemove]);
+    } else {
+        // If it's a new file (base64 preview), remove it from the new files array
+        const fileIndex = imagePreviews.slice(0, index).filter(p => !p.startsWith('http')).length;
+        setNewImageFiles(prev => prev.filter((_, i) => i !== fileIndex));
+    }
 
+    // Always remove from the preview array
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
   
@@ -435,5 +452,3 @@ export default function EditClaimForm({ claim, projects }: EditClaimFormProps) {
     </Card>
   );
 }
-
-    
