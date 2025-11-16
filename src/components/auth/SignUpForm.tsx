@@ -57,12 +57,12 @@ export default function SignUpForm() {
   });
 
   const contactMethod = form.watch('contactMethod');
-  const engineerLimitReached = licenseUsage.engineer >= licenseLimits.engineer;
+  // const engineerLimitReached = licenseUsage.engineer >= licenseLimits.engineer;
 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    if (engineerLimitReached) {
+    /* if (engineerLimitReached) {
        toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
@@ -70,7 +70,7 @@ export default function SignUpForm() {
       });
       setIsLoading(false);
       return;
-    }
+    } */
 
     const { password, email, phone } = values;
     if (!password || (!email && !phone)) {
@@ -98,14 +98,14 @@ export default function SignUpForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {engineerLimitReached && (
+        {/* {engineerLimitReached && (
            <Alert variant="destructive" className="text-sm">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               The license limit for new <strong>engineer</strong> sign-ups has been reached. Please contact an administrator.
             </AlertDescription>
           </Alert>
-        )}
+        )} */}
         <FormField
           control={form.control}
           name="name"
@@ -242,7 +242,8 @@ export default function SignUpForm() {
           )}
         />
         
-        <Button type="submit" className="w-full" disabled={isLoading || engineerLimitReached}>
+        {/* <Button type="submit" className="w-full" disabled={isLoading || engineerLimitReached}> */}
+        <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Account
         </Button>
