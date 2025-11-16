@@ -69,10 +69,15 @@ export default function JoinCompanyForm() {
 
     try {
         // Fetch current active engineer count and license limits for the target company
+        console.log('Starting join process for company:', foundCompany.id);
+        
+        console.log('Step 1: Fetching license...');
         const licenseRef = doc(firestore, 'licenses', foundCompany.licenseKey!);
         const licenseSnap = await getDoc(licenseRef);
+        console.log('✓ License fetched successfully');
 
         if (!licenseSnap.exists()) {
+            console.error('License does not exist:', foundCompany.licenseKey);
             toast({ variant: 'destructive', title: 'Error', description: 'Company license not found.' });
             setIsLoading(false);
             return;
@@ -80,7 +85,9 @@ export default function JoinCompanyForm() {
 
         const licenseData = licenseSnap.data();
         const maxEngineers = licenseData.maxEngineers;
+        console.log('License data:', { maxEngineers });
 
+        console.log('Step 2: Counting active engineers...');
         const usersQuery = query(
             collection(firestore, 'users'),
             where('companyId', '==', foundCompany.id),
@@ -89,9 +96,12 @@ export default function JoinCompanyForm() {
         );
         const activeEngineersSnap = await getCountFromServer(usersQuery);
         const activeEngineersCount = activeEngineersSnap.data().count;
+        console.log('✓ Active engineers counted:', activeEngineersCount);
 
         const willExceedLimit = activeEngineersCount + 1 > maxEngineers;
+        console.log('Will exceed limit?', willExceedLimit);
 
+        console.log('Step 3: Updating user document...');
         const userDocRef = doc(firestore, 'users', user.id);
         const updateData: Partial<User> = { 
             companyId: foundCompany.id,
@@ -107,6 +117,7 @@ export default function JoinCompanyForm() {
         };
 
         await updateDoc(userDocRef, updateData);
+        console.log('✓ User document updated successfully');
         
         setUser(prev => prev ? { ...prev, ...updateData } : null);
 
@@ -125,12 +136,16 @@ export default function JoinCompanyForm() {
 
         router.push('/dashboard');
 
-    } catch (error) {
-      console.error('Error joining company:', error);
+    } catch (error: any) {
+      console.error('❌ Error occurred at:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: error.message || 'An unexpected error occurred. Please try again.',
       });
     } finally {
       setIsLoading(false);
