@@ -250,7 +250,7 @@
         },
         "type": {
           "type": "string",
-          "enum": ["Progress Claim", "Variation Order", "Final Claim", "Materials on Site", "Retention Release"],
+          "enum": ["Petrol", "Meals", "Grocery", "Small Items", "Progress Claim", "Variation Order", "Final Claim", "Materials on Site", "Retention Release"],
           "description": "Type of the claim."
         },
         "description": {

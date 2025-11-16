@@ -100,7 +100,7 @@ export default function OverviewTab({ project, assignedUsers, user, onProjectUpd
       'manual': 'Manual',
       'task-driven': 'Task-Driven',
       'milestone-driven': 'Milestone-Driven',
-      'mixed-mode': 'Mixed Mode',
+      'task-milestone-driven': 'Task + Milestone',
     };
 
     const handleManualProgressChange = (value: number) => {

@@ -93,12 +93,13 @@ export default function OverviewTab({ project, assignedUsers, user, onProjectUpd
     const canViewFinancials = user.role === 'admin' || user.role === 'director';
     const canEditManualProgress = user.role === 'admin' || user.role === 'director';
     const calculatedProgress = getProjectProgress(project);
+    // <SelectItem value="task-milestone-driven">Task + Milestone</SelectItem>
 
     const progressModeLabels: Record<Project['progressTrackingMode'], string> = {
       'manual': 'Manual',
       'task-driven': 'Task-Driven',
       'milestone-driven': 'Milestone-Driven',
-      'mixed-mode': 'Mixed Mode',
+      'task-milestone-driven': 'Task + Milestone',
     };
 
     const handleManualProgressChange = (value: number) => {

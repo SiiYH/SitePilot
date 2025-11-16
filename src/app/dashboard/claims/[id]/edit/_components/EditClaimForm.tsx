@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
-const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
+const claimTypes: ClaimType[] = ['Petrol', 'Meals"', 'Grocery', 'Small Items', 'Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),

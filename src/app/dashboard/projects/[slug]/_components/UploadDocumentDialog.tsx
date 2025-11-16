@@ -31,8 +31,8 @@ interface UploadDocumentDialogProps {
   onDocumentUploaded: (newDocument: DocType) => void;
 }
 
-// File size limit: 10MB
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// File size limit: 20MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = [
   'application/pdf',
   'image/jpeg',
@@ -82,7 +82,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setFileError('File size must be less than 10MB.');
+      setFileError('File size must be less than 20MB.');
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
@@ -248,7 +248,7 @@ export default function UploadDocumentDialog({ project, onDocumentUploaded }: Up
         <DialogHeader>
           <DialogTitle>Upload New Document</DialogTitle>
           <DialogDescription>
-            Select a file and provide details for the new document. Max file size: 10MB.
+            Select a file and provide details for the new document. Max file size: 20MB.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

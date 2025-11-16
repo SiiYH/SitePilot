@@ -33,7 +33,7 @@ export default function DocumentsList({ documents, user, projectId }: DocumentsL
   const firestore = useFirestore();
   const [loadingDoc, setLoadingDoc] = useState<string | null>(null);
   const { toast } = useToast();
-  
+
   const canManageDoc = (docType: DocType['type']) => {
     return user.role === 'admin' || user.role === 'director';
   }
@@ -64,15 +64,18 @@ export default function DocumentsList({ documents, user, projectId }: DocumentsL
     try {
       const docRef = ref(storage, doc.path);
       const url = await getDownloadURL(docRef);
-      
+
       const link = document.createElement('a');
       link.href = url;
+      /* console.log(link);
+      console.log(`url: ${url}`); */
+
       // Use original file name for download, or fall back to the display name
-      link.download = doc.originalFileName || `${doc.name}.pdf`; 
+      link.download = doc.originalFileName || `${doc.name}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
     } catch (error) {
       console.error("Error getting download URL:", error);
       toast({
@@ -84,42 +87,42 @@ export default function DocumentsList({ documents, user, projectId }: DocumentsL
       setLoadingDoc(null);
     }
   };
-  
+
   const handleDelete = async (docToDelete: DocType) => {
     if (!firestore || !storage || !docToDelete.path) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Cannot delete document. Services not available.",
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Cannot delete document. Services not available.",
+      });
+      return;
     }
 
     setLoadingDoc(docToDelete.id);
 
     try {
-        // 1. Delete from Firebase Storage
-        const fileRef = ref(storage, docToDelete.path);
-        await deleteObject(fileRef);
+      // 1. Delete from Firebase Storage
+      const fileRef = ref(storage, docToDelete.path);
+      await deleteObject(fileRef);
 
-        // 2. Delete from Firestore
-        const docRef = doc(firestore, 'projects', projectId, 'documents', docToDelete.id);
-        await deleteDoc(docRef);
-        
-        toast({
-            title: "Document Deleted",
-            description: `"${docToDelete.originalFileName || docToDelete.name}" has been removed.`,
-        });
+      // 2. Delete from Firestore
+      const docRef = doc(firestore, 'projects', projectId, 'documents', docToDelete.id);
+      await deleteDoc(docRef);
+
+      toast({
+        title: "Document Deleted",
+        description: `"${docToDelete.originalFileName || docToDelete.name}" has been removed.`,
+      });
 
     } catch (error) {
-        console.error("Error deleting document:", error);
-        toast({
-            variant: "destructive",
-            title: "Deletion Failed",
-            description: "Could not delete the document. It may have already been removed.",
-        });
+      console.error("Error deleting document:", error);
+      toast({
+        variant: "destructive",
+        title: "Deletion Failed",
+        description: "Could not delete the document. It may have already been removed.",
+      });
     } finally {
-        setLoadingDoc(null);
+      setLoadingDoc(null);
     }
   }
 
@@ -147,60 +150,60 @@ export default function DocumentsList({ documents, user, projectId }: DocumentsL
         {documents.map(doc => (
           <TableRow key={doc.id}>
             <TableCell className="font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground"/>
-                {canView(doc.type) ? (doc.originalFileName || doc.name) : 'Restricted Document'}
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              {canView(doc.type) ? (doc.originalFileName || doc.name) : 'Restricted Document'}
             </TableCell>
             <TableCell>{doc.type}</TableCell>
             <TableCell>{format(parseISO(doc.uploadedAt), 'MMM dd, yyyy')}</TableCell>
             <TableCell className="text-right">
               {canView(doc.type) ? (
                 <div className="flex justify-end gap-2">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDownload(doc)}
-                        disabled={loadingDoc === doc.id}
-                        className="h-8"
-                    >
-                        {loadingDoc === doc.id && !(loadingDoc === doc.id) ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Download className="mr-2 h-4 w-4" />
-                        )}
-                        Download
-                    </Button>
-                    {canManageDoc(doc.type) && (
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                 <Button 
-                                    variant="destructive" 
-                                    size="icon" 
-                                    disabled={loadingDoc === doc.id}
-                                    className="h-8 w-8"
-                                >
-                                    {loadingDoc === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the document
-                                    <span className="font-bold"> "{doc.originalFileName || doc.name}"</span> from the server.
-                                </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(doc)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(doc)}
+                    disabled={loadingDoc === doc.id}
+                    className="h-8"
+                  >
+                    {loadingDoc === doc.id && !(loadingDoc === doc.id) ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
                     )}
+                    Download
+                  </Button>
+                  {canManageDoc(doc.type) && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          disabled={loadingDoc === doc.id}
+                          className="h-8 w-8"
+                        >
+                          {loadingDoc === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the document
+                            <span className="font-bold"> "{doc.originalFileName || doc.name}"</span> from the server.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(doc)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center justify-end gap-2 text-muted-foreground">
-                    <EyeOff className="h-4 w-4" />
-                    <span>Restricted</span>
+                  <EyeOff className="h-4 w-4" />
+                  <span>Restricted</span>
                 </div>
               )}
             </TableCell>

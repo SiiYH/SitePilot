@@ -62,7 +62,7 @@ export interface Milestone {
   invoiceNo?: string;
 }
 
-export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'mixed-mode';
+export type ProgressTrackingMode = 'task-driven' | 'milestone-driven' | 'manual' | 'task-milestone-driven';
 
 export type ProgressTrackingModeChange = {
   mode: ProgressTrackingMode;
@@ -112,7 +112,7 @@ export interface Project {
   modifiedBy?: string;
 }
 
-export type ClaimType = 'Fuel' | 'Meal' | 'Progress Claim' | 'Variation Order' | 'Final Claim' | 'Materials on Site' | 'Retention Release';
+export type ClaimType = 'Petrol'| 'Meals'| 'Grocery'| 'Small Items' | 'Progress Claim' | 'Variation Order' | 'Final Claim' | 'Materials on Site' | 'Retention Release';
 
 export interface Claim {
   id: string;

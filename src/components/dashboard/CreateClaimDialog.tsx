@@ -29,7 +29,7 @@ import { collection, doc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'CAD'];
-const claimTypes: ClaimType[] = ['Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
+const claimTypes: ClaimType[] = ["Petrol", "Meals", "Grocery", "Small Items", 'Progress Claim', 'Variation Order', 'Final Claim', 'Materials on Site', 'Retention Release'];
 
 const formSchema = z.object({
   projectId: z.string().min(1, 'Project is required.'),
@@ -61,7 +61,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
     defaultValues: {
       projectId: defaultProjectId || '',
       title: '',
-      type: 'Progress Claim',
+      type: 'Petrol',
       eInvoiceNo: '',
       description: '',
       amount: '',
@@ -81,7 +81,7 @@ export default function CreateClaimDialog({ projects, onClaimCreated, userId, de
       form.reset({
         projectId: initialProjectId,
         title: '',
-        type: 'Progress Claim',
+        type: 'Petrol',
         eInvoiceNo: '',
         description: '',
         amount: '',
