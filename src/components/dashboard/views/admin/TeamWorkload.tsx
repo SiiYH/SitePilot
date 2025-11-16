@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Project, User, UserRole, UserStatus } from '@/types';
+import { Project, Task, User, UserRole, UserStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useRouter } from 'next/navigation';
+import { useFirestore } from '@/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 interface TeamWorkloadProps {
   users: User[];
@@ -97,12 +99,42 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     }
   }, [isMobile]);
 
+  const firestore = useFirestore();
+const [projectsWithTasks, setProjectsWithTasks] = useState<Project[]>([]);
+
+useEffect(() => {
+  const fetchTasksForProjects = async () => {
+    if (!firestore || !projects.length) return;
+
+    const projectsWithTasksData = await Promise.all(
+      projects.map(async (project) => {
+        const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
+        const tasksSnapshot = await getDocs(tasksRef);
+        
+        const tasks = tasksSnapshot.docs.map(taskDoc => ({
+          id: taskDoc.id,
+          ...taskDoc.data()
+        })) as Task[];
+
+        return {
+          ...project,
+          tasks
+        };
+      })
+    );
+
+    setProjectsWithTasks(projectsWithTasksData);
+  };
+
+  fetchTasksForProjects();
+}, [projects, firestore]);
+
   // PERFORMANCE OPTIMIZATION 1: Memoize unassigned tasks
   const unassignedTasks = useMemo(() => {
-    return projects.flatMap(p => 
+    return projectsWithTasks.flatMap(p => 
       (p.tasks || [])
         .filter(t => !t.owner)
-        .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
+        .map(t => ({ ...t, projectName: p.name, projectId: p.id }))
     );
   }, [projects]);
 
@@ -131,15 +163,17 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
     const map: Record<string, any[]> = {};
     users.forEach(user => {
       if (user.role === 'engineer') {
-        map[user.id] = projects.flatMap(p => 
+        map[user.id] = projectsWithTasks.flatMap(p => 
           (p.tasks || [])
             .filter(t => t.owner === user.id || t.contributors?.includes(user.id))
-            .map(t => ({ ...t, projectName: p.name, projectSlug: p.slug }))
+            .map(t => ({ ...t, projectName: p.name, projectId: p.id }))
         );
       }
     });
     return map;
-  }, [users, projects]);
+  }, [users, projectsWithTasks]);
+
+  console.log(engineerTasksMap);
 
   // PERFORMANCE OPTIMIZATION 4: Memoize task stats calculation
   const getTaskStats = useCallback((tasks: any[]) => {
@@ -380,7 +414,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                       <TableCell className="font-semibold">{task.title}</TableCell>
                                       <TableCell className="hidden sm:table-cell">
                                         <Link 
-                                          href={`/dashboard/projects/${task.projectSlug}`} 
+                                          href={`/dashboard/projects/${task.projectId}`} 
                                           className="text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1.5 font-semibold hover:underline decoration-2 underline-offset-2"
                                         >
                                           {task.projectName}
@@ -632,7 +666,7 @@ export default function TeamWorkload({ users, projects, onUserUpdated }: TeamWor
                                           <TableCell className="font-semibold">{task.title}</TableCell>
                                           <TableCell className="hidden sm:table-cell">
                                             <Link 
-                                              href={`/dashboard/projects/${task.projectSlug}`} 
+                                              href={`/dashboard/projects/${task.projectId}`} 
                                               className="text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1.5 font-semibold hover:underline decoration-2 underline-offset-2"
                                             >
                                               {task.projectName}

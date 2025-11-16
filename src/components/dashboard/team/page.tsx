@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { mockProjects } from '@/lib/data';
-import { Project, User, UserStatus, UserStatusChange } from '@/types';
+import { Project, User, UserStatus } from '@/types';
 import TeamWorkload from '@/components/dashboard/views/admin/TeamWorkload';
 import { useAuth } from '@/hooks/use-auth';
 import CreateUserDialog from '@/components/dashboard/views/admin/CreateUserDialog';
