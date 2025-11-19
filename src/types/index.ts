@@ -81,6 +81,7 @@ export interface ProjectStatus {
 export interface Project {
   id: string;
   name: string;
+  slug: string;
   description: string;
   status: string; // Now refers to the ID of a ProjectStatus
   progress: number;
@@ -187,5 +188,3 @@ export type CreateUserData = {
     role: UserRole;
     companyId: string;
 };
-
-    

@@ -3,14 +3,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Project, User, ProjectStatus } from '@/types';
+import { Project, User, ProjectStatus, Task, Document as DocType } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
 import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock, Calendar as CalendarIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
 import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -22,6 +23,7 @@ import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
 
 
 type ViewMode = 'grid' | 'list';
@@ -29,6 +31,8 @@ type ViewMode = 'grid' | 'list';
 export default function ProjectsPage() {
   const { user, company, isLicenseExpired, isLicenseValid } = useAuth();
   const firestore = useFirestore();
+  const storage = useFirestore();
+  const { toast } = useToast();
   const [localProjects, setLocalProjects] = useState<Project[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -40,62 +44,6 @@ export default function ProjectsPage() {
   
   // Check if license is active
   const isLicenseActive = isLicenseValid;
-
-  // Locked Feature Overlay Component
-  const LockedOverlay = ({ message = "Activate your license to access this feature" }: { message?: string }) => {
-    const canManageLicense = user?.role === 'admin' || user?.role === 'director';
-    const isExpired = isLicenseExpired;
-    
-    return (
-      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-background/98 via-background/95 to-background/98 backdrop-blur-md p-4 border border-destructive/20 shadow-xl overflow-hidden">
-        <div className="text-center animate-in fade-in-50 slide-in-from-bottom-4 duration-500 max-w-md">
-          <div className="relative mx-auto mb-6 w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-[-10px] animate-pulse rounded-full bg-destructive/20 blur-xl" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-destructive/20 via-destructive/10 to-destructive/5 shadow-lg ring-2 ring-destructive/30 ring-offset-2 ring-offset-background">
-              <Lock className="h-10 w-10 text-destructive drop-shadow-sm" />
-            </div>
-          </div>
-          
-          <p className="font-bold text-xl mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {isExpired ? 'License Expired' : 'Feature Locked'}
-          </p>
-          
-          {canManageLicense ? (
-            <>
-              <p className="text-sm text-muted-foreground/80 mb-6 leading-relaxed px-4">
-                {isExpired 
-                  ? "Your company's license has expired. Renew to restore access to all features."
-                  : message
-                }
-              </p>
-              <Button asChild size="sm" className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <Link href="/dashboard/company">
-                  {isExpired ? 'Renew License' : 'Activate License'}
-                </Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground/80 mb-4 leading-relaxed px-4">
-                {isExpired 
-                  ? "Your company's license has expired. This feature is unavailable until the license is renewed."
-                  : "This feature is locked. Your company's license needs to be activated to access this feature."
-                }
-              </p>
-              <div className="bg-muted/50 rounded-lg p-4 mb-4 border border-muted-foreground/20">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Please contact your <span className="font-semibold text-foreground">Admin</span> or <span className="font-semibold text-foreground">Director</span> to {isExpired ? 'renew' : 'activate'} the company license.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" disabled className="cursor-not-allowed">
-                License Management Restricted
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   useEffect(() => {
     const savedViewMode = localStorage.getItem('sitepilot-project-view') as ViewMode;
@@ -122,17 +70,12 @@ export default function ProjectsPage() {
   const { data: firestoreProjects, isLoading: loadingProjects } = useCollection<Project>(projectsQuery);
   const { data: companyUsers, isLoading: loadingUsers } = useCollection<User>(usersQuery);
 
-  // const projects = firestoreProjects || localProjects;
-  // Then modify the projects assignment to sort after fetching
-  // Then modify the projects assignment to sort after fetching
   const projects = useMemo(() => {
     if (!firestoreProjects) return localProjects;
-    // Sort by createdAt descending on the client side
     return [...firestoreProjects].sort((a, b) => {
-      // Handle ISO string dates
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime; // Descending order (newest first)
+      return bTime - aTime;
     });
   }, [firestoreProjects, localProjects]);
 
@@ -141,7 +84,6 @@ export default function ProjectsPage() {
   const canManageSettings = user?.role === 'admin' || user?.role === 'director';
 
   const handleProjectCreated = (newProject: Project) => {
-    // Optimistically add the new project to the local state
     if (newProject.companyId === company?.id) {
       if (user?.role === 'engineer') {
         if (newProject.assignedEngineers.includes(user.id)) {
@@ -152,6 +94,49 @@ export default function ProjectsPage() {
       }
     }
   };
+  
+    const handleDeleteProject = async (projectToDelete: Project) => {
+        if (!firestore || !storage) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Database or storage service is not available.' });
+            return;
+        }
+
+        try {
+            // Delete subcollections (tasks, documents)
+            const tasksRef = collection(firestore, 'projects', projectToDelete.id, 'tasks');
+            const tasksSnap = await getDocs(tasksRef);
+            const taskDeletes = tasksSnap.docs.map(doc => deleteDoc(doc.ref));
+            await Promise.all(taskDeletes);
+
+            const docsRef = collection(firestore, 'projects', projectToDelete.id, 'documents');
+            const docsSnap = await getDocs(docsRef);
+            const docDeletes = docsSnap.docs.map(async (docSnap) => {
+                const docData = docSnap.data() as DocType;
+                // Delete file from storage if path exists
+                if (docData.path) {
+                    const fileRef = ref(storage, docData.path);
+                    await deleteObject(fileRef).catch(err => console.warn(`Could not delete storage file ${docData.path}:`, err));
+                }
+                return deleteDoc(docSnap.ref);
+            });
+            await Promise.all(docDeletes);
+            
+            // Delete the project header image from storage
+            if (projectToDelete.imageUrl && projectToDelete.imageUrl.includes('firebasestorage')) {
+                const imageRef = ref(storage, projectToDelete.imageUrl);
+                await deleteObject(imageRef).catch(err => console.warn(`Could not delete project image ${projectToDelete.imageUrl}:`, err));
+            }
+
+            // Finally, delete the project document itself
+            await deleteDoc(doc(firestore, 'projects', projectToDelete.id));
+
+            toast({ title: 'Project Deleted', description: `"${projectToDelete.name}" has been permanently removed.` });
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: 'An error occurred while deleting the project.' });
+        }
+    };
+
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -173,7 +158,6 @@ export default function ProjectsPage() {
             const projectStart = parseISO(p.startDate);
             const projectEnd = parseISO(p.endDate);
             const range = { start: date.from!, end: date.to! };
-            // Check if project interval overlaps with the selected range
             return (projectStart <= range.end && projectEnd >= range.start);
           } catch {
             return false;
@@ -339,11 +323,19 @@ export default function ProjectsPage() {
             currentViewMode === 'grid' ? (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredProjects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard 
+                    key={project.id} 
+                    project={project} 
+                    onDelete={handleDeleteProject}
+                  />
                 ))}
               </div>
             ) : (
-              <ProjectList projects={filteredProjects} users={companyUsers || []} />
+              <ProjectList 
+                projects={filteredProjects} 
+                users={companyUsers || []} 
+                onDelete={handleDeleteProject}
+              />
             )
           ) : (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-12 text-center">
@@ -358,5 +350,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-
-    

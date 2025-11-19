@@ -13,15 +13,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProjectStatusBadge from './ProjectStatusBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Calendar, Users, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { Calendar, Users, ArrowUpDown, ArrowDown, ArrowUp, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 interface ProjectListProps {
   projects: Project[];
   users: User[];
+  onDelete: (project: Project) => void;
 }
 
 type SortKey = 'startDate' | 'endDate';
@@ -46,7 +49,7 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
     }
 };
 
-export default function ProjectList({ projects, users }: ProjectListProps) {
+export default function ProjectList({ projects, users, onDelete }: ProjectListProps) {
   const router = useRouter();
   const { company } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -96,46 +99,8 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
 
   return (
     <>
-      {/* Mobile View */}
-      <div className="space-y-4 md:hidden">
-        {sortedProjects.map(project => {
-            const progress = getProjectProgress(project);
-            const endDate = getSafeDate(project.endDate);
-            const assignedEngineers = project.assignedEngineers
-                .map(id => users.find(u => u.id === id))
-                .filter((u): u is any => !!u);
-            return (
-                <Card key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer transition-shadow hover:shadow-md">
-                    <CardHeader>
-                        <div className="flex items-start justify-between gap-4">
-                            <h3 className="font-semibold text-lg">{project.name}</h3>
-                            <ProjectStatusBadge statusId={project.status} />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <div className="mb-1 flex justify-between text-sm font-medium">
-                                <span>Progress</span>
-                                <span className="text-muted-foreground">{progress}%</span>
-                            </div>
-                            <Progress value={progress} />
-                        </div>
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                <span>{endDate ? format(endDate, 'MMM dd, yyyy') : 'N/A'}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                <span>{assignedEngineers.length} Engineers</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )
-        })}
-      </div>
-
+      {/* Mobile View is now handled by the grid view in projects/page.tsx */}
+      
       {/* Desktop View */}
       <div className="hidden overflow-hidden rounded-lg border md:block">
           <Table>
@@ -157,6 +122,7 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
                         </Button>
                       </TableHead>
                       <TableHead>Team</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -170,20 +136,20 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
                           .filter((u): u is any => !!u);
 
                       return (
-                          <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
-                              <TableCell className="font-medium">{project.name}</TableCell>
-                              <TableCell>
+                          <TableRow key={project.id}>
+                              <TableCell className="font-medium" onClick={() => handleRowClick(project.id)}>{project.name}</TableCell>
+                              <TableCell onClick={() => handleRowClick(project.id)}>
                                   <ProjectStatusBadge statusId={project.status} />
                               </TableCell>
-                              <TableCell>
+                              <TableCell onClick={() => handleRowClick(project.id)}>
                                   <div className="flex items-center gap-2">
                                       <Progress value={progress} className="h-2 w-20" />
                                       <span className="text-xs font-medium text-muted-foreground">{progress}%</span>
                                   </div>
                               </TableCell>
-                              <TableCell>{startDate ? format(startDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
-                              <TableCell>{endDate ? format(endDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
-                              <TableCell>
+                              <TableCell onClick={() => handleRowClick(project.id)}>{startDate ? format(startDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
+                              <TableCell onClick={() => handleRowClick(project.id)}>{endDate ? format(endDate, 'MMM dd, yyyy') : 'N/A'}</TableCell>
+                              <TableCell onClick={() => handleRowClick(project.id)}>
                                   <div className="flex items-center -space-x-2">
                                       <TooltipProvider>
                                       {assignedEngineers.slice(0, 3).map(engineer => (
@@ -206,6 +172,37 @@ export default function ProjectList({ projects, users }: ProjectListProps) {
                                           </div>
                                       )}
                                   </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <AlertDialog>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete the project "{project.name}", its tasks, documents, and all associated data. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => onDelete(project)} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                               </TableCell>
                           </TableRow>
                       );

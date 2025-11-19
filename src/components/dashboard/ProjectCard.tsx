@@ -5,16 +5,19 @@ import { Project } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, Users, MoreVertical, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
 import ProjectStatusBadge from './ProjectStatusBadge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 interface ProjectCardProps {
   project: Project;
+  onDelete: (project: Project) => void;
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const calculatedProgress = getProjectProgress(project);
 
   const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
@@ -44,14 +47,45 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </Link>
       <CardHeader>
         <div className='flex items-start justify-between gap-4'>
-            <CardTitle>
-                <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
-                    {project.name}
-                </Link>
-            </CardTitle>
-            <ProjectStatusBadge statusId={project.status} />
+            <div className="space-y-2">
+                <CardTitle>
+                    <Link href={`/dashboard/projects/${project.id}`} className="hover:underline">
+                        {project.name}
+                    </Link>
+                </CardTitle>
+                 <ProjectStatusBadge statusId={project.status} />
+            </div>
+            <AlertDialog>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the project "{project.name}", its tasks, documents, and all associated data. This action cannot be undone.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(project)} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
-        <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+        <CardDescription className="line-clamp-2 pt-2">{project.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         <div>
