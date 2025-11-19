@@ -18,12 +18,12 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Input } from '@/components/ui/input';
 import ActivateLicenseDialog from '@/components/dashboard/views/admin/ActivateLicenseDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
-import LockedOverlay from '@/components/dashboard/LockedOverlay';
+import LockedOverlay from '@/components/ui/lockedOverlay';
 import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, isWithinInterval, parseISO } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { Calendar } from '@/components/ui/calendar';
 
 
 type ViewMode = 'grid' | 'list';
