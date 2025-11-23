@@ -19,12 +19,16 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Checkbox } from '../ui/checkbox';
 
 
 interface ProjectListProps {
   projects: Project[];
   users: User[];
-  onDelete: (project: Project) => void;
+  onDelete: (projects: Project[]) => void;
+  selectedProjects: string[];
+  onSelect: (projectId: string, isSelected: boolean) => void;
+  onSelectAll: (isSelected: boolean) => void;
 }
 
 type SortKey = 'startDate' | 'endDate';
@@ -49,7 +53,7 @@ const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
     }
 };
 
-export default function ProjectList({ projects, users, onDelete }: ProjectListProps) {
+export default function ProjectList({ projects, users, onDelete, selectedProjects, onSelect, onSelectAll }: ProjectListProps) {
   const router = useRouter();
   const { company } = useAuth();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -97,6 +101,9 @@ export default function ProjectList({ projects, users, onDelete }: ProjectListPr
     return ArrowDown;
   };
 
+  const isAllSelected = selectedProjects.length === sortedProjects.length && sortedProjects.length > 0;
+  const isSomeSelected = selectedProjects.length > 0 && !isAllSelected;
+
   return (
     <>
       {/* Mobile View is now handled by the grid view in projects/page.tsx */}
@@ -106,6 +113,13 @@ export default function ProjectList({ projects, users, onDelete }: ProjectListPr
           <Table>
               <TableHeader>
                   <TableRow>
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                           checked={isAllSelected || (isSomeSelected && "indeterminate")}
+                           onCheckedChange={(checked) => onSelectAll(!!checked)}
+                           aria-label="Select all projects"
+                        />
+                      </TableHead>
                       <TableHead>Project Name</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Progress</TableHead>
@@ -136,7 +150,14 @@ export default function ProjectList({ projects, users, onDelete }: ProjectListPr
                           .filter((u): u is any => !!u);
 
                       return (
-                          <TableRow key={project.id}>
+                          <TableRow key={project.id} data-state={selectedProjects.includes(project.id) && "selected"}>
+                              <TableCell>
+                                <Checkbox
+                                    checked={selectedProjects.includes(project.id)}
+                                    onCheckedChange={(checked) => onSelect(project.id, !!checked)}
+                                    aria-label={`Select project ${project.name}`}
+                                />
+                              </TableCell>
                               <TableCell className="font-medium" onClick={() => handleRowClick(project.id)}>{project.name}</TableCell>
                               <TableCell onClick={() => handleRowClick(project.id)}>
                                   <ProjectStatusBadge statusId={project.status} />
@@ -199,7 +220,7 @@ export default function ProjectList({ projects, users, onDelete }: ProjectListPr
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => onDelete(project)} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => onDelete([project])} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>

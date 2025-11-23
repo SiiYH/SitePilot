@@ -6,11 +6,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { Project, User, ProjectStatus, Task, Document as DocType } from '@/types';
 import ProjectCard from '@/components/dashboard/ProjectCard';
 import CreateProjectDialog from '@/components/dashboard/views/admin/CreateProjectDialog';
-import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Loader2, Settings, List, LayoutGrid, FolderKanban, Activity, Search, Lock, Calendar as CalendarIcon, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, deleteDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import ProjectList from '@/components/dashboard/ProjectList';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 type ViewMode = 'grid' | 'list';
@@ -39,6 +40,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [date, setDate] = useState<DateRange | undefined>();
   const isMobile = useIsMobile();
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   
   const projectStatuses = useMemo(() => company?.projectStatuses || [], [company]);
   
@@ -95,45 +97,47 @@ export default function ProjectsPage() {
     }
   };
   
-    const handleDeleteProject = async (projectToDelete: Project) => {
+    const handleDeleteProjects = async (projectsToDelete: Project[]) => {
         if (!firestore || !storage) {
             toast({ variant: 'destructive', title: 'Error', description: 'Database or storage service is not available.' });
             return;
         }
 
         try {
-            // Delete subcollections (tasks, documents)
-            const tasksRef = collection(firestore, 'projects', projectToDelete.id, 'tasks');
-            const tasksSnap = await getDocs(tasksRef);
-            const taskDeletes = tasksSnap.docs.map(doc => deleteDoc(doc.ref));
-            await Promise.all(taskDeletes);
+            const batch = writeBatch(firestore);
 
-            const docsRef = collection(firestore, 'projects', projectToDelete.id, 'documents');
-            const docsSnap = await getDocs(docsRef);
-            const docDeletes = docsSnap.docs.map(async (docSnap) => {
-                const docData = docSnap.data() as DocType;
-                // Delete file from storage if path exists
-                if (docData.path) {
-                    const fileRef = ref(storage, docData.path);
-                    await deleteObject(fileRef).catch(err => console.warn(`Could not delete storage file ${docData.path}:`, err));
+            for (const project of projectsToDelete) {
+                // Delete subcollections (tasks, documents)
+                const tasksRef = collection(firestore, 'projects', project.id, 'tasks');
+                const tasksSnap = await getDocs(tasksRef);
+                tasksSnap.docs.forEach(doc => batch.delete(doc.ref));
+
+                const docsRef = collection(firestore, 'projects', project.id, 'documents');
+                const docsSnap = await getDocs(docsRef);
+                for (const docSnap of docsSnap.docs) {
+                    const docData = docSnap.data() as DocType;
+                    if (docData.path) {
+                        const fileRef = ref(storage, docData.path);
+                        await deleteObject(fileRef).catch(err => console.warn(`Could not delete storage file ${docData.path}:`, err));
+                    }
+                    batch.delete(docSnap.ref);
                 }
-                return deleteDoc(docSnap.ref);
-            });
-            await Promise.all(docDeletes);
-            
-            // Delete the project header image from storage
-            if (projectToDelete.imageUrl && projectToDelete.imageUrl.includes('firebasestorage')) {
-                const imageRef = ref(storage, projectToDelete.imageUrl);
-                await deleteObject(imageRef).catch(err => console.warn(`Could not delete project image ${projectToDelete.imageUrl}:`, err));
+                
+                if (project.imageUrl && project.imageUrl.includes('firebasestorage')) {
+                    const imageRef = ref(storage, project.imageUrl);
+                    await deleteObject(imageRef).catch(err => console.warn(`Could not delete project image ${project.imageUrl}:`, err));
+                }
+
+                batch.delete(doc(firestore, 'projects', project.id));
             }
+            
+            await batch.commit();
 
-            // Finally, delete the project document itself
-            await deleteDoc(doc(firestore, 'projects', projectToDelete.id));
-
-            toast({ title: 'Project Deleted', description: `"${projectToDelete.name}" has been permanently removed.` });
+            toast({ title: 'Projects Deleted', description: `${projectsToDelete.length} project(s) have been permanently removed.` });
+            setSelectedProjects([]); // Clear selection after deletion
         } catch (error) {
-            console.error('Error deleting project:', error);
-            toast({ variant: 'destructive', title: 'Deletion Failed', description: 'An error occurred while deleting the project.' });
+            console.error('Error deleting project(s):', error);
+            toast({ variant: 'destructive', title: 'Deletion Failed', description: 'An error occurred while deleting the project(s).' });
         }
     };
 
@@ -179,6 +183,14 @@ export default function ProjectsPage() {
   
   const currentViewMode = isMobile ? 'grid' : viewMode;
 
+  const handleSelectProject = (projectId: string, isSelected: boolean) => {
+    setSelectedProjects(prev => isSelected ? [...prev, projectId] : prev.filter(id => id !== projectId));
+  };
+  
+  const handleSelectAll = (isSelected: boolean) => {
+    setSelectedProjects(isSelected ? filteredProjects.map(p => p.id) : []);
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -200,24 +212,51 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex w-full items-center justify-end gap-2 flex-wrap">
-          
-          <div className="flex items-center gap-2">
-            {user?.role !== 'engineer' && company && (
-              !company.activated || isLicenseExpired ? (
-                <ActivateLicenseDialog featureName="create projects" />
-              ) : (
-                <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
-              )
+            {selectedProjects.length > 0 ? (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete ({selectedProjects.length})
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete {selectedProjects.length} project(s) and all their associated data. This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={() => handleDeleteProjects(projects.filter(p => selectedProjects.includes(p.id)))}
+                                className="bg-destructive hover:bg-destructive/90"
+                            >
+                                Yes, delete project(s)
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            ) : (
+                <div className="flex items-center gap-2">
+                    {user?.role !== 'engineer' && company && (
+                        !company.activated || isLicenseExpired ? (
+                            <ActivateLicenseDialog featureName="create projects" />
+                        ) : (
+                            <CreateProjectDialog users={companyUsers || []} onProjectCreated={handleProjectCreated} companyId={company.id} />
+                        )
+                    )}
+                    {canManageSettings && (
+                        <Button variant="outline" asChild>
+                            <Link href="/dashboard/settings">
+                                <Settings className="mr-2 h-4 w-4" />
+                                Settings
+                            </Link>
+                        </Button>
+                    )}
+                </div>
             )}
-            {canManageSettings && (
-              <Button variant="outline" asChild>
-                <Link href="/dashboard/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </Button>
-            )}
-          </div>
         </div>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -326,7 +365,9 @@ export default function ProjectsPage() {
                   <ProjectCard 
                     key={project.id} 
                     project={project} 
-                    onDelete={handleDeleteProject}
+                    onDelete={handleDeleteProjects}
+                    isSelected={selectedProjects.includes(project.id)}
+                    onSelect={handleSelectProject}
                   />
                 ))}
               </div>
@@ -334,7 +375,10 @@ export default function ProjectsPage() {
               <ProjectList 
                 projects={filteredProjects} 
                 users={companyUsers || []} 
-                onDelete={handleDeleteProject}
+                onDelete={handleDeleteProjects}
+                selectedProjects={selectedProjects}
+                onSelect={handleSelectProject}
+                onSelectAll={handleSelectAll}
               />
             )
           ) : (

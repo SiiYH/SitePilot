@@ -5,19 +5,23 @@ import { Project } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, MoreVertical, Trash2 } from 'lucide-react';
+import { Calendar, Users, MoreVertical, Trash2, CheckSquare } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { getProjectProgress } from '@/lib/projects';
 import ProjectStatusBadge from './ProjectStatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { Checkbox } from '../ui/checkbox';
+import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
-  onDelete: (project: Project) => void;
+  onDelete: (projects: Project[]) => void;
+  isSelected: boolean;
+  onSelect: (projectId: string, isSelected: boolean) => void;
 }
 
-export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
+export default function ProjectCard({ project, onDelete, isSelected, onSelect }: ProjectCardProps) {
   const calculatedProgress = getProjectProgress(project);
 
   const getSafeDate = (dateValue: string | Date | undefined): Date | null => {
@@ -33,18 +37,31 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
   const endDate = getSafeDate(project.endDate);
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
-      <Link href={`/dashboard/projects/${project.id}`} className="block">
-        <div className="relative h-32 w-full sm:h-48">
-          <Image
-            src={project.imageUrl}
-            alt={project.name}
-            fill
-            className="object-cover"
-            data-ai-hint={project.imageHint}
+    <Card className={cn(
+        "flex flex-col overflow-hidden transition-all hover:shadow-lg",
+        isSelected && "ring-2 ring-primary border-primary"
+      )}>
+      <div className="relative">
+        <Link href={`/dashboard/projects/${project.id}`} className="block">
+          <div className="relative h-32 w-full sm:h-48">
+            <Image
+              src={project.imageUrl}
+              alt={project.name}
+              fill
+              className="object-cover"
+              data-ai-hint={project.imageHint}
+            />
+          </div>
+        </Link>
+        <div className="absolute top-2 left-2 bg-background/50 p-1 rounded-sm backdrop-blur-sm">
+          <Checkbox 
+            checked={isSelected}
+            onCheckedChange={(checked) => onSelect(project.id, !!checked)}
+            aria-label={`Select project ${project.name}`}
+            className="h-5 w-5"
           />
         </div>
-      </Link>
+      </div>
       <CardHeader>
         <div className='flex items-start justify-between gap-4'>
             <div className="space-y-2">
@@ -80,7 +97,7 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps) {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(project)} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
+                    <AlertDialogAction onClick={() => onDelete([project])} className="bg-destructive hover:bg-destructive/90">Delete Project</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
