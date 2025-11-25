@@ -98,7 +98,9 @@ export default function DirectorDashboard({
 
       {/* Admin Alerts - Only show if active */}
       {isLicenseActive && (
-        <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+        <div className="mb-6">
+          <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+        </div>
       )}
 
       {/* Progress Overview - Locked if inactive */}
@@ -194,7 +196,13 @@ export default function DirectorDashboard({
               // Show projects if active
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {latestProjects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard 
+                    key={project.id} 
+                    project={project}
+                    onDelete={() => {}} 
+                    isSelected={false} 
+                    onSelect={() => {}}
+                  />
                 ))}
               </div>
             ) : (

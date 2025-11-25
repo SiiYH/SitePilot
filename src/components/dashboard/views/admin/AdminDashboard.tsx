@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -79,7 +78,9 @@ export default function AdminDashboard({
       )}
       <div className={!isLicenseActive ? 'pointer-events-none select-none' : ''}>
         <div className="space-y-6">
-          <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+          <div className="mb-6">
+            <AdminAlerts claims={claims} unassignedTasksCount={unassignedTasks.length} />
+          </div>
 
           <ProgressOverview projects={projects} />
 
@@ -109,7 +110,13 @@ export default function AdminDashboard({
             {latestProjects.length > 0 ? (
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {latestProjects.map(project => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard 
+                    key={project.id} 
+                    project={project} 
+                    onDelete={() => {}} 
+                    isSelected={false} 
+                    onSelect={() => {}}
+                  />
                 ))}
               </div>
             ) : (
