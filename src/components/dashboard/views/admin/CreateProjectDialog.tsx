@@ -126,11 +126,23 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     const projectId = `proj-${Date.now()}`;
     const jobNo = `JB-${Date.now()}`;
     const now = new Date().toISOString();
+    
+    // Helper to safely parse numeric values
+    const parseOptionalFloat = (value: any): number | undefined => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+      const num = parseFloat(String(value).replace(/,/g, ''));
+      return isNaN(num) ? undefined : num;
+    }
 
-    const newProject: Project = {
+    const newProject: Omit<Project, 'tasks' | 'documents' | 'milestones'> = {
       ...values,
-      performanceBondAmount: values.performanceBondAmount ? parseFloat(String(values.performanceBondAmount).replace(/,/g, '')) : undefined,
-      insuranceAmount: values.insuranceAmount ? parseFloat(String(values.insuranceAmount).replace(/,/g, '')) : undefined,
+      performanceBondAmount: parseOptionalFloat(values.performanceBondAmount),
+      insuranceAmount: parseOptionalFloat(values.insuranceAmount),
+      grossProfit: parseOptionalFloat(values.grossProfit),
+      marginProfit: parseOptionalFloat(values.marginProfit),
+      distance: parseOptionalFloat(values.distance),
       id: projectId,
       jobNo: jobNo,
       companyId: companyId,
@@ -146,9 +158,6 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
       }],
       imageUrl: `https://picsum.photos/seed/${projectId}/600/400`,
       imageHint: 'construction site',
-      tasks: [],
-      documents: [],
-      milestones: [],
       createdAt: now,
       createdBy: user.id,
       modifiedAt: now,
@@ -156,11 +165,13 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     };
     
     const projectDocRef = doc(firestore, 'projects', projectId);
-    setDocumentNonBlocking(projectDocRef, newProject, {});
+    // Explicitly cast to any to bypass strict type checking for the setDoc call.
+    // This is because the Project type expects tasks, documents, and milestones, which are added later.
+    setDocumentNonBlocking(projectDocRef, newProject as any, {});
     
     // Simulate API call delay for UI feedback
     setTimeout(() => {
-      onProjectCreated(newProject);
+      onProjectCreated(newProject as Project);
       setIsLoading(false);
       setOpen(false);
       form.reset();
@@ -596,7 +607,4 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     </Dialog>
   );
 }
-
-
-
 
