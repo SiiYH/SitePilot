@@ -127,7 +127,6 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     const jobNo = `JB-${Date.now()}`;
     const now = new Date().toISOString();
     
-    // Helper to safely parse numeric values
     const parseOptionalFloat = (value: any): number | undefined => {
       if (value === '' || value === null || value === undefined) {
         return undefined;
@@ -136,26 +135,19 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
       return isNaN(num) ? undefined : num;
     }
 
-    const newProject: Omit<Project, 'tasks' | 'documents' | 'milestones'> = {
-      ...values,
-      performanceBondAmount: parseOptionalFloat(values.performanceBondAmount),
-      insuranceAmount: parseOptionalFloat(values.insuranceAmount),
-      grossProfit: parseOptionalFloat(values.grossProfit),
-      marginProfit: parseOptionalFloat(values.marginProfit),
-      distance: parseOptionalFloat(values.distance),
+    const newProjectData: Omit<Project, 'tasks' | 'documents' | 'milestones'> = {
       id: projectId,
-      jobNo: jobNo,
-      companyId: companyId,
+      name: values.name,
       slug: createSlug(values.name),
+      description: values.description,
+      status: values.status,
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
-      progress: values.progress || 0,
+      assignedEngineers: values.assignedEngineers,
       progressTrackingMode: values.progressTrackingMode as ProgressTrackingMode,
-      progressTrackingModeHistory: [{
-        mode: values.progressTrackingMode as ProgressTrackingMode,
-        date: now,
-        changedBy: user.id,
-      }],
+      progress: values.progress || 0,
+      jobNo: jobNo,
+      companyId: companyId,
       imageUrl: `https://picsum.photos/seed/${projectId}/600/400`,
       imageHint: 'construction site',
       createdAt: now,
@@ -164,20 +156,40 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
       modifiedBy: user.id,
     };
     
-    const projectDocRef = doc(firestore, 'projects', projectId);
-    // Explicitly cast to any to bypass strict type checking for the setDoc call.
-    // This is because the Project type expects tasks, documents, and milestones, which are added later.
-    setDocumentNonBlocking(projectDocRef, newProject as any, {});
+    // Conditionally add optional fields to avoid sending 'undefined'
+    if (values.orderNo) newProjectData.orderNo = values.orderNo;
+    if (values.siteName) newProjectData.siteName = values.siteName;
+    if (values.jobLocation) newProjectData.jobLocation = values.jobLocation;
+    if (values.performanceBondNo) newProjectData.performanceBondNo = values.performanceBondNo;
+    if (values.currency) newProjectData.currency = values.currency;
+
+    const distance = parseOptionalFloat(values.distance);
+    if (distance !== undefined) newProjectData.distance = distance;
     
-    // Simulate API call delay for UI feedback
+    const performanceBondAmount = parseOptionalFloat(values.performanceBondAmount);
+    if (performanceBondAmount !== undefined) newProjectData.performanceBondAmount = performanceBondAmount;
+
+    const insuranceAmount = parseOptionalFloat(values.insuranceAmount);
+    if (insuranceAmount !== undefined) newProjectData.insuranceAmount = insuranceAmount;
+
+    const grossProfit = parseOptionalFloat(values.grossProfit);
+    if (grossProfit !== undefined) newProjectData.grossProfit = grossProfit;
+
+    const marginProfit = parseOptionalFloat(values.marginProfit);
+    if (marginProfit !== undefined) newProjectData.marginProfit = marginProfit;
+
+    
+    const projectDocRef = doc(firestore, 'projects', projectId);
+    setDocumentNonBlocking(projectDocRef, newProjectData, {});
+    
     setTimeout(() => {
-      onProjectCreated(newProject as Project);
+      onProjectCreated(newProjectData as Project);
       setIsLoading(false);
       setOpen(false);
       form.reset();
       toast({
         title: 'Project Created',
-        description: `${newProject.name} has been successfully created.`,
+        description: `${newProjectData.name} has been successfully created.`,
       });
     }, 1000);
   };
@@ -607,4 +619,5 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
     </Dialog>
   );
 }
+
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -111,17 +112,33 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
       return;
     }
 
+    const parseOptionalFloat = (value: any): number | undefined => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+      const num = parseFloat(String(value).replace(/,/g, ''));
+      return isNaN(num) ? undefined : num;
+    };
+
     const projectDocRef = doc(firestore, 'projects', project.id);
-    const updateData = {
+    const updateData: Record<string, any> = {
       ...values,
-      performanceBondAmount: values.performanceBondAmount ? parseFloat(String(values.performanceBondAmount).replace(/,/g, '')) : undefined,
-      grossProfit: values.grossProfit ? parseFloat(String(values.grossProfit).replace(/,/g, '')) : undefined,
-      insuranceAmount: values.insuranceAmount ? parseFloat(String(values.insuranceAmount).replace(/,/g, '')) : undefined,
       startDate: values.startDate.toISOString(),
       endDate: values.endDate.toISOString(),
       modifiedAt: new Date().toISOString(),
       modifiedBy: user.id,
     };
+    
+    // Remove undefined values to avoid Firestore errors
+    const numericFields = ['performanceBondAmount', 'grossProfit', 'insuranceAmount', 'marginProfit', 'distance'];
+    numericFields.forEach(field => {
+      const parsedValue = parseOptionalFloat(values[field as keyof typeof values]);
+      if (parsedValue !== undefined) {
+        updateData[field] = parsedValue;
+      } else {
+        delete updateData[field];
+      }
+    });
     
     updateDocumentNonBlocking(projectDocRef, updateData);
     
@@ -510,3 +527,4 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
     </Card>
   );
 }
+
