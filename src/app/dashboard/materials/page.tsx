@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Material, MaterialPurchase } from '@/types';
 import { Loader2, Package, DollarSign, LineChart, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,20 +20,14 @@ export default function MaterialsPage() {
 
   const materialsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
-    return query(collection(firestore, 'materials'));
+    return query(collection(firestore, 'materials'), where('companyId', '==', company.id));
   }, [firestore, company?.id]);
 
   const purchasesQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
-    // For simplicity, fetching all purchases. In a real app, this might need pagination or more specific queries.
-    const allPurchases: any[] = [];
-    company.projects.forEach((project: any) => {
-        allPurchases.push(query(collection(firestore, 'projects', project.id, 'materials')));
-    });
-    // This is a simplified approach. A real implementation might need to execute these queries separately.
-    // For now, let's assume a flat `materialPurchases` collection for easier querying.
+    // Query the top-level 'materialPurchases' collection, filtering by the current companyId.
     return query(collection(firestore, 'materialPurchases'), where('companyId', '==', company.id));
-  }, [firestore, company]);
+  }, [firestore, company?.id]);
 
 
   const { data: materials, isLoading: materialsLoading } = useCollection<Material>(materialsQuery);

@@ -371,6 +371,56 @@
         "expiresAt",
         "createdAt"
       ]
+    },
+    "Material": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Material",
+      "type": "object",
+      "description": "Represents a type of construction material in a central repository.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "unit": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "companyId", "name", "category", "unit", "createdAt"]
+    },
+    "MaterialPurchase": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MaterialPurchase",
+      "type": "object",
+      "description": "Represents a specific purchase of a material for a project.",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "companyId": { "type": "string" },
+        "materialId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "supplier": { "type": "string" },
+        "purchaseDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Ordered", "Delivered", "Cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "companyId",
+        "materialId",
+        "quantity",
+        "unitPrice",
+        "totalPrice",
+        "supplier",
+        "purchaseDate",
+        "status",
+        "createdAt",
+        "createdBy"
+      ]
     }
   },
   "auth": {
@@ -498,6 +548,28 @@
               "name": "documentId",
               "description": "Unique identifier for the document."
             }
+          ]
+        }
+      },
+      {
+        "path": "/materials/{materialId}",
+        "definition": {
+          "entityName": "Material",
+          "schema": { "$ref": "#/backend/entities/Material" },
+          "description": "A central repository of all materials available to a company.",
+          "params": [
+            { "name": "materialId", "description": "Unique identifier for the material." }
+          ]
+        }
+      },
+      {
+        "path": "/materialPurchases/{purchaseId}",
+        "definition": {
+          "entityName": "MaterialPurchase",
+          "schema": { "$ref": "#/backend/entities/MaterialPurchase" },
+          "description": "Records a specific material purchase, linked to a company and project.",
+          "params": [
+            { "name": "purchaseId", "description": "Unique identifier for the purchase." }
           ]
         }
       }

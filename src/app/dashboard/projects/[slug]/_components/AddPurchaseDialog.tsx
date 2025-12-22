@@ -44,7 +44,7 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded 
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,20 +60,21 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded 
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!firestore || !user) return;
+    if (!firestore || !user || !company) return;
     setIsLoading(true);
 
     const purchaseId = `purchase-${Date.now()}`;
     const newPurchase: Omit<MaterialPurchase, 'id'> = {
       ...values,
       projectId: project.id,
+      companyId: company.id,
       totalPrice: values.quantity * values.unitPrice,
       purchaseDate: values.purchaseDate.toISOString(),
       createdAt: new Date().toISOString(),
       createdBy: user.id,
     };
     
-    const purchaseDocRef = doc(firestore, 'projects', project.id, 'materials', purchaseId);
+    const purchaseDocRef = doc(firestore, 'materialPurchases', purchaseId);
     setDocumentNonBlocking(purchaseDocRef, newPurchase);
 
     setTimeout(() => {

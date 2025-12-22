@@ -178,6 +178,7 @@ export interface Company {
     licenseKey?: string;
     ownerId?: string;
     eInvoicing?: any;
+    projectStatuses?: ProjectStatus[];
 }
 
 export type CreateUserData = {
@@ -188,3 +189,28 @@ export type CreateUserData = {
     role: UserRole;
     companyId: string;
 };
+
+export interface Material {
+  id: string;
+  companyId: string;
+  name: string;
+  description?: string;
+  category: string;
+  unit: string;
+  createdAt: string;
+}
+
+export interface MaterialPurchase {
+  id: string;
+  projectId: string;
+  companyId: string;
+  materialId: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  supplier: string;
+  purchaseDate: string;
+  status: 'Ordered' | 'Delivered' | 'Cancelled';
+  createdAt: string;
+  createdBy: string;
+}
