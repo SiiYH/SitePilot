@@ -14,10 +14,13 @@ import AddMaterialDialog from './_components/AddMaterialDialog';
 import LockedOverlay from '@/components/ui/lockedOverlay';
 
 export default function MaterialsPage() {
-  const { user, company, isLicenseActive, isLicenseExpired } = useAuth();
+  const { user, company, isLicenseValid, isLicenseExpired } = useAuth();
   const firestore = useFirestore();
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-
+  
+  // Check if license is active
+  const isLicenseActive = isLicenseValid;
+  
   const materialsQuery = useMemoFirebase(() => {
     if (!firestore || !company?.id) return null;
     return query(collection(firestore, 'materials'), where('companyId', '==', company.id));

@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { defaultProjectStatuses } from '@/lib/data';
-import { Project, User, Claim, Task, ProjectStatus, Document as DocType } from '@/types';
+import { Project, User, Claim, Task, ProjectStatus, Document as DocType, Material, MaterialPurchase } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import TasksTable from '@/components/dashboard/TasksTable';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import GenerateReportButton from '@/components/dashboard/GenerateReportButton';
 import ClaimsTab from './_components/ClaimsTab';
+import MaterialsTab from './_components/MaterialsTab';
 import { Button } from '@/components/ui/button';
 import { Edit, Upload, Settings } from 'lucide-react';
 import OverviewTab from './_components/OverviewTab';
@@ -131,6 +132,19 @@ export default function ProjectDetailsPage() {
   }, [firestore, project?.id, user?.id, user?.role, user?.companyId]);
 
   const { data: claims, isLoading: claimsLoading } = useCollection<Claim>(claimsQuery);
+  
+  const materialsQuery = useMemoFirebase(() => {
+    if (!firestore || !company?.id) return null;
+    return query(collection(firestore, 'materials'), where('companyId', '==', company.id));
+  }, [firestore, company?.id]);
+
+  const purchasesQuery = useMemoFirebase(() => {
+    if (!firestore || !project?.id) return null;
+    return query(collection(firestore, 'materialPurchases'), where('projectId', '==', project.id));
+  }, [firestore, project?.id]);
+
+  const { data: materials, isLoading: materialsLoading } = useCollection<Material>(materialsQuery);
+  const { data: purchases, isLoading: purchasesLoading } = useCollection<MaterialPurchase>(purchasesQuery);
 
 
   const canManageSettings = user?.role === 'admin' || user?.role === 'director';
@@ -222,6 +236,10 @@ export default function ProjectDetailsPage() {
       title: "Document Uploaded",
       description: "Your document has been successfully uploaded.",
     });
+  };
+  
+  const handlePurchaseAdded = (newPurchase: MaterialPurchase) => {
+    // This is handled by useCollection now
   };
 
   const handleImageUploadClick = () => {
@@ -368,11 +386,12 @@ export default function ProjectDetailsPage() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10 sm:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-1 h-auto sm:h-10 sm:grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="claims">Claims</TabsTrigger>
           <TabsTrigger value="tasks">Work Items</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="materials">Materials</TabsTrigger>
           {canManageSettings && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6">
@@ -431,6 +450,14 @@ export default function ProjectDetailsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="materials" className="mt-6">
+          <MaterialsTab
+            purchases={purchases || []}
+            materials={materials || []}
+            project={projectWithTasks}
+            onPurchaseAdded={handlePurchaseAdded}
+          />
         </TabsContent>
         {canManageSettings && (
           <TabsContent value="settings" className="mt-6">
