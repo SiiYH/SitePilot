@@ -169,7 +169,7 @@ export default function MaterialsPage() {
           <StatCard 
             icon={DollarSign}
             label="Total Spent"
-            value={`${company?.currency || ''}${stats.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={`${company?.currency || ''} ${stats.totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             trend={selectedMaterial ? stats.priceTrend : undefined}
             trendValue={selectedMaterial && stats.trendValue ? stats.trendValue : undefined}
           />
@@ -273,13 +273,23 @@ export default function MaterialsPage() {
                               tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             />
                             <YAxis 
-                              tickFormatter={(value) => `${company?.currency || ''}${value}`}
+                              // tickFormatter={(value) => `${company?.currency || ''} ${value}`}
+                              tickFormatter={(value) => {
+                                // Format large numbers with K/M suffix
+                                if (value >= 1000000) {
+                                  return `${company?.currency || ''} ${(value / 1000000).toFixed(1)}M`;
+                                }
+                                if (value >= 1000) {
+                                  return `${company?.currency || ''} ${(value / 1000).toFixed(0)}K`;
+                                }
+                                return value.toString();
+                              }}
                               className="text-xs"
                               tick={{ fill: 'hsl(var(--muted-foreground))' }}
                             />
                             <Tooltip
                               formatter={(value: number) => [
-                                `${company?.currency || ''}${value.toFixed(2)}`,
+                                `${company?.currency || ''} ${value.toFixed(2)}`,
                                 'Unit Price',
                               ]}
                               contentStyle={{
@@ -307,11 +317,11 @@ export default function MaterialsPage() {
                         <div className="grid grid-cols-3 gap-4">
                           <div className="p-4 rounded-lg border bg-card">
                             <p className="text-xs text-muted-foreground mb-1">First Price</p>
-                            <p className="text-lg font-bold">{company?.currency || ''}{priceHistory[0].price.toFixed(2)}</p>
+                            <p className="text-lg font-bold">{company?.currency || ''} {priceHistory[0].price.toFixed(2)}</p>
                           </div>
                           <div className="p-4 rounded-lg border bg-card">
                             <p className="text-xs text-muted-foreground mb-1">Latest Price</p>
-                            <p className="text-lg font-bold">{company?.currency || ''}{priceHistory[priceHistory.length - 1].price.toFixed(2)}</p>
+                            <p className="text-lg font-bold">{company?.currency || ''} {priceHistory[priceHistory.length - 1].price.toFixed(2)}</p>
                           </div>
                           <div className="p-4 rounded-lg border bg-card">
                             <p className="text-xs text-muted-foreground mb-1">Data Points</p>
