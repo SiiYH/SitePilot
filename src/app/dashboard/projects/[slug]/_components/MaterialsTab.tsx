@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MaterialPurchase, Project, Material } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -21,6 +22,7 @@ interface MaterialsTabProps {
 
 export default function MaterialsTab({ purchases, materials, project, onPurchaseAdded, onMaterialAdded }: MaterialsTabProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const canAddPurchase = user?.role === 'admin' || user?.role === 'director' || project.assignedEngineers.includes(user.id);
 
   const getMaterialName = (materialId: string) => {
@@ -31,12 +33,16 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
     return materials.find(m => m.id === materialId)?.unit || 'unit';
   };
   
+  const handleRowClick = (purchaseId: string) => {
+    router.push(`/dashboard/material-purchases/${purchaseId}`);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Material Purchases</CardTitle>
-          <CardDescription>All materials purchased for this project.</CardDescription>
+          <CardDescription>All materials purchased for this project. Click a row to view details.</CardDescription>
         </div>
         {canAddPurchase && (
           <AddPurchaseDialog
@@ -65,7 +71,7 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
             </TableHeader>
             <TableBody>
               {purchases.map(purchase => (
-                <TableRow key={purchase.id}>
+                <TableRow key={purchase.id} onClick={() => handleRowClick(purchase.id)} className="cursor-pointer">
                   <TableCell className="font-medium">{getMaterialName(purchase.materialId)}</TableCell>
                   <TableCell>{purchase.quantity} {getMaterialUnit(purchase.materialId)}</TableCell>
                   <TableCell>{project.currency} {purchase.unitPrice.toFixed(2)}</TableCell>
