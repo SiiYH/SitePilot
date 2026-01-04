@@ -27,7 +27,7 @@ export default function MaterialPurchaseDetailsPage() {
     const router = useRouter();
     const firestore = useFirestore();
     const purchaseId = params.id as string;
-
+    
     const purchaseRef = useMemoFirebase(() => purchaseId ? doc(firestore, 'materialPurchases', purchaseId) : null, [firestore, purchaseId]);
     const { data: purchase, isLoading: purchaseLoading } = useDoc<MaterialPurchase>(purchaseRef);
 
@@ -50,9 +50,14 @@ export default function MaterialPurchaseDetailsPage() {
         );
     }
 
-    if (!purchase) {
+    /* if (!purchase) {
         return notFound();
+    } */
+
+    if (!purchase && !isLoading) {
+        return <div>Purchase not found</div>;
     }
+              
 
     return (
         <div className="space-y-6">
@@ -66,9 +71,9 @@ export default function MaterialPurchaseDetailsPage() {
                     <div className="flex items-start justify-between">
                         <div>
                             <CardTitle className="text-2xl">Purchase: {material?.name || 'Loading...'}</CardTitle>
-                            <CardDescription>Details for material purchase #{purchase.id.slice(-6)}</CardDescription>
+                            <CardDescription>Details for material purchase #{purchase!.id.slice(-6)}</CardDescription>
                         </div>
-                         <Badge className="text-base px-4 py-1.5">{purchase.status}</Badge>
+                         <Badge className="text-base px-4 py-1.5">{purchase!.status}</Badge>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -82,8 +87,8 @@ export default function MaterialPurchaseDetailsPage() {
                                 {project?.name}
                              </Link>
                          </InfoField>
-                         <InfoField icon={Truck} label="Supplier" value={purchase.supplier} />
-                         <InfoField icon={Calendar} label="Purchase Date" value={format(parseISO(purchase.purchaseDate), 'PPP')} />
+                         <InfoField icon={Truck} label="Supplier" value={purchase!.supplier} />
+                         <InfoField icon={Calendar} label="Purchase Date" value={format(parseISO(purchase!.purchaseDate), 'PPP')} />
                          <InfoField icon={User} label="Recorded By" value={createdByUser?.name} />
                     </div>
                     
@@ -93,13 +98,13 @@ export default function MaterialPurchaseDetailsPage() {
                             Financial Details
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <InfoField icon={DollarSign} label="Quantity" value={`${purchase.quantity.toLocaleString()} ${material?.unit}`} />
-                            <InfoField icon={DollarSign} label="Unit Price" value={`${project?.currency} ${purchase.unitPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
-                            <InfoField icon={DollarSign} label="Discount" value={`${project?.currency} ${(purchase.discount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
-                            <InfoField icon={DollarSign} label="Total Paid" value={`${project?.currency} ${(purchase.totalPaid || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
+                            <InfoField icon={DollarSign} label="Quantity" value={`${purchase!.quantity.toLocaleString()} ${material?.unit}`} />
+                            <InfoField icon={DollarSign} label="Unit Price" value={`${project?.currency} ${purchase!.unitPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
+                            <InfoField icon={DollarSign} label="Discount" value={`${project?.currency} ${(purchase!.discount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
+                            <InfoField icon={DollarSign} label="Total Paid" value={`${project?.currency} ${(purchase!.totalPaid || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`} />
                             <div className="md:col-span-2 lg:col-span-4">
                                <InfoField icon={DollarSign} label="Total Price (After Discount)">
-                                   <p className="text-xl font-bold text-primary">{project?.currency} {purchase.totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                                   <p className="text-xl font-bold text-primary">{project?.currency} {purchase!.totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
                                </InfoField>
                             </div>
                         </div>
