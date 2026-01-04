@@ -68,10 +68,10 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
                 <TableRow key={purchase.id}>
                   <TableCell className="font-medium">{getMaterialName(purchase.materialId)}</TableCell>
                   <TableCell>{purchase.quantity} {getMaterialUnit(purchase.materialId)}</TableCell>
-                  <TableCell>${purchase.unitPrice.toFixed(2)}</TableCell>
-                  <TableCell>${(purchase.discount || 0).toFixed(2)}</TableCell>
-                  <TableCell>${(purchase.totalPaid || 0).toFixed(2)}</TableCell>
-                  <TableCell>${purchase.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell>{project.currency} {purchase.unitPrice.toFixed(2)}</TableCell>
+                  <TableCell>{project.currency} {(purchase.discount || 0).toFixed(2)}</TableCell>
+                  <TableCell>{project.currency} {(purchase.totalPaid || 0).toFixed(2)}</TableCell>
+                  <TableCell>{project.currency} {purchase.totalPrice.toFixed(2)}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
                   <TableCell>{format(parseISO(purchase.purchaseDate), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>{purchase.status}</TableCell>
