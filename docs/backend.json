@@ -405,7 +405,9 @@
         "purchaseDate": { "type": "string", "format": "date-time" },
         "status": { "type": "string", "enum": ["Ordered", "Delivered", "Cancelled"] },
         "createdAt": { "type": "string", "format": "date-time" },
-        "createdBy": { "type": "string" }
+        "createdBy": { "type": "string" },
+        "discount": { "type": "number" },
+        "totalPaid": { "type": "number" }
       },
       "required": [
         "id",

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,6 +33,8 @@ const formSchema = z.object({
   supplier: z.string().min(2, 'Supplier name is required.'),
   purchaseDate: z.date({ required_error: 'Purchase date is required.' }),
   status: z.enum(['Ordered', 'Delivered', 'Cancelled']),
+  discount: z.coerce.number().optional(),
+  totalPaid: z.coerce.number().optional(),
 });
 
 interface AddPurchaseDialogProps {
@@ -56,6 +59,8 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded 
       supplier: '',
       purchaseDate: new Date(),
       status: 'Ordered',
+      discount: 0,
+      totalPaid: 0,
     },
   });
 
@@ -147,6 +152,34 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded 
                         <FormLabel>Unit Price</FormLabel>
                         <FormControl>
                             <Input type="number" step="0.01" placeholder="$" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="discount"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Discount</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="0.01" placeholder="e.g., 10.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="totalPaid"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Total Paid</FormLabel>
+                        <FormControl>
+                            <Input type="number" step="0.01" placeholder="e.g., 100.00" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>

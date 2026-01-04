@@ -213,4 +213,6 @@ export interface MaterialPurchase {
   status: 'Ordered' | 'Delivered' | 'Cancelled';
   createdAt: string;
   createdBy: string;
+  discount?: number;
+  totalPaid?: number;
 }

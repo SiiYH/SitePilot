@@ -53,6 +53,8 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
                 <TableHead>Material</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Unit Price</TableHead>
+                <TableHead>Discount</TableHead>
+                <TableHead>Total Paid</TableHead>
                 <TableHead>Total Price</TableHead>
                 <TableHead>Supplier</TableHead>
                 <TableHead>Date</TableHead>
@@ -65,6 +67,8 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
                   <TableCell className="font-medium">{getMaterialName(purchase.materialId)}</TableCell>
                   <TableCell>{purchase.quantity} {getMaterialUnit(purchase.materialId)}</TableCell>
                   <TableCell>${purchase.unitPrice.toFixed(2)}</TableCell>
+                  <TableCell>${(purchase.discount || 0).toFixed(2)}</TableCell>
+                  <TableCell>${(purchase.totalPaid || 0).toFixed(2)}</TableCell>
                   <TableCell>${purchase.totalPrice.toFixed(2)}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
                   <TableCell>{format(parseISO(purchase.purchaseDate), 'MMM dd, yyyy')}</TableCell>
