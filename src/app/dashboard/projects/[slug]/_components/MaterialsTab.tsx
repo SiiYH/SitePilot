@@ -23,7 +23,7 @@ interface MaterialsTabProps {
 export default function MaterialsTab({ purchases, materials, project, onPurchaseAdded, onMaterialAdded }: MaterialsTabProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const canAddPurchase = user?.role === 'admin' || user?.role === 'director' || project.assignedEngineers.includes(user.id);
+  const canAddPurchase = user?.role === 'admin' || user?.role === 'director' || project.assignedEngineers.includes(user!.id);
 
   const getMaterialName = (materialId: string) => {
     return materials.find(m => m.id === materialId)?.name || 'Unknown';
