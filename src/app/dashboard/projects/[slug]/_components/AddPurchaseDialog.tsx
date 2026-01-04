@@ -71,6 +71,21 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded,
     },
   });
 
+  const { watch, setValue } = form;
+  const quantity = watch('quantity');
+  const unitPrice = watch('unitPrice');
+  const discount = watch('discount');
+
+  useEffect(() => {
+    const q = quantity || 0;
+    const p = unitPrice || 0;
+    const d = discount || 0;
+    
+    const total = q * p - d;
+    
+    setValue('totalPaid', total >= 0 ? total : 0);
+  }, [quantity, unitPrice, discount, setValue]);
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!firestore || !company || !user) return;
     setIsLoading(true);
@@ -232,8 +247,8 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded,
                 name="totalPaid"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Total Paid (Optional)</FormLabel>
-                    <Input type="number" placeholder="e.g., 2500.00" {...field} />
+                    <FormLabel>Total Paid</FormLabel>
+                    <Input type="number" placeholder="Auto-calculated" {...field} readOnly className="bg-muted" />
                     <FormMessage />
                     </FormItem>
                 )}
