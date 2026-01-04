@@ -27,7 +27,7 @@ import { DateInput } from '@/components/ui/date-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import AddMaterialDialog from '../../materials/_components/AddMaterialDialog';
+import AddMaterialDialog from '@/app/dashboard/materials/_components/AddMaterialDialog';
 
 interface AddPurchaseDialogProps {
   project: Project;
@@ -305,4 +305,3 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded,
     </Dialog>
   );
 }
-
