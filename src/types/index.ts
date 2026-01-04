@@ -174,6 +174,7 @@ export interface Company {
     industryCode: string;
     industryDescription: string;
     description?: string;
+    currency?: string;
     activated: boolean;
     licenseKey?: string;
     ownerId?: string;

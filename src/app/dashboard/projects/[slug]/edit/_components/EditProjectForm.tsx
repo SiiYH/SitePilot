@@ -95,7 +95,7 @@ export default function EditProjectForm({ project, users }: EditProjectFormProps
       grossProfit: formatAmountForDisplay(project.grossProfit),
       marginProfit: project.marginProfit || ('' as any),
       insuranceAmount: formatAmountForDisplay(project.insuranceAmount),
-      currency: project.currency || 'MYR',
+      currency: project.currency || company?.currency || 'MYR',
     },
   });
 

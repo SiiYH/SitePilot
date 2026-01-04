@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import {Building2, Clock, Info, Infinity, Loader2, Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check, Calendar, User } from 'lucide-react';
+import {Building2, Clock, Info, Infinity, Loader2, Building, PlusCircle, Edit, ShieldCheck, ShieldOff, KeyRound, Copy, Check, Calendar, User, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
@@ -423,6 +423,7 @@ export default function CompanyPage() {
                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <InfoField label="Company Name" value={companyData.name} />
                                 <InfoField label="Industry" value={industryDisplay} />
+                                <InfoField label="Default Currency" value={companyData.currency} />
                             </div>
                             <InfoField label="Company Description" value={companyData.description} />
                         </AccordionContent>
@@ -527,4 +528,3 @@ export default function CompanyPage() {
     </div>
   );
 }
-

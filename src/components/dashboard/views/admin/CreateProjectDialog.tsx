@@ -80,9 +80,18 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
   const { toast } = useToast();
   const { user, company } = useAuth();
   const firestore = useFirestore();
+  const [projectStatuses, setProjectStatuses] = useState<ProjectStatus[]>([]);
 
-  const projectStatuses: ProjectStatus[] = useMemo(() => company?.projectStatuses || [], [company]);
-
+  useEffect(() => {
+    if (open) {
+      const storedStatuses = localStorage.getItem('sitepilot-project-statuses');
+      if (storedStatuses) {
+        setProjectStatuses(JSON.parse(storedStatuses));
+      } else {
+        setProjectStatuses(defaultProjectStatuses);
+      }
+    }
+  }, [open]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,7 +111,7 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
       grossProfit: '' as any,
       marginProfit: '' as any,
       insuranceAmount: '' as any,
-      currency: 'MYR',
+      currency: company?.currency || 'MYR',
     },
   });
 
@@ -156,7 +165,6 @@ export default function CreateProjectDialog({ users, onProjectCreated, companyId
       modifiedBy: user.id,
     };
     
-    // Conditionally add optional fields to avoid sending 'undefined'
     if (values.orderNo) newProjectData.orderNo = values.orderNo;
     if (values.siteName) newProjectData.siteName = values.siteName;
     if (values.jobLocation) newProjectData.jobLocation = values.jobLocation;

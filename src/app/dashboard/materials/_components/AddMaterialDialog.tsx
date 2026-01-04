@@ -144,7 +144,7 @@ export default function AddMaterialDialog({ onMaterialAdded, open, onOpenChange,
                 name="unit"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Unit</FormLabel>
+                    <FormLabel>Unit of Measure</FormLabel>
                     <FormControl>
                         <Input placeholder="e.g., Bag, Ton, etc." {...field} />
                     </FormControl>

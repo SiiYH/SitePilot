@@ -211,6 +211,10 @@
           "type": "string",
           "description": "A description of the company."
         },
+        "currency": {
+          "type": "string",
+          "description": "The default currency for the company."
+        },
         "activated": {
           "type": "boolean",
           "description": "Whether the company has an active license."

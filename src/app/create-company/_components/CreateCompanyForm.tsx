@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Industry = {
   Code: string;
@@ -25,6 +26,8 @@ interface CreateCompanyFormProps {
   industries: Industry[];
 }
 
+const currencies = ['MYR', 'USD', 'SGD', 'EUR', 'GBP'];
+
 export default function CreateCompanyForm({ industries }: CreateCompanyFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,6 +37,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
   const [industryCode, setIndustryCode] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
+  const [currency, setCurrency] = useState("MYR");
   const [isLoading, setIsLoading] = useState(false);
 
   const isEditing = searchParams.get('edit') === 'true';
@@ -44,6 +48,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       setCompanyName(company.name);
       setCompanyDescription(company.description || "");
       setIndustryCode(company.industryCode || "");
+      setCurrency(company.currency || "MYR");
     } else if (isEditing && companyId) {
       // Fallback if company context is not yet populated
       const fetchCompany = async () => {
@@ -54,6 +59,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
           setCompanyName(companyData.name);
           setCompanyDescription(companyData.description || "");
           setIndustryCode(companyData.industryCode || "");
+          setCurrency(companyData.currency || "MYR");
         }
       }
       fetchCompany();
@@ -77,6 +83,7 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       industryCode: selectedIndustry?.Code || '',
       industryDescription: selectedIndustry?.Description || '',
       description: companyDescription,
+      currency: currency,
     };
 
     if (isEditing && companyId) {
@@ -86,7 +93,6 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
     } else {
       const newCompanyId = `company-${Date.now()}`;
 
-      // ✅ STEP 1: Update user role to 'director' FIRST
       const userDocRef = doc(firestore, 'users', user.id);
       const userUpdates = {
         companyId: newCompanyId,
@@ -94,10 +100,8 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       };
 
       try {
-        // Use await instead of non-blocking to ensure role is updated first
         await updateDoc(userDocRef, userUpdates);
 
-        // ✅ STEP 2: Now create company (user is now director)
         const finalCompanyData = {
           ...companyData,
           id: newCompanyId,
@@ -109,7 +113,6 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
         const companyDocRef = doc(firestore, 'companies', newCompanyId);
         await setDoc(companyDocRef, finalCompanyData);
 
-        // Update auth context
         setAuthCompany(finalCompanyData);
         setUser(prevUser => prevUser ? { ...prevUser, ...userUpdates } : null);
 
@@ -118,7 +121,6 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
       } catch (error) {
         console.error('Error creating company:', error);
         setIsLoading(false);
-        // Handle error - maybe show toast
       }
     }
 
@@ -192,6 +194,17 @@ export default function CreateCompanyForm({ industries }: CreateCompanyFormProps
                 </Command>
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currency">Default Currency</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="company-description">Company Description (Optional)</Label>
