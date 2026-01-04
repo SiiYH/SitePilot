@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,10 +28,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AddMaterialDialogProps {
   onMaterialAdded: (material: Material) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialName?: string;
 }
 
-export default function AddMaterialDialog({ onMaterialAdded }: AddMaterialDialogProps) {
-  const [open, setOpen] = useState(false);
+export default function AddMaterialDialog({ onMaterialAdded, open, onOpenChange, initialName }: AddMaterialDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { company } = useAuth();
@@ -39,12 +42,18 @@ export default function AddMaterialDialog({ onMaterialAdded }: AddMaterialDialog
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      name: initialName || '',
       description: '',
       category: '',
       unit: '',
     },
   });
+  
+  useEffect(() => {
+    if (initialName) {
+      form.setValue('name', initialName);
+    }
+  }, [initialName, form]);
 
   const onSubmit = (values: FormValues) => {
     if (!firestore || !company) return;
@@ -64,19 +73,23 @@ export default function AddMaterialDialog({ onMaterialAdded }: AddMaterialDialog
       onMaterialAdded({ ...newMaterial, id: materialId });
       toast({ title: 'Material Added', description: `${values.name} has been added to the repository.` });
       setIsLoading(false);
-      setOpen(false);
+      onOpenChange?.(false); // Close dialog
       form.reset();
     }, 1000);
   };
+  
+  const dialogProps = open !== undefined && onOpenChange ? { open, onOpenChange } : {};
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Material
-        </Button>
-      </DialogTrigger>
+    <Dialog {...dialogProps}>
+      {open === undefined && (
+        <DialogTrigger asChild>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Material
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Material</DialogTitle>
@@ -141,7 +154,7 @@ export default function AddMaterialDialog({ onMaterialAdded }: AddMaterialDialog
                 />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => onOpenChange?.(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>

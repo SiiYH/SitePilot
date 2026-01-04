@@ -241,6 +241,10 @@ export default function ProjectDetailsPage() {
   const handlePurchaseAdded = (newPurchase: MaterialPurchase) => {
     // This is handled by useCollection now
   };
+  
+  const handleMaterialAdded = (newMaterial: Material) => {
+    // This is handled by useCollection now
+  };
 
   const handleImageUploadClick = () => {
     fileInputRef.current?.click();
@@ -457,6 +461,7 @@ export default function ProjectDetailsPage() {
             materials={materials || []}
             project={projectWithTasks}
             onPurchaseAdded={handlePurchaseAdded}
+            onMaterialAdded={handleMaterialAdded}
           />
         </TabsContent>
         {canManageSettings && (

@@ -16,9 +16,10 @@ interface MaterialsTabProps {
   materials: Material[];
   project: Project;
   onPurchaseAdded: (purchase: MaterialPurchase) => void;
+  onMaterialAdded: (material: Material) => void;
 }
 
-export default function MaterialsTab({ purchases, materials, project, onPurchaseAdded }: MaterialsTabProps) {
+export default function MaterialsTab({ purchases, materials, project, onPurchaseAdded, onMaterialAdded }: MaterialsTabProps) {
   const { user } = useAuth();
   const canAddPurchase = user?.role === 'admin' || user?.role === 'director' || project.assignedEngineers.includes(user.id);
 
@@ -42,6 +43,7 @@ export default function MaterialsTab({ purchases, materials, project, onPurchase
             project={project}
             materials={materials}
             onPurchaseAdded={onPurchaseAdded}
+            onMaterialAdded={onMaterialAdded}
           />
         )}
       </CardHeader>
