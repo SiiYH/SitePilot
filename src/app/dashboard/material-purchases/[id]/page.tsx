@@ -5,11 +5,11 @@ import { useParams, notFound, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { MaterialPurchase, Material, Project } from '@/types';
-import { Loader2, ArrowLeft, Package, FolderKanban, Calendar, DollarSign, User, Truck, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, Package, FolderKanban, Calendar, DollarSign, User, Truck, ShoppingCart, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isBefore, subHours } from 'date-fns';
 import Link from 'next/link';
 
 const InfoField = ({ icon: Icon, label, value, children }: { icon: React.ElementType; label: string; value?: string | number | React.ReactNode; children?: React.ReactNode }) => (
@@ -42,6 +42,13 @@ export default function MaterialPurchaseDetailsPage() {
 
     const isLoading = purchaseLoading || materialLoading || projectLoading || userLoading;
 
+    const canEdit = useMemo(() => {
+        if (!purchase) return false;
+        const gracePeriodEnd = subHours(new Date(), 24);
+        const createdAt = parseISO(purchase.createdAt);
+        return purchase.status === 'Ordered' && isBefore(gracePeriodEnd, createdAt);
+    }, [purchase]);
+
     if (isLoading) {
         return (
             <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
@@ -50,21 +57,27 @@ export default function MaterialPurchaseDetailsPage() {
         );
     }
 
-    /* if (!purchase) {
-        return notFound();
-    } */
-
     if (!purchase && !isLoading) {
-        return <div>Purchase not found</div>;
+        return notFound();
     }
               
 
     return (
         <div className="space-y-6">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-            </Button>
+            <div className="flex items-center justify-between">
+                <Button variant="outline" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                </Button>
+                {canEdit && (
+                    <Button asChild>
+                        <Link href={`/dashboard/material-purchases/${purchaseId}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Purchase
+                        </Link>
+                    </Button>
+                )}
+            </div>
 
             <Card>
                 <CardHeader>
@@ -114,4 +127,3 @@ export default function MaterialPurchaseDetailsPage() {
         </div>
     );
 }
-
