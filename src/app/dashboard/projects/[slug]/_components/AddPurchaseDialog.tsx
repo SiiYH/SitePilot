@@ -42,7 +42,7 @@ const formSchema = z.object({
   unitPrice: z.coerce.number().min(0.01, 'Unit price must be greater than 0.'),
   supplier: z.string().min(2, 'Supplier name is required.'),
   purchaseDate: z.date({ required_error: 'Purchase date is required.' }),
-  status: z.enum(['Ordered', 'Delivered', 'Cancelled']),
+  status: z.enum(['Ordered', 'Delivered', 'Cancelled', 'Pending', 'Partially Delivered', 'Returned']),
   discount: z.coerce.number().optional(),
   totalPaid: z.coerce.number().optional(),
 });
@@ -65,7 +65,7 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded,
       quantity: 1,
       unitPrice: 0,
       supplier: '',
-      status: 'Ordered',
+      status: 'Pending',
       discount: 0,
       totalPaid: 0,
     },
@@ -292,8 +292,11 @@ export default function AddPurchaseDialog({ project, materials, onPurchaseAdded,
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
                       <SelectItem value="Ordered">Ordered</SelectItem>
                       <SelectItem value="Delivered">Delivered</SelectItem>
+                      <SelectItem value="Partially Delivered">Partially Delivered</SelectItem>
+                      <SelectItem value="Returned">Returned</SelectItem>
                       <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>

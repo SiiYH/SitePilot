@@ -211,7 +211,7 @@ export interface MaterialPurchase {
   totalPrice: number;
   supplier: string;
   purchaseDate: string;
-  status: 'Ordered' | 'Delivered' | 'Cancelled';
+  status: 'Ordered' | 'Delivered' | 'Cancelled' | 'Pending' | 'Partially Delivered' | 'Returned';
   createdAt: string;
   createdBy: string;
   discount?: number;

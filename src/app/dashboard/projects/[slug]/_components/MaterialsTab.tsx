@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -25,6 +24,9 @@ const statusVariant: { [key: string]: 'default' | 'secondary' | 'destructive' | 
   'Ordered': 'secondary',
   'Delivered': 'default',
   'Cancelled': 'destructive',
+  'Pending': 'secondary',
+  'Partially Delivered': 'outline',
+  'Returned': 'destructive',
 };
 
 const InfoRow = ({ icon: Icon, label, children }: { icon: React.ElementType, label: string, children: React.ReactNode }) => (
