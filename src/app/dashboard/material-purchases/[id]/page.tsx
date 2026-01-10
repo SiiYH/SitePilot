@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format, parseISO, isBefore, subHours } from 'date-fns';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 const InfoField = ({ icon: Icon, label, value, children }: { icon: React.ElementType; label: string; value?: string | number | React.ReactNode; children?: React.ReactNode }) => (
     <div className="space-y-1">
