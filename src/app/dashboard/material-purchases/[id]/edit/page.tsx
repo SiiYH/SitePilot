@@ -38,6 +38,10 @@ export default function EditMaterialPurchasePage() {
   );
   const { data: material } = useDoc<Material>(materialRef);
 
+  console.log('params:', params);
+  console.log('purchaseId:', purchaseId);
+  console.log('purchaseRef:', purchaseRef);
+
   const [formData, setFormData] = useState({
     quantity: 0,
     unitPrice: 0,
