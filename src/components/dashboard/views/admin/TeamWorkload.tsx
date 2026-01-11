@@ -173,7 +173,7 @@ useEffect(() => {
     return map;
   }, [users, projectsWithTasks]);
 
-  console.log(engineerTasksMap);
+  // console.log(engineerTasksMap);
 
   // PERFORMANCE OPTIMIZATION 4: Memoize task stats calculation
   const getTaskStats = useCallback((tasks: any[]) => {
