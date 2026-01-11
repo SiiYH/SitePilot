@@ -307,25 +307,25 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
                       {formatCurrency(purchase.discount ? purchase.totalPrice - purchase.discount : purchase.totalPrice)}
                     </td>
                   </tr>
-                  {purchase.totalPaid !== undefined && [
-                    <tr key="paid" className="hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-medium">Amount Paid</td>
-                      <td className="p-3 text-right text-green-600 font-medium">
-                        {formatCurrency(amountPaid)}
-                      </td>
-                    </tr>,
-
-                    <tr key="balance" className="bg-muted/30">
-                      <td className="p-3 font-semibold">Balance Due</td>
-                      <td
-                        className={`p-3 text-right font-bold ${balanceDue > 0 ? 'text-orange-600' : 'text-green-600'
-                          }`}
-                      >
-                        {formatCurrency(balanceDue)}
-                      </td>
-                    </tr>,
-                  ]}
-
+                  {purchase.totalPaid !== undefined && (
+                    <>
+                      <tr className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3 font-medium">Amount Paid</td>
+                        <td className="p-3 text-right text-green-600 font-medium">
+                          {formatCurrency(amountPaid)}
+                        </td>
+                      </tr>
+                      <tr className="bg-muted/30">
+                        <td className="p-3 font-semibold">Balance Due</td>
+                        <td
+                          className={`p-3 text-right font-bold ${balanceDue > 0 ? 'text-orange-600' : 'text-green-600'
+                            }`}
+                        >
+                          {formatCurrency(balanceDue)}
+                        </td>
+                      </tr>
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
