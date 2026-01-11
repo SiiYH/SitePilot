@@ -13,16 +13,16 @@ import type { MaterialPurchase, Material, Project, User as UserType } from '@/ty
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
-const InfoField = ({ 
-  icon, 
-  label, 
-  value, 
-  children 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  value?: string | null; 
-  children?: React.ReactNode 
+const InfoField = ({
+  icon,
+  label,
+  value,
+  children
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string | null;
+  children?: React.ReactNode
 }) => {
   const Icon = icon;
   return (
@@ -158,14 +158,14 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
               Attach Document
             </Button>
           )}
-          
+
           {permissions.canEditNotes && (
             <Button variant="outline" onClick={handleAddNote}>
               <MessageSquare className="mr-2 h-4 w-4" />
               Add Note
             </Button>
           )}
-          
+
           {permissions.canFullEdit && (
             <Button onClick={handleEdit}>
               <Edit className="mr-2 h-4 w-4" />
@@ -205,8 +205,8 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
               </Badge>
               {!permissions.canFullEdit && !permissions.isReadOnly && (
                 <span className="text-xs text-muted-foreground">
-                  {permissions.canEditAfterDelivery 
-                    ? 'Limited editing (delivered)' 
+                  {permissions.canEditAfterDelivery
+                    ? 'Limited editing (delivered)'
                     : 'Grace period expired'}
                 </span>
               )}
@@ -219,27 +219,27 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
           <div>
             <h3 className="font-semibold text-lg mb-4">Purchase Overview</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InfoField 
-                icon={Calendar} 
-                label="Purchase Date" 
-                value={formatDate(purchase.purchaseDate)} 
+              <InfoField
+                icon={Calendar}
+                label="Purchase Date"
+                value={formatDate(purchase.purchaseDate)}
               />
-              <InfoField 
-                icon={User} 
-                label="Supplier" 
-                value={purchase.supplier} 
+              <InfoField
+                icon={User}
+                label="Supplier"
+                value={purchase.supplier}
               />
               {project && (
-                <InfoField 
-                  icon={Package} 
-                  label="Project" 
-                  value={project.name} 
+                <InfoField
+                  icon={Package}
+                  label="Project"
+                  value={project.name}
                 />
               )}
-              <InfoField 
-                icon={User} 
-                label="Created By" 
-                value={creator?.name || 'Unknown User'} 
+              <InfoField
+                icon={User}
+                label="Created By"
+                value={creator?.name || 'Unknown User'}
               />
             </div>
           </div>
@@ -288,48 +288,59 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
                 <tbody className="divide-y">
                   <tr className="hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium">Subtotal</td>
-                    <td className="p-3 text-right">{formatCurrency(purchase.totalPrice)}</td>
+                    <td className="p-3 text-right">
+                      {formatCurrency(purchase.totalPrice)}
+                    </td>
                   </tr>
-                  {purchase.discount && purchase.discount > 0 && (
+
+                  {purchase.discount! > 0 ? (
                     <tr className="hover:bg-muted/30 transition-colors">
                       <td className="p-3 font-medium flex items-center gap-2">
                         <TrendingDown className="h-4 w-4 text-green-600" />
                         Discount
                       </td>
                       <td className="p-3 text-right text-green-600">
-                        -{formatCurrency(purchase.discount)}
+                        -{formatCurrency(purchase.discount!)}
                       </td>
                     </tr>
-                  )}
+                  ) : null}
+
                   <tr className="bg-muted/50 border-t-2">
                     <td className="p-3 font-semibold">Total Amount</td>
                     <td className="p-3 text-right font-bold text-lg">
-                      {formatCurrency(purchase.discount ? purchase.totalPrice - purchase.discount : purchase.totalPrice)}
+                      {formatCurrency(
+                        purchase.discount
+                          ? purchase.totalPrice - purchase.discount
+                          : purchase.totalPrice
+                      )}
                     </td>
                   </tr>
-                  {purchase.totalPaid !== undefined && (
-                    <>
-                      <tr className="hover:bg-muted/30 transition-colors">
-                        <td className="p-3 font-medium">Amount Paid</td>
-                        <td className="p-3 text-right text-green-600 font-medium">
-                          {formatCurrency(amountPaid)}
-                        </td>
-                      </tr>
-                      <tr className="bg-muted/30">
-                        <td className="p-3 font-semibold">Balance Due</td>
-                        <td
-                          className={`p-3 text-right font-bold ${balanceDue > 0 ? 'text-orange-600' : 'text-green-600'
-                            }`}
-                        >
-                          {formatCurrency(balanceDue)}
-                        </td>
-                      </tr>
-                    </>
-                  )}
+
+                  {purchase.totalPaid !== undefined ? (
+                    <tr className="hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-medium">Amount Paid</td>
+                      <td className="p-3 text-right text-green-600 font-medium">
+                        {formatCurrency(amountPaid)}
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {purchase.totalPaid !== undefined ? (
+                    <tr className="bg-muted/30">
+                      <td className="p-3 font-semibold">Balance Due</td>
+                      <td
+                        className={`p-3 text-right font-bold ${balanceDue > 0 ? 'text-orange-600' : 'text-green-600'
+                          }`}
+                      >
+                        {formatCurrency(balanceDue)}
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>
           </div>
+
 
           <Separator />
 
@@ -367,15 +378,15 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
           <div>
             <h3 className="font-semibold text-lg mb-4">Additional Information</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InfoField 
-                icon={FileText} 
-                label="Purchase ID" 
-                value={purchase.id} 
+              <InfoField
+                icon={FileText}
+                label="Purchase ID"
+                value={purchase.id}
               />
-              <InfoField 
-                icon={ShoppingCart} 
-                label="Company ID" 
-                value={purchase.companyId} 
+              <InfoField
+                icon={ShoppingCart}
+                label="Company ID"
+                value={purchase.companyId}
               />
             </div>
           </div>
