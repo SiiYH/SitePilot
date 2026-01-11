@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import type { MaterialPurchase, Material, Project, User as UserType } from '@/types';
+import type { MaterialPurchase, Material, Project, User as UserType, Company } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -83,10 +83,17 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
   );
   const { data: creator, isLoading: creatorLoading } = useDoc<UserType>(creatorRef);
 
+  // Fetch company details for currency
+  const companyRef = useMemoFirebase(
+    () => doc(firestore, 'companies', purchase.companyId),
+    [firestore, purchase.companyId]
+  );
+  const { data: company, isLoading: companyLoading } = useDoc<Company>(companyRef);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: company?.currency || 'USD',
     }).format(amount);
   };
 
@@ -130,7 +137,7 @@ export default function MaterialPurchaseClient({ purchase }: { purchase: Materia
     console.log('Attach document');
   };
 
-  const isLoading = materialLoading || projectLoading || creatorLoading;
+  const isLoading = materialLoading || projectLoading || creatorLoading || companyLoading;
 
   if (isLoading) {
     return (

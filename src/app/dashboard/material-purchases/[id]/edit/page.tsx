@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams, notFound } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import type { MaterialPurchase, Material, Project } from '@/types';
+import type { MaterialPurchase, Material, Project, Company } from '@/types';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,14 @@ export default function EditMaterialPurchasePage() {
     [firestore, purchase?.materialId]
   );
   const { data: material } = useDoc<Material>(materialRef);
+
+  const companyRef = useMemoFirebase(
+    () => purchase ? doc(firestore, 'companies', purchase.companyId) : null,
+    [firestore, purchase?.companyId]
+  );
+  const { data: company } = useDoc<Company>(companyRef);
+
+  const currencyCode = company?.currency || 'USD';
 
   console.log('params:', params);
   console.log('purchaseId:', purchaseId);
@@ -123,7 +131,7 @@ export default function EditMaterialPurchasePage() {
       }
 
       await updateDoc(purchaseRef, updateData);
-      
+
       toast({
         title: "Success",
         description: "Purchase updated successfully",
@@ -156,8 +164,8 @@ export default function EditMaterialPurchasePage() {
             Edit Purchase Order #{purchase.id.slice(0, 8).toUpperCase()}
           </CardTitle>
           <CardDescription>
-            {canFullEdit 
-              ? 'Full editing available' 
+            {canFullEdit
+              ? 'Full editing available'
               : 'Limited editing - Can only update status, discount, and payment info'}
           </CardDescription>
         </CardHeader>
@@ -167,9 +175,9 @@ export default function EditMaterialPurchasePage() {
             {/* Material Info (Read-only) */}
             <div className="space-y-2">
               <Label>Material</Label>
-              <Input 
-                value={material?.name || 'Loading...'} 
-                disabled 
+              <Input
+                value={material?.name || 'Loading...'}
+                disabled
                 className="bg-muted"
               />
             </div>
@@ -189,7 +197,7 @@ export default function EditMaterialPurchasePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unitPrice">Unit Price ($)</Label>
+                <Label htmlFor="unitPrice">Unit Price ({currencyCode})</Label>
                 <Input
                   id="unitPrice"
                   type="number"
@@ -245,7 +253,7 @@ export default function EditMaterialPurchasePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="discount">Discount ($)</Label>
+                <Label htmlFor="discount">Discount ({currencyCode})</Label>
                 <Input
                   id="discount"
                   type="number"
@@ -256,7 +264,7 @@ export default function EditMaterialPurchasePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="totalPaid">Total Paid ($)</Label>
+                <Label htmlFor="totalPaid">Total Paid ({currencyCode})</Label>
                 <Input
                   id="totalPaid"
                   type="number"
@@ -273,27 +281,27 @@ export default function EditMaterialPurchasePage() {
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium">{currencyCode} {totalPrice.toFixed(2)}</span>
                 </div>
                 {formData.discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount:</span>
-                    <span className="font-medium">-${formData.discount.toFixed(2)}</span>
+                    <span className="font-medium">-{currencyCode} {formData.discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span>Total:</span>
-                  <span>${finalAmount.toFixed(2)}</span>
+                  <span>{currencyCode} {finalAmount.toFixed(2)}</span>
                 </div>
                 {formData.totalPaid > 0 && (
                   <>
                     <div className="flex justify-between text-green-600">
                       <span>Paid:</span>
-                      <span className="font-medium">${formData.totalPaid.toFixed(2)}</span>
+                      <span className="font-medium">{currencyCode} {formData.totalPaid.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-orange-600">
                       <span>Balance Due:</span>
-                      <span>${(finalAmount - formData.totalPaid).toFixed(2)}</span>
+                      <span>{currencyCode} {(finalAmount - formData.totalPaid).toFixed(2)}</span>
                     </div>
                   </>
                 )}
