@@ -10,7 +10,7 @@ import { useAuth as useFirebaseAuth, useFirestore, initializeFirebase, errorEmit
 import { createUserWithEmailAndPassword, getAuth, signInWithCredential } from 'firebase/auth';
 import { License } from '@/app/dashboard/system-admin/_components/LicenseGenerator';
 import { initializeApp, deleteApp } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import { firebaseConfig } from '@/firebase/client';
 
 interface AuthContextType {
   user: User | null;

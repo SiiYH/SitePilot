@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { mockAttendance } from '@/lib/data';
-import { firestore } from '@/firebase/config';
+import { firestore } from '@/firebase/client';
 
 export default function DashboardPage() {
   const { user, company, loading: authLoading } = useAuth();

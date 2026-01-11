@@ -216,4 +216,21 @@ export interface MaterialPurchase {
   createdBy: string;
   discount?: number;
   totalPaid?: number;
+  notes?: Array<{
+    id: string;
+    text: string;
+    createdBy: string;
+    createdByName: string;
+    createdAt: string;
+  }>;
+  documents?: Array<{
+    id: string;
+    name: string;
+    type: 'invoice' | 'delivery_note' | 'receipt' | 'other';
+    url: string;
+    uploadedBy: string;
+    uploadedByName: string;
+    uploadedAt: string;
+    size?: number;
+  }>;
 }
