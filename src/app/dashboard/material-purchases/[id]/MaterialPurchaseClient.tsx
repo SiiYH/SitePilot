@@ -55,7 +55,7 @@ const getStatusVariant = (status: MaterialPurchase['status']) => {
   }
 };
 
-const GRACE_PERIOD_HOURS = 24;
+const GRACE_PERIOD_HOURS = 90;
 
 export default function MaterialPurchaseClient({ purchase }: { purchase: MaterialPurchase }) {
   const router = useRouter();

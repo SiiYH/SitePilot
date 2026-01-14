@@ -16,7 +16,7 @@ import { Loader2, ArrowLeft, Save, X } from 'lucide-react';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
-const GRACE_PERIOD_HOURS = 24;
+const GRACE_PERIOD_HOURS = 90;
 
 export default function EditMaterialPurchasePage() {
   const router = useRouter();
@@ -44,6 +44,15 @@ export default function EditMaterialPurchasePage() {
   );
   const { data: company } = useDoc<Company>(companyRef);
 
+  // Debug render state
+  console.log('Render: ', {
+    purchaseLoading,
+    purchase: purchase ? 'Present' : 'Null/Undefined',
+    purchaseId,
+    purchaseRefPath: purchaseRef?.path
+  });
+  if (purchase) console.log('Purchase Data:', purchase);
+
   const currencyCode = company?.currency || 'USD';
 
   console.log('params:', params);
@@ -60,19 +69,31 @@ export default function EditMaterialPurchasePage() {
     totalPaid: 0,
   });
 
+  // Debug formData changes
+  useEffect(() => {
+    console.log('FormData State:', formData);
+  }, [formData]);
+
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (purchase) {
-      setFormData({
-        quantity: purchase.quantity,
-        unitPrice: purchase.unitPrice,
-        supplier: purchase.supplier,
-        purchaseDate: purchase.purchaseDate.split('T')[0],
-        status: purchase.status,
-        discount: purchase.discount || 0,
-        totalPaid: purchase.totalPaid || 0,
-      });
+      console.log('Attempting to populate form with purchase:', purchase);
+      try {
+        const newData = {
+          quantity: purchase.quantity,
+          unitPrice: purchase.unitPrice,
+          supplier: purchase.supplier,
+          purchaseDate: purchase.purchaseDate ? purchase.purchaseDate.split('T')[0] : '',
+          status: purchase.status,
+          discount: purchase.discount || 0,
+          totalPaid: purchase.totalPaid || 0,
+        };
+        console.log('Setting new form data:', newData);
+        setFormData(newData);
+      } catch (error) {
+        console.error('Error populating form data:', error);
+      }
     }
   }, [purchase]);
 
@@ -189,6 +210,7 @@ export default function EditMaterialPurchasePage() {
                 <Input
                   id="quantity"
                   type="number"
+                  step="any"
                   value={formData.quantity}
                   onChange={(e) => setFormData({ ...formData, quantity: parseFloat(e.target.value) || 0 })}
                   disabled={!canFullEdit}
