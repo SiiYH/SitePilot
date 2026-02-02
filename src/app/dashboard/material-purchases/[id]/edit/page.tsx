@@ -18,6 +18,26 @@ import { useToast } from '@/hooks/use-toast';
 
 const GRACE_PERIOD_HOURS = 90;
 
+// Helper to safely parse date from string or Timestamp
+const getSafeDate = (date: any): Date | null => {
+  if (!date) return null;
+  if (date.toDate && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  if (typeof date === 'string') {
+    return parseISO(date);
+  }
+  if (date instanceof Date) {
+    return date;
+  }
+  return null;
+};
+
+const getSafeDateString = (date: any): string => {
+  const d = getSafeDate(date);
+  return d ? d.toISOString().split('T')[0] : '';
+};
+
 export default function EditMaterialPurchasePage() {
   const router = useRouter();
   const params = useParams();
@@ -84,7 +104,7 @@ export default function EditMaterialPurchasePage() {
           quantity: purchase.quantity,
           unitPrice: purchase.unitPrice,
           supplier: purchase.supplier,
-          purchaseDate: purchase.purchaseDate ? purchase.purchaseDate.split('T')[0] : '',
+          purchaseDate: getSafeDateString(purchase.purchaseDate),
           status: purchase.status,
           discount: purchase.discount || 0,
           totalPaid: purchase.totalPaid || 0,
@@ -110,8 +130,8 @@ export default function EditMaterialPurchasePage() {
   }
 
   // Check edit permissions
-  const createdAt = parseISO(purchase.createdAt);
-  const hoursSinceCreation = differenceInHours(new Date(), createdAt);
+  const createdAtDate = getSafeDate(purchase.createdAt);
+  const hoursSinceCreation = createdAtDate ? differenceInHours(new Date(), createdAtDate) : 9999;
   const withinGracePeriod = hoursSinceCreation <= GRACE_PERIOD_HOURS;
 
   const canFullEdit = (purchase.status === 'Ordered' || purchase.status === 'Pending') && withinGracePeriod;
@@ -143,6 +163,7 @@ export default function EditMaterialPurchasePage() {
         updateData.totalPrice = totalPrice;
         updateData.supplier = formData.supplier;
         updateData.purchaseDate = new Date(formData.purchaseDate).toISOString();
+
         updateData.discount = formData.discount;
         updateData.totalPaid = formData.totalPaid;
       } else {
